@@ -8,12 +8,25 @@
 
 /* Begin PBXBuildFile section */
 		F862F1A32F583923001666F2 /* Flow3App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1A22F583923001666F2 /* Flow3App.swift */; };
-		F862F1A52F583923001666F2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1A42F583923001666F2 /* ContentView.swift */; };
 		F862F1A72F583927001666F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F862F1A62F583927001666F2 /* Assets.xcassets */; };
 		F862F1AA2F583927001666F2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F862F1A92F583927001666F2 /* Preview Assets.xcassets */; };
 		F862F1B42F583928001666F2 /* Flow3Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1B32F583928001666F2 /* Flow3Tests.swift */; };
 		F862F1BE2F583928001666F2 /* Flow3UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1BD2F583928001666F2 /* Flow3UITests.swift */; };
 		F862F1C02F583928001666F2 /* Flow3UITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1BF2F583928001666F2 /* Flow3UITestsLaunchTests.swift */; };
+		F862F1D12F583995001666F2 /* FlowTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1D02F583995001666F2 /* FlowTypes.swift */; };
+		F862F1D32F5839B4001666F2 /* WaitTimeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1D22F5839B4001666F2 /* WaitTimeModels.swift */; };
+		F862F1D52F5839C9001666F2 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1D42F5839C9001666F2 /* WeatherModels.swift */; };
+		F862F1D92F583A17001666F2 /* WaitTimeProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1D82F583A17001666F2 /* WaitTimeProviding.swift */; };
+		F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1DA2F583A3A001666F2 /* WaitTimeService.swift */; };
+		F862F1DD2F583A5B001666F2 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1DC2F583A5B001666F2 /* WeatherService.swift */; };
+		F862F1E02F583A94001666F2 /* ATLStubWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1DF2F583A94001666F2 /* ATLStubWaitTimeProvider.swift */; };
+		F862F1E22F583AAB001666F2 /* LHRStubWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1E12F583AAA001666F2 /* LHRStubWaitTimeProvider.swift */; };
+		F862F1E82F583B0C001666F2 /* LandingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1E72F583B0C001666F2 /* LandingStore.swift */; };
+		F862F1EA2F583B20001666F2 /* LandingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1E92F583B20001666F2 /* LandingView.swift */; };
+		F862F1ED2F583B45001666F2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1EC2F583B45001666F2 /* ContentView.swift */; };
+		F862F1F02F5840C2001666F2 /* CompositeWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1EE2F583C32001666F2 /* CompositeWaitTimeProvider.swift */; };
+		F862F1F42F5844CE001666F2 /* StubWeatherProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1F32F5844CE001666F2 /* StubWeatherProvider.swift */; };
+		F862F1F62F584B45001666F2 /* JFKAzureAPIWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1F52F584B45001666F2 /* JFKAzureAPIWaitTimeProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,7 +49,6 @@
 /* Begin PBXFileReference section */
 		F862F19F2F583923001666F2 /* Flow3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Flow3.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F862F1A22F583923001666F2 /* Flow3App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flow3App.swift; sourceTree = "<group>"; };
-		F862F1A42F583923001666F2 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F862F1A62F583927001666F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F862F1A92F583927001666F2 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		F862F1AF2F583928001666F2 /* Flow3Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Flow3Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -44,6 +56,20 @@
 		F862F1B92F583928001666F2 /* Flow3UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Flow3UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F862F1BD2F583928001666F2 /* Flow3UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flow3UITests.swift; sourceTree = "<group>"; };
 		F862F1BF2F583928001666F2 /* Flow3UITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flow3UITestsLaunchTests.swift; sourceTree = "<group>"; };
+		F862F1D02F583995001666F2 /* FlowTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowTypes.swift; sourceTree = "<group>"; };
+		F862F1D22F5839B4001666F2 /* WaitTimeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaitTimeModels.swift; sourceTree = "<group>"; };
+		F862F1D42F5839C9001666F2 /* WeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModels.swift; sourceTree = "<group>"; };
+		F862F1D82F583A17001666F2 /* WaitTimeProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaitTimeProviding.swift; sourceTree = "<group>"; };
+		F862F1DA2F583A3A001666F2 /* WaitTimeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaitTimeService.swift; sourceTree = "<group>"; };
+		F862F1DC2F583A5B001666F2 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
+		F862F1DF2F583A94001666F2 /* ATLStubWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLStubWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F862F1E12F583AAA001666F2 /* LHRStubWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LHRStubWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F862F1E72F583B0C001666F2 /* LandingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandingStore.swift; sourceTree = "<group>"; };
+		F862F1E92F583B20001666F2 /* LandingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandingView.swift; sourceTree = "<group>"; };
+		F862F1EC2F583B45001666F2 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		F862F1EE2F583C32001666F2 /* CompositeWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositeWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F862F1F32F5844CE001666F2 /* StubWeatherProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StubWeatherProvider.swift; sourceTree = "<group>"; };
+		F862F1F52F584B45001666F2 /* JFKAzureAPIWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JFKAzureAPIWaitTimeProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,10 +120,15 @@
 		F862F1A12F583923001666F2 /* Flow3 */ = {
 			isa = PBXGroup;
 			children = (
+				F862F1EB2F583B29001666F2 /* App */,
+				F862F1E52F583ACB001666F2 /* Features */,
+				F862F1DE2F583A76001666F2 /* Providers */,
+				F862F1CC2F58394F001666F2 /* Core */,
 				F862F1A22F583923001666F2 /* Flow3App.swift */,
-				F862F1A42F583923001666F2 /* ContentView.swift */,
 				F862F1A62F583927001666F2 /* Assets.xcassets */,
 				F862F1A82F583927001666F2 /* Preview Content */,
+				F862F1F32F5844CE001666F2 /* StubWeatherProvider.swift */,
+				F862F1F52F584B45001666F2 /* JFKAzureAPIWaitTimeProvider.swift */,
 			);
 			path = Flow3;
 			sourceTree = "<group>";
@@ -125,6 +156,70 @@
 				F862F1BF2F583928001666F2 /* Flow3UITestsLaunchTests.swift */,
 			);
 			path = Flow3UITests;
+			sourceTree = "<group>";
+		};
+		F862F1CC2F58394F001666F2 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				F862F1D72F5839EF001666F2 /* Services */,
+				F862F1CD2F583958001666F2 /* Models */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		F862F1CD2F583958001666F2 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F862F1D02F583995001666F2 /* FlowTypes.swift */,
+				F862F1D22F5839B4001666F2 /* WaitTimeModels.swift */,
+				F862F1D42F5839C9001666F2 /* WeatherModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		F862F1D72F5839EF001666F2 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				F862F1D82F583A17001666F2 /* WaitTimeProviding.swift */,
+				F862F1DA2F583A3A001666F2 /* WaitTimeService.swift */,
+				F862F1DC2F583A5B001666F2 /* WeatherService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		F862F1DE2F583A76001666F2 /* Providers */ = {
+			isa = PBXGroup;
+			children = (
+				F862F1DF2F583A94001666F2 /* ATLStubWaitTimeProvider.swift */,
+				F862F1E12F583AAA001666F2 /* LHRStubWaitTimeProvider.swift */,
+				F862F1EE2F583C32001666F2 /* CompositeWaitTimeProvider.swift */,
+			);
+			path = Providers;
+			sourceTree = "<group>";
+		};
+		F862F1E52F583ACB001666F2 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				F862F1E62F583AF2001666F2 /* Landing */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		F862F1E62F583AF2001666F2 /* Landing */ = {
+			isa = PBXGroup;
+			children = (
+				F862F1E72F583B0C001666F2 /* LandingStore.swift */,
+				F862F1E92F583B20001666F2 /* LandingView.swift */,
+			);
+			path = Landing;
+			sourceTree = "<group>";
+		};
+		F862F1EB2F583B29001666F2 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				F862F1EC2F583B45001666F2 /* ContentView.swift */,
+			);
+			path = App;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -257,8 +352,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F862F1A52F583923001666F2 /* ContentView.swift in Sources */,
+				F862F1DD2F583A5B001666F2 /* WeatherService.swift in Sources */,
+				F862F1EA2F583B20001666F2 /* LandingView.swift in Sources */,
+				F862F1ED2F583B45001666F2 /* ContentView.swift in Sources */,
+				F862F1E82F583B0C001666F2 /* LandingStore.swift in Sources */,
+				F862F1D12F583995001666F2 /* FlowTypes.swift in Sources */,
+				F862F1F02F5840C2001666F2 /* CompositeWaitTimeProvider.swift in Sources */,
+				F862F1F62F584B45001666F2 /* JFKAzureAPIWaitTimeProvider.swift in Sources */,
 				F862F1A32F583923001666F2 /* Flow3App.swift in Sources */,
+				F862F1E02F583A94001666F2 /* ATLStubWaitTimeProvider.swift in Sources */,
+				F862F1E22F583AAB001666F2 /* LHRStubWaitTimeProvider.swift in Sources */,
+				F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */,
+				F862F1D32F5839B4001666F2 /* WaitTimeModels.swift in Sources */,
+				F862F1F42F5844CE001666F2 /* StubWeatherProvider.swift in Sources */,
+				F862F1D92F583A17001666F2 /* WaitTimeProviding.swift in Sources */,
+				F862F1D52F5839C9001666F2 /* WeatherModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
