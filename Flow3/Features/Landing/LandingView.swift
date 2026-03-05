@@ -20,7 +20,7 @@ struct LandingView: View {
 
                     airportTabs
 
-                    weatherSection
+                    weatherRow // ✅ Weather card + Time card (same size / same style)
 
                     securityHero
 
@@ -123,10 +123,25 @@ extension LandingView {
     }
 }
 
-// MARK: - Weather
+// MARK: - Weather + Time row (ALL airports)
 
 extension LandingView {
 
+    // ✅ Weather + Time cards should match size and feel
+    var weatherRow: some View {
+        HStack(alignment: .top, spacing: 12) {
+
+            weatherSection
+                .frame(maxWidth: .infinity)
+                .frame(height: 110)
+
+            timeSection
+                .frame(maxWidth: .infinity)
+                .frame(height: 110)
+        }
+    }
+
+    // ✅ Weather card
     var weatherSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Weather")
@@ -145,9 +160,51 @@ extension LandingView {
                 Text(weatherLine)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white.opacity(0.95))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
         }
         .flowGlassCard()
+    }
+
+    // ✅ Time card (NO inner pill) — same layout style as Weather card
+    var timeSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Time")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
+
+            Text(store.selectedAirport.rawValue.uppercased())
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.75))
+
+            TimelineView(.periodic(from: Date(), by: 60)) { context in
+                let tz = TimeZone.current
+                let time = timeString(context.date, in: tz)
+                let abbr = tz.abbreviation(for: context.date) ?? "LOCAL"
+
+                HStack(spacing: 10) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.95))
+
+                    Text("\(time) • \(abbr)")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.95))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+            }
+        }
+        .flowGlassCard()
+    }
+
+    func timeString(_ date: Date, in tz: TimeZone) -> String {
+        let f = DateFormatter()
+        f.timeZone = tz
+        f.dateFormat = "HH:mm"
+        return f.string(from: date)
     }
 
     var weatherLine: String {
@@ -213,7 +270,6 @@ extension LandingView {
         }
     }
 
-    // ✅ ATL hero now shows selected checkpoint name + minutes + Domestic/International
     var heroCard: some View {
         let general = heroMinutes(.general)
         let pre = heroMinutes(.precheck)
@@ -245,7 +301,7 @@ extension LandingView {
                         .foregroundColor(.white.opacity(0.75))
                 }
             } else {
-                // ✅ JFK + LHR unchanged: two-number layout
+                // ✅ JFK + LHR remain unchanged (two-number layout)
                 HStack(spacing: 34) {
                     heroMetric(value: general, label: "General")
                     heroMetric(value: pre, label: "PreCheck")
@@ -266,7 +322,6 @@ extension LandingView {
         .frame(height: 175)
     }
 
-    // ✅ “Domestic Main checkpoint”, “International Main checkpoint”, etc.
     var atlHeroCheckpointLabel: String {
         let area = atlSelectedCheckpointArea.trimmingCharacters(in: .whitespacesAndNewlines)
         let name = atlSelectedCheckpointName
@@ -296,7 +351,6 @@ extension LandingView {
 
     func heroMinutes(_ queue: QueueType) -> Int? {
         if store.selectedAirport == .jfk {
-            // If JFK selected and terminal not set, default to 1 automatically
             let t = selectedTerminal ?? 1
             return store.jfkMinutes(terminal: t, category: queue)
         }
