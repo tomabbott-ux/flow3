@@ -4,51 +4,78 @@ import Combine
 @MainActor
 final class LandingStore: ObservableObject {
 
-    struct TerminalMinutes: Hashable {
-        let terminal: Int
-        let general: Int?
-        let precheck: Int?
-    }
+    // MARK: - Published state (used by LandingView)
 
     @Published var selectedAirport: FlowAirport = .atl
-    @Published var waitTimes: [WaitTimeEstimate] = []
-    @Published var weather: WeatherSnapshot? = nil
-    @Published var lastUpdated: Date? = nil
-    @Published var errorText: String? = nil
+    @Published var weather: WeatherSnapshot?
+    @Published var lastUpdated: Date?
+    @Published var errorText: String?
+
+    // ✅ This is the missing piece your extensions expect
+    @Published private(set) var waitTimes: [WaitTimeEstimate] = []
+
+    // MARK: - Services
 
     private let waitTimeService: WaitTimeService
     private let weatherService: WeatherService
 
-    private var autoRefreshTask: Task<Void, Never>? = nil
+    // MARK: - Auto refresh
 
-    init(waitTimeService: WaitTimeService, weatherService: WeatherService) {
+    private var autoRefreshTask: Task<Void, Never>?
+    private var autoRefreshInterval: TimeInterval = 60
+
+    init(
+        waitTimeService: WaitTimeService,
+        weatherService: WeatherService
+    ) {
         self.waitTimeService = waitTimeService
         self.weatherService = weatherService
     }
 
+    deinit {
+        // ✅ deinit is NOT actor-isolated — do not call MainActor methods directly
+        autoRefreshTask?.cancel()
+        autoRefreshTask = nil
+    }
+
+    // MARK: - Refresh
+
     func refresh() async {
-        errorText = nil
         do {
+            errorText = nil
+
             async let wt = waitTimeService.fetchWaitTimes(for: selectedAirport)
             async let wx = weatherService.fetchWeather(for: selectedAirport)
 
-            let (wait, w) = try await (wt, wx)
-            self.waitTimes = wait
-            self.weather = w
+            let (newWaitTimes, newWeather) = try await (wt, wx)
+
+            self.waitTimes = newWaitTimes
+            self.weather = newWeather
             self.lastUpdated = Date()
+
         } catch {
-            self.errorText = "Failed to refresh: \(error.localizedDescription)"
+            self.errorText = "Refresh failed: \(error.localizedDescription)"
+            // Keep last good data on screen if refresh fails.
         }
     }
 
-    func startAutoRefresh(every seconds: UInt64 = 60) {
-        stopAutoRefresh()
+    // MARK: - Auto refresh (60s)
+
+    /// Starts auto-refresh. Safe to call multiple times (it restarts).
+    func startAutoRefresh(every seconds: TimeInterval = 60) {
+        autoRefreshInterval = seconds
+        stopAutoRefresh() // restart cleanly
+
         autoRefreshTask = Task { [weak self] in
+            guard let self else { return }
+
+            // Small delay so first .task refresh can run without fighting
+            try? await Task.sleep(nanoseconds: 300_000_000)
+
             while !Task.isCancelled {
-                // refresh immediately on start, then sleep
-                guard let self else { break }
                 await self.refresh()
-                try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+                let ns = UInt64(self.autoRefreshInterval * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: ns)
             }
         }
     }
@@ -58,28 +85,19 @@ final class LandingStore: ObservableObject {
         autoRefreshTask = nil
     }
 
-    // MARK: - Helpers (LandingView uses these)
+    // MARK: - Shared helpers used by views/extensions
 
+    /// Overall minutes for the currently selected airport (fallback logic).
     func overallMinutes(_ queue: QueueType) -> Int? {
-        let items = waitTimes.filter { $0.airport == selectedAirport && $0.queueType == queue }
-        if let overall = items.first(where: { $0.terminal == nil }) {
-            return overall.minutes
-        }
-        return items.map(\.minutes).min()
+        let relevant = waitTimes
+            .filter { $0.airport == selectedAirport && $0.queueType == queue }
+            .map { $0.minutes }
+
+        return relevant.min()
     }
 
-    func jfkTerminalsPresent() -> [Int] {
-        guard selectedAirport == .jfk else { return [] }
-        let terms = waitTimes
-            .filter { $0.airport == .jfk }
-            .compactMap { $0.terminal }
-        return Array(Set(terms)).sorted()
-    }
-    
-    func jfkMinutes(terminal: Int, category: QueueType) -> Int? {
-        guard selectedAirport == .jfk else { return nil }
-        return waitTimes.first(where: {
-            $0.airport == .jfk && $0.terminal == terminal && $0.queueType == category
-        })?.minutes
+    /// Allows your other airport extensions (ATL/JFK/LHR) to read raw waitTimes if needed.
+    func allWaitTimes() -> [WaitTimeEstimate] {
+        waitTimes
     }
 }

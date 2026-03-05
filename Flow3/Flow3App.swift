@@ -9,7 +9,7 @@ struct Flow3App: App {
             let composite = CompositeWaitTimeProvider(providers: [
                 ATLStubWaitTimeProvider(),
                 LHRStubWaitTimeProvider(),
-                JFKAzureAPIWaitTimeProvider()   // ✅ IMPORTANT
+                JFKAzureAPIWaitTimeProvider() // ✅ IMPORTANT
             ])
 
             let waitService = WaitTimeService(provider: composite)

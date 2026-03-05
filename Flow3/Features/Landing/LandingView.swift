@@ -10,6 +10,12 @@ struct LandingView: View {
     @State private var atlSelectedCheckpointMinutes: Int? = nil
     @State private var atlSelectedCheckpointArea: String = "Domestic" // "Domestic" or "International"
 
+    // ✅ LHR selection state
+    // Terminals: 2, 3, 4 are single checkpoint; Terminal 5 has North/South
+    @State private var lhrSelectedTerminal: Int? = 5
+    @State private var lhrSelectedCheckpointName: String = "North"   // "Security" OR "North"/"South" for T5
+    @State private var lhrSelectedCheckpointMinutes: Int? = nil
+
     var body: some View {
         ZStack {
             FlowBrand.backgroundGradient
@@ -33,10 +39,18 @@ struct LandingView: View {
                         )
                     }
 
+                    // ✅ JFK terminals list (JFK only)
                     if store.selectedAirport == .jfk {
                         jfkTerminals
                     }
 
+                    // ✅ LHR terminals list (LHR only) — drives LHR hero
+                    if store.selectedAirport == .lhr {
+                        LHRCheckpointCard(
+                            store: store,
+                            selectedTerminal: $lhrSelectedTerminal
+                        )
+                    }
                     if let e = store.errorText, !e.isEmpty {
                         Text(e)
                             .font(.footnote)
@@ -62,6 +76,13 @@ struct LandingView: View {
                 atlSelectedCheckpointName = "MAIN"
                 atlSelectedCheckpointMinutes = nil
                 atlSelectedCheckpointArea = "Domestic"
+            }
+
+            // If we launch on LHR, default to Terminal 5 North
+            if store.selectedAirport == .lhr {
+                lhrSelectedTerminal = 5
+                lhrSelectedCheckpointName = "North"
+                lhrSelectedCheckpointMinutes = nil
             }
 
             store.startAutoRefresh() // default = every 60s (LandingStore)
@@ -102,6 +123,13 @@ extension LandingView {
                 atlSelectedCheckpointArea = "Domestic"
             }
 
+            // ✅ When user clicks LHR, default Terminal 5 North
+            if airport == .lhr {
+                lhrSelectedTerminal = 5
+                lhrSelectedCheckpointName = "North"
+                lhrSelectedCheckpointMinutes = nil
+            }
+
             Task { await store.refresh() }
         } label: {
             Text(title)
@@ -127,7 +155,6 @@ extension LandingView {
 
 extension LandingView {
 
-    // ✅ Weather + Time cards should match size and feel
     var weatherRow: some View {
         HStack(alignment: .top, spacing: 12) {
 
@@ -141,7 +168,6 @@ extension LandingView {
         }
     }
 
-    // ✅ Weather card
     var weatherSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Weather")
@@ -167,7 +193,6 @@ extension LandingView {
         .flowGlassCard()
     }
 
-    // ✅ Time card (NO inner pill) — same layout style as Weather card
     var timeSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Time")
@@ -271,10 +296,8 @@ extension LandingView {
     }
 
     var heroCard: some View {
-        let general = heroMinutes(.general)
-        let pre = heroMinutes(.precheck)
 
-        return ZStack {
+        ZStack {
             RoundedRectangle(cornerRadius: 22)
                 .fill(Color.black.opacity(0.25))
                 .overlay(
@@ -286,8 +309,10 @@ extension LandingView {
                 .font(.system(size: 84, weight: .heavy))
                 .foregroundColor(.white.opacity(0.06))
 
+            // ✅ ATL = single number from selected checkpoint
             if store.selectedAirport == .atl {
-                let minutes = atlSelectedCheckpointMinutes ?? general
+                let fallback = store.overallMinutes(.general)
+                let minutes = atlSelectedCheckpointMinutes ?? fallback
                 let label = atlHeroCheckpointLabel
 
                 VStack(spacing: 6) {
@@ -299,9 +324,55 @@ extension LandingView {
                     Text(label)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.white.opacity(0.75))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.9)
                 }
-            } else {
-                // ✅ JFK + LHR remain unchanged (two-number layout)
+            }
+
+            // ✅ LHR hero:
+            // - T2/T3/T4: single number "Security"
+            // - T5: two numbers North/South (mapped to general/precheck buckets)
+            else if store.selectedAirport == .lhr {
+
+                let terminal = lhrSelectedTerminal ?? 5
+
+                if terminal == 5 {
+                    let north = lhrMinutesForTerminal5("North")
+                    let south = lhrMinutesForTerminal5("South")
+
+                    HStack(spacing: 34) {
+                        heroMetric(value: north, label: "North")
+                        heroMetric(value: south, label: "South")
+                    }
+                } else {
+                    let minutes = store.lhrMinutes(terminal: terminal, category: .general)
+                    VStack(spacing: 6) {
+                        Text(minutes == nil ? "--" : "\(minutes!)")
+                            .font(.system(size: 72, weight: .heavy))
+                            .foregroundColor(.white)
+                            .monospacedDigit()
+
+                        Text("Security")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.75))
+                    }
+                }
+
+                VStack {
+                    Spacer()
+                    Text("Terminal \(terminal)")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.85))
+                        .padding(.bottom, 14)
+                }
+            }
+
+            // ✅ JFK remains unchanged (two-number layout)
+            else {
+
+                let general = heroMinutes(.general)
+                let pre = heroMinutes(.precheck)
+
                 HStack(spacing: 34) {
                     heroMetric(value: general, label: "General")
                     heroMetric(value: pre, label: "PreCheck")
@@ -320,6 +391,17 @@ extension LandingView {
             }
         }
         .frame(height: 175)
+    }
+
+    private func lhrMinutesForTerminal5(_ side: String) -> Int? {
+        // Map T5 North/South into the app’s two slots:
+        // - North -> .general
+        // - South -> .precheck
+        if side.lowercased().contains("north") {
+            return store.lhrMinutes(terminal: 5, category: .general)
+        } else {
+            return store.lhrMinutes(terminal: 5, category: .precheck)
+        }
     }
 
     var atlHeroCheckpointLabel: String {
