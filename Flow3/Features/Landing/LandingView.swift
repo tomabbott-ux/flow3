@@ -5,6 +5,11 @@ struct LandingView: View {
     @ObservedObject var store: LandingStore
     @State private var selectedTerminal: Int? = nil
 
+    // ✅ ATL selection state (mirrors JFK terminal selection concept)
+    @State private var atlSelectedCheckpointName: String = "MAIN"
+    @State private var atlSelectedCheckpointMinutes: Int? = nil
+    @State private var atlSelectedCheckpointArea: String = "Domestic" // "Domestic" or "International"
+
     var body: some View {
         ZStack {
             FlowBrand.backgroundGradient
@@ -18,6 +23,15 @@ struct LandingView: View {
                     weatherSection
 
                     securityHero
+
+                    // ✅ ATL checkpoint list (ATL only) — drives ATL hero
+                    if store.selectedAirport == .atl {
+                        ATLCheckpointCard(
+                            selectedCheckpointName: $atlSelectedCheckpointName,
+                            selectedCheckpointMinutes: $atlSelectedCheckpointMinutes,
+                            selectedCheckpointArea: $atlSelectedCheckpointArea
+                        )
+                    }
 
                     if store.selectedAirport == .jfk {
                         jfkTerminals
@@ -37,10 +51,19 @@ struct LandingView: View {
         }
         .task {
             await store.refresh()
+
             // If we launch on JFK, default terminal 1 in the hero.
             if store.selectedAirport == .jfk {
                 selectedTerminal = 1
             }
+
+            // If we launch on ATL, default selection is Domestic MAIN (card will resolve minutes)
+            if store.selectedAirport == .atl {
+                atlSelectedCheckpointName = "MAIN"
+                atlSelectedCheckpointMinutes = nil
+                atlSelectedCheckpointArea = "Domestic"
+            }
+
             store.startAutoRefresh() // default = every 60s (LandingStore)
         }
     }
@@ -70,6 +93,13 @@ extension LandingView {
                 selectedTerminal = 1
             } else {
                 selectedTerminal = nil
+            }
+
+            // ✅ When user clicks ATL, default Domestic MAIN
+            if airport == .atl {
+                atlSelectedCheckpointName = "MAIN"
+                atlSelectedCheckpointMinutes = nil
+                atlSelectedCheckpointArea = "Domestic"
             }
 
             Task { await store.refresh() }
@@ -183,6 +213,7 @@ extension LandingView {
         }
     }
 
+    // ✅ ATL hero now shows selected checkpoint name + minutes + Domestic/International
     var heroCard: some View {
         let general = heroMinutes(.general)
         let pre = heroMinutes(.precheck)
@@ -199,11 +230,29 @@ extension LandingView {
                 .font(.system(size: 84, weight: .heavy))
                 .foregroundColor(.white.opacity(0.06))
 
-            HStack(spacing: 34) {
-                heroMetric(value: general, label: "General")
-                heroMetric(value: pre, label: "PreCheck")
+            if store.selectedAirport == .atl {
+                let minutes = atlSelectedCheckpointMinutes ?? general
+                let label = atlHeroCheckpointLabel
+
+                VStack(spacing: 6) {
+                    Text(minutes == nil ? "--" : "\(minutes!)")
+                        .font(.system(size: 72, weight: .heavy))
+                        .foregroundColor(.white)
+                        .monospacedDigit()
+
+                    Text(label)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.75))
+                }
+            } else {
+                // ✅ JFK + LHR unchanged: two-number layout
+                HStack(spacing: 34) {
+                    heroMetric(value: general, label: "General")
+                    heroMetric(value: pre, label: "PreCheck")
+                }
             }
 
+            // ✅ JFK terminal label stays exactly the same
             if store.selectedAirport == .jfk, let t = selectedTerminal {
                 VStack {
                     Spacer()
@@ -217,9 +266,24 @@ extension LandingView {
         .frame(height: 175)
     }
 
+    // ✅ “Domestic Main checkpoint”, “International Main checkpoint”, etc.
+    var atlHeroCheckpointLabel: String {
+        let area = atlSelectedCheckpointArea.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = atlSelectedCheckpointName
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .split(separator: " ")
+            .map { $0.prefix(1).uppercased() + $0.dropFirst() }
+            .joined(separator: " ")
+
+        let safeArea = area.isEmpty ? "Domestic" : area
+        let safeName = name.isEmpty ? "Main" : name
+
+        return "\(safeArea) \(safeName) checkpoint"
+    }
+
     func heroMetric(value: Int?, label: String) -> some View {
         VStack(spacing: 6) {
-            // ✅ Bigger hero numbers
             Text(value == nil ? "--" : "\(value!)")
                 .font(.system(size: 58, weight: .heavy))
                 .foregroundColor(.white)
@@ -240,7 +304,7 @@ extension LandingView {
     }
 }
 
-// MARK: - JFK terminals list
+// MARK: - JFK terminals list (UNCHANGED)
 
 extension LandingView {
 
@@ -258,7 +322,6 @@ extension LandingView {
         }
         .flowGlassCard()
         .onAppear {
-            // If user lands on JFK and we have data, keep hero on terminal 1 by default.
             if selectedTerminal == nil {
                 selectedTerminal = 1
             }
@@ -348,7 +411,6 @@ extension LandingView {
 
         return Text("Confidence \(c.label)")
             .font(.system(size: 12, weight: .semibold))
-            // ✅ Text color green/orange/red
             .foregroundColor(c.color)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
@@ -371,10 +433,10 @@ extension LandingView {
     }
 }
 
-// MARK: - Flow Brand + helpers
+// MARK: - Flow Brand + helpers (MUST be file-scope)
 
 private enum FlowBrand {
-    static let accent = Color(hex: "8B5CF6") // Flow purple accent
+    static let accent = Color(hex: "8B5CF6")
     static let backgroundTop = Color(hex: "2A0C5A")
     static let backgroundMid = Color(hex: "3B136E")
     static let backgroundBottom = Color(hex: "14062F")
@@ -412,9 +474,9 @@ private extension Color {
 
         let a, r, g, b: UInt64
         switch hex.count {
-        case 6: // RRGGBB
+        case 6:
             (a, r, g, b) = (255, (int >> 16) & 255, (int >> 8) & 255, int & 255)
-        case 8: // AARRGGBB
+        case 8:
             (a, r, g, b) = ((int >> 24) & 255, (int >> 16) & 255, (int >> 8) & 255, int & 255)
         default:
             (a, r, g, b) = (255, 255, 255, 255)
