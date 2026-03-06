@@ -5,6 +5,8 @@ struct LandingView: View {
     @ObservedObject var store: LandingStore
     @State private var selectedRowID: String? = nil
 
+    private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+
     private var displayRows: [AirportDisplayRow] {
         store.displayRowsForSelectedAirport()
     }
@@ -45,15 +47,30 @@ struct LandingView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            await store.refresh()
-            selectedRowID = store.displayRowsForSelectedAirport().first?.id
-            store.startAutoRefresh()
+            await refreshNow()
+        }
+        .onReceive(refreshTimer) { _ in
+            Task {
+                await refreshNow()
+            }
         }
         .onChange(of: store.selectedAirport) { _ in
-            selectedRowID = store.displayRowsForSelectedAirport().first?.id
+            Task {
+                await refreshNow()
+            }
         }
-        .onDisappear {
-            store.stopAutoRefresh()
+    }
+
+    private func refreshNow() async {
+        await store.refresh()
+
+        let latestRows = store.displayRowsForSelectedAirport()
+
+        if let selectedRowID,
+           latestRows.contains(where: { $0.id == selectedRowID }) {
+            self.selectedRowID = selectedRowID
+        } else {
+            self.selectedRowID = latestRows.first?.id
         }
     }
 }

@@ -9,14 +9,20 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
             .atl: ATLStubWaitTimeProvider(),
             .jfk: JFKAzureAPIWaitTimeProvider(),
             .lhr: LHRStubWaitTimeProvider(),
+
             .yyz: YYZLiveWaitTimeProvider(),
             .yvr: YVRLiveWaitTimeProvider(),
             .yyc: YYCLiveWaitTimeProvider(),
+
             .den: DENLiveWaitTimeProvider(),
             .dfw: DFWLiveWaitTimeProvider(),
             .hou: HOULiveWaitTimeProvider(),
+            .mco: MCOLiveWaitTimeProvider(),
+            .phx: PHXLiveWaitTimeProvider(),
+            .phl: PHLLiveWaitTimeProvider(),
 
             .ams: AMSWaitTimeProvider(),
+
             .cdg: EstimatedAirportWaitTimeProvider(
                 airport: .cdg,
                 terminalMinutes: [
@@ -127,10 +133,7 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
     }
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
-        guard let provider = providers[airport] else {
-            return []
-        }
-
+        guard let provider = providers[airport] else { return [] }
         return try await provider.fetchWaitTimes(for: airport)
     }
 }

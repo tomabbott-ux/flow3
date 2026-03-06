@@ -1,26 +1,31 @@
 import Foundation
 
 struct AirportDefinition: Identifiable, Hashable {
+
     let airport: FlowAirport
     let isLive: Bool
 
-    var id: FlowAirport {
-        airport
-    }
+    var id: FlowAirport { airport }
 }
 
 struct AirportRegistry {
 
     static let airports: [AirportDefinition] = [
+
         AirportDefinition(airport: .atl, isLive: true),
         AirportDefinition(airport: .jfk, isLive: true),
         AirportDefinition(airport: .lhr, isLive: true),
+
         AirportDefinition(airport: .yyz, isLive: true),
         AirportDefinition(airport: .yvr, isLive: true),
         AirportDefinition(airport: .yyc, isLive: true),
+
         AirportDefinition(airport: .den, isLive: true),
         AirportDefinition(airport: .dfw, isLive: true),
         AirportDefinition(airport: .hou, isLive: true),
+        AirportDefinition(airport: .mco, isLive: true),
+        AirportDefinition(airport: .phx, isLive: true),
+        AirportDefinition(airport: .phl, isLive: true),
 
         AirportDefinition(airport: .ams, isLive: false),
         AirportDefinition(airport: .cdg, isLive: false),
@@ -39,10 +44,6 @@ struct AirportRegistry {
         AirportDefinition(airport: .icn, isLive: false),
         AirportDefinition(airport: .syd, isLive: false)
     ]
-
-    static var all: [AirportDefinition] {
-        airports
-    }
 
     static func definition(for airport: FlowAirport) -> AirportDefinition? {
         airports.first(where: { $0.airport == airport })

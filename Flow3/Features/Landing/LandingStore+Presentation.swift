@@ -24,7 +24,7 @@ extension LandingStore {
 
         switch selectedAirport {
 
-        case .atl, .yvr, .yyc, .den, .dfw, .hou:
+        case .atl, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
             return namedCheckpointRows(from: rows)
 
         case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad, .sfo, .lax, .ord, .bcn, .fco, .hnd, .icn, .syd:
@@ -49,18 +49,7 @@ extension LandingStore {
                 let general = items.first(where: { $0.queueType == .general })?.minutes
                 let precheck = items.first(where: { $0.queueType == .precheck })?.minutes
 
-                let metrics: [AirportMetric]
-                if items.contains(where: { $0.queueType == .precheck }) {
-                    metrics = [
-                        AirportMetric(label: "General", minutes: general),
-                        AirportMetric(label: "PreCheck", minutes: precheck)
-                    ]
-                } else {
-                    let bestMinutes = items.map(\.minutes).min()
-                    metrics = [
-                        AirportMetric(label: "Wait", minutes: bestMinutes)
-                    ]
-                }
+                let metrics = metricsForRow(general: general, precheck: precheck, items: items)
 
                 return AirportDisplayRow(
                     id: key,
@@ -70,7 +59,12 @@ extension LandingStore {
                     observedAt: observedAt
                 )
             }
-            .sorted { $0.title < $1.title }
+            .sorted { lhs, rhs in
+                if lhs.subtitle == rhs.subtitle {
+                    return lhs.title < rhs.title
+                }
+                return lhs.subtitle < rhs.subtitle
+            }
     }
 
     private func terminalDisplayRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
@@ -99,32 +93,48 @@ extension LandingStore {
 
                 let general = items.first(where: { $0.queueType == .general })?.minutes
                 let precheck = items.first(where: { $0.queueType == .precheck })?.minutes
+                let metrics = metricsForRow(general: general, precheck: precheck, items: items)
 
-                if items.contains(where: { $0.queueType == .precheck }) {
-                    return AirportDisplayRow(
-                        id: "\(selectedAirport.rawValue)-T\(terminal)",
-                        title: title,
-                        subtitle: "Security",
-                        metrics: [
-                            AirportMetric(label: "General", minutes: general),
-                            AirportMetric(label: "PreCheck", minutes: precheck)
-                        ],
-                        observedAt: observedAt
-                    )
-                } else {
-                    let best = items.map(\.minutes).min()
-
-                    return AirportDisplayRow(
-                        id: "\(selectedAirport.rawValue)-T\(terminal)",
-                        title: title,
-                        subtitle: items.first?.checkpointName ?? "Security",
-                        metrics: [
-                            AirportMetric(label: "Wait", minutes: best)
-                        ],
-                        observedAt: observedAt
-                    )
-                }
+                return AirportDisplayRow(
+                    id: "\(selectedAirport.rawValue)-T\(terminal)",
+                    title: title,
+                    subtitle: items.first?.checkpointName ?? "Security",
+                    metrics: metrics,
+                    observedAt: observedAt
+                )
             }
             .sorted { $0.title < $1.title }
+    }
+
+    private func metricsForRow(
+        general: Int?,
+        precheck: Int?,
+        items: [WaitTimeEstimate]
+    ) -> [AirportMetric] {
+
+        if general != nil, precheck != nil {
+            return [
+                AirportMetric(label: "General", minutes: general),
+                AirportMetric(label: "PreCheck", minutes: precheck)
+            ]
+        }
+
+        if precheck != nil {
+            return [
+                AirportMetric(label: "PreCheck", minutes: precheck)
+            ]
+        }
+
+        if general != nil {
+            return [
+                AirportMetric(label: "Wait", minutes: general)
+            ]
+        }
+
+        let bestMinutes = items.map(\.minutes).min()
+
+        return [
+            AirportMetric(label: "Wait", minutes: bestMinutes)
+        ]
     }
 }
