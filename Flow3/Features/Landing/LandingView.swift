@@ -5,16 +5,19 @@ struct LandingView: View {
     @ObservedObject var store: LandingStore
     @State private var selectedTerminal: Int? = nil
 
-    // ✅ ATL selection state (mirrors JFK terminal selection concept)
+    // ATL selection state
     @State private var atlSelectedCheckpointName: String = "MAIN"
     @State private var atlSelectedCheckpointMinutes: Int? = nil
-    @State private var atlSelectedCheckpointArea: String = "Domestic" // "Domestic" or "International"
+    @State private var atlSelectedCheckpointArea: String = "Domestic"
 
-    // ✅ LHR selection state
-    // Terminals: 2, 3, 4 are single checkpoint; Terminal 5 has North/South
+    // LHR selection state
     @State private var lhrSelectedTerminal: Int? = 5
-    @State private var lhrSelectedCheckpointName: String = "North"   // "Security" OR "North"/"South" for T5
+    @State private var lhrSelectedCheckpointName: String = "North"
     @State private var lhrSelectedCheckpointMinutes: Int? = nil
+
+    private var presentation: AirportPresentation {
+        AirportPresentation.make(for: store.selectedAirport)
+    }
 
     var body: some View {
         ZStack {
@@ -24,34 +27,38 @@ struct LandingView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
 
-                    airportTabs
+                    headerSection
 
-                    weatherRow // ✅ Weather card + Time card (same size / same style)
+                    weatherRow
 
-                    securityHero
+                    if presentation.isLive {
+                        securityHero
 
-                    // ✅ ATL checkpoint list (ATL only) — drives ATL hero
-                    if store.selectedAirport == .atl {
-                        ATLCheckpointCard(
-                            selectedCheckpointName: $atlSelectedCheckpointName,
-                            selectedCheckpointMinutes: $atlSelectedCheckpointMinutes,
-                            selectedCheckpointArea: $atlSelectedCheckpointArea
-                        )
+                        if store.selectedAirport == .atl {
+                            ATLCheckpointCard(
+                                selectedCheckpointName: $atlSelectedCheckpointName,
+                                selectedCheckpointMinutes: $atlSelectedCheckpointMinutes,
+                                selectedCheckpointArea: $atlSelectedCheckpointArea
+                            )
+                        }
+
+                        if store.selectedAirport == .jfk {
+                            jfkTerminals
+                        }
+
+                        if store.selectedAirport == .lhr {
+                            LHRCheckpointCard(
+                                store: store,
+                                selectedTerminal: $lhrSelectedTerminal
+                            )
+                        }
+                        if store.selectedAirport == .ams {
+                            GenericTerminalCard(store: store)
+                        }                    } else {
+                        placeholderAirportCard
                     }
 
-                    // ✅ JFK terminals list (JFK only)
-                    if store.selectedAirport == .jfk {
-                        jfkTerminals
-                    }
-
-                    // ✅ LHR terminals list (LHR only) — drives LHR hero
-                    if store.selectedAirport == .lhr {
-                        LHRCheckpointCard(
-                            store: store,
-                            selectedTerminal: $lhrSelectedTerminal
-                        )
-                    }
-                    if let e = store.errorText, !e.isEmpty {
+                    if let e = store.errorText, !e.isEmpty, presentation.isLive {
                         Text(e)
                             .font(.footnote)
                             .foregroundColor(.white.opacity(0.7))
@@ -63,95 +70,69 @@ struct LandingView: View {
                 .padding(.bottom, 30)
             }
         }
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             await store.refresh()
 
-            // If we launch on JFK, default terminal 1 in the hero.
             if store.selectedAirport == .jfk {
                 selectedTerminal = 1
             }
 
-            // If we launch on ATL, default selection is Domestic MAIN (card will resolve minutes)
             if store.selectedAirport == .atl {
                 atlSelectedCheckpointName = "MAIN"
                 atlSelectedCheckpointMinutes = nil
                 atlSelectedCheckpointArea = "Domestic"
             }
 
-            // If we launch on LHR, default to Terminal 5 North
             if store.selectedAirport == .lhr {
                 lhrSelectedTerminal = 5
                 lhrSelectedCheckpointName = "North"
                 lhrSelectedCheckpointMinutes = nil
             }
 
-            store.startAutoRefresh() // default = every 60s (LandingStore)
+            store.startAutoRefresh()
+        }
+        .onDisappear {
+            store.stopAutoRefresh()
         }
     }
 }
 
-// MARK: - Top airport pills
+// MARK: - Header
 
 extension LandingView {
 
-    var airportTabs: some View {
-        HStack(spacing: 14) {
-            airportButton("ATL", .atl)
-            airportButton("JFK", .jfk)
-            airportButton("LHR", .lhr)
-            Spacer()
+    var headerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Text(presentation.titleText)
+                    .font(.system(size: 34, weight: .heavy))
+                    .foregroundColor(.white)
+
+                statusBadge
+            }
+
+            Text(presentation.subtitleText)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white.opacity(0.75))
         }
+        .padding(.top, 2)
     }
 
-    func airportButton(_ title: String, _ airport: FlowAirport) -> some View {
-        let isSelected = store.selectedAirport == airport
-
-        return Button {
-            store.selectedAirport = airport
-
-            // ✅ When user clicks JFK, default terminal 1 for hero
-            if airport == .jfk {
-                selectedTerminal = 1
-            } else {
-                selectedTerminal = nil
-            }
-
-            // ✅ When user clicks ATL, default Domestic MAIN
-            if airport == .atl {
-                atlSelectedCheckpointName = "MAIN"
-                atlSelectedCheckpointMinutes = nil
-                atlSelectedCheckpointArea = "Domestic"
-            }
-
-            // ✅ When user clicks LHR, default Terminal 5 North
-            if airport == .lhr {
-                lhrSelectedTerminal = 5
-                lhrSelectedCheckpointName = "North"
-                lhrSelectedCheckpointMinutes = nil
-            }
-
-            Task { await store.refresh() }
-        } label: {
-            Text(title)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(isSelected ? .white : .white.opacity(0.85))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(
-                    Capsule()
-                        .fill(isSelected ? FlowBrand.accent : Color.white.opacity(0.10))
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.white.opacity(isSelected ? 0.20 : 0.12), lineWidth: 1)
-                        )
-                )
-                .shadow(color: .black.opacity(isSelected ? 0.25 : 0.10), radius: 10, x: 0, y: 6)
-        }
-        .buttonStyle(.plain)
+    var statusBadge: some View {
+        Text(presentation.badgeText)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundColor(presentation.isLive ? .green : .orange)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(0.10))
+            )
     }
 }
 
-// MARK: - Weather + Time row (ALL airports)
+// MARK: - Weather + Time row
 
 extension LandingView {
 
@@ -204,7 +185,7 @@ extension LandingView {
                 .foregroundColor(.white.opacity(0.75))
 
             TimelineView(.periodic(from: Date(), by: 60)) { context in
-                let tz = TimeZone.current
+                let tz = store.selectedAirport.timeZone
                 let time = timeString(context.date, in: tz)
                 let abbr = tz.abbreviation(for: context.date) ?? "LOCAL"
 
@@ -235,7 +216,7 @@ extension LandingView {
     var weatherLine: String {
         guard let w = store.weather else { return "--" }
         let temp = "\(w.temperatureC)°C"
-        let cond = (w.summary ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let cond = w.summary.trimmingCharacters(in: .whitespacesAndNewlines)
         return cond.isEmpty ? temp : "\(temp) • \(cond)"
     }
 
@@ -255,6 +236,44 @@ extension LandingView {
     }
 }
 
+// MARK: - Placeholder / Coming Soon
+
+extension LandingView {
+
+    var placeholderAirportCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Security wait")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text(presentation.placeholderTitle)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.white)
+
+                Text(presentation.placeholderBody)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.75))
+
+                Text(presentation.placeholderFootnote)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.65))
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(Color.black.opacity(0.22))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+            )
+        }
+        .flowGlassCard()
+    }
+}
+
 // MARK: - Security hero
 
 extension LandingView {
@@ -268,7 +287,7 @@ extension LandingView {
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
 
-                    Text(subtitleAirportLine)
+                    Text(store.selectedAirport.subtitleLine)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.white.opacity(0.75))
                 }
@@ -287,16 +306,7 @@ extension LandingView {
         .flowGlassCard()
     }
 
-    var subtitleAirportLine: String {
-        switch store.selectedAirport {
-        case .jfk: return "New York JFK (JFK)"
-        case .atl: return "ATL (ATL)"
-        case .lhr: return "London Heathrow (LHR)"
-        }
-    }
-
     var heroCard: some View {
-
         ZStack {
             RoundedRectangle(cornerRadius: 22)
                 .fill(Color.black.opacity(0.25))
@@ -309,7 +319,6 @@ extension LandingView {
                 .font(.system(size: 84, weight: .heavy))
                 .foregroundColor(.white.opacity(0.06))
 
-            // ✅ ATL = single number from selected checkpoint
             if store.selectedAirport == .atl {
                 let fallback = store.overallMinutes(.general)
                 let minutes = atlSelectedCheckpointMinutes ?? fallback
@@ -327,13 +336,7 @@ extension LandingView {
                         .lineLimit(1)
                         .minimumScaleFactor(0.9)
                 }
-            }
-
-            // ✅ LHR hero:
-            // - T2/T3/T4: single number "Security"
-            // - T5: two numbers North/South (mapped to general/precheck buckets)
-            else if store.selectedAirport == .lhr {
-
+            } else if store.selectedAirport == .lhr {
                 let terminal = lhrSelectedTerminal ?? 5
 
                 if terminal == 5 {
@@ -346,6 +349,7 @@ extension LandingView {
                     }
                 } else {
                     let minutes = store.lhrMinutes(terminal: terminal, category: .general)
+
                     VStack(spacing: 6) {
                         Text(minutes == nil ? "--" : "\(minutes!)")
                             .font(.system(size: 72, weight: .heavy))
@@ -365,11 +369,7 @@ extension LandingView {
                         .foregroundColor(.white.opacity(0.85))
                         .padding(.bottom, 14)
                 }
-            }
-
-            // ✅ JFK remains unchanged (two-number layout)
-            else {
-
+            } else {
                 let general = heroMinutes(.general)
                 let pre = heroMinutes(.precheck)
 
@@ -379,7 +379,6 @@ extension LandingView {
                 }
             }
 
-            // ✅ JFK terminal label stays exactly the same
             if store.selectedAirport == .jfk, let t = selectedTerminal {
                 VStack {
                     Spacer()
@@ -394,9 +393,6 @@ extension LandingView {
     }
 
     private func lhrMinutesForTerminal5(_ side: String) -> Int? {
-        // Map T5 North/South into the app’s two slots:
-        // - North -> .general
-        // - South -> .precheck
         if side.lowercased().contains("north") {
             return store.lhrMinutes(terminal: 5, category: .general)
         } else {
@@ -440,7 +436,7 @@ extension LandingView {
     }
 }
 
-// MARK: - JFK terminals list (UNCHANGED)
+// MARK: - JFK terminals list
 
 extension LandingView {
 
@@ -569,7 +565,7 @@ extension LandingView {
     }
 }
 
-// MARK: - Flow Brand + helpers (MUST be file-scope)
+// MARK: - Flow Brand + helpers
 
 private enum FlowBrand {
     static let accent = Color(hex: "8B5CF6")
@@ -586,7 +582,7 @@ private enum FlowBrand {
     }
 }
 
-private extension View {
+extension View {
     func flowGlassCard() -> some View {
         self
             .padding(14)
@@ -601,7 +597,6 @@ private extension View {
             .shadow(color: .black.opacity(0.25), radius: 18, x: 0, y: 10)
     }
 }
-
 private extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

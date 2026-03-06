@@ -31,6 +31,15 @@ struct StubWeatherProvider: WeatherProviding {
                 summary: "Cloudy",
                 observedAt: now
             )
+
+        // Future airports (temporary stub)
+        case .ams, .cdg, .dxb, .sin, .fra, .mad:
+            return WeatherSnapshot(
+                airport: airport,
+                temperatureC: 20,
+                summary: "Clear",
+                observedAt: now
+            )
         }
     }
 }

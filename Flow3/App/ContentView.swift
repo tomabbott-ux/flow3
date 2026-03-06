@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+
     @StateObject private var store: LandingStore
 
     init(store: LandingStore) {
@@ -8,6 +9,11 @@ struct ContentView: View {
     }
 
     var body: some View {
-        LandingView(store: store)
+
+        NavigationStack {
+
+            WelcomeView(store: store)
+
+        }
     }
 }

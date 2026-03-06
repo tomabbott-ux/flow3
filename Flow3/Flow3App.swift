@@ -6,20 +6,20 @@ struct Flow3App: App {
     var body: some Scene {
         WindowGroup {
 
-            let composite = CompositeWaitTimeProvider(providers: [
-                ATLStubWaitTimeProvider(),
-                LHRStubWaitTimeProvider(),
-                JFKAzureAPIWaitTimeProvider() // ✅ IMPORTANT
-            ])
+            // Airport provider router
+            let router = AirportWaitTimeRouter()
 
-            let waitService = WaitTimeService(provider: composite)
+            // Services
+            let waitService = WaitTimeService(provider: router)
             let weatherService = WeatherService(provider: StubWeatherProvider())
 
+            // App store
             let store = LandingStore(
                 waitTimeService: waitService,
                 weatherService: weatherService
             )
 
+            // Root view
             ContentView(store: store)
         }
     }
