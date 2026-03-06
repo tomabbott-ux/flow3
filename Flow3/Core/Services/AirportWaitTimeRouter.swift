@@ -2,29 +2,24 @@ import Foundation
 
 struct AirportWaitTimeRouter: WaitTimeProviding {
 
-    let atlProvider = ATLStubWaitTimeProvider()
-    let lhrProvider = LHRStubWaitTimeProvider()
-    let jfkProvider = JFKAzureAPIWaitTimeProvider()
-    let amsProvider = AMSWaitTimeProvider()
+    private let providers: [FlowAirport: any WaitTimeProviding]
+
+    init(
+        providers: [FlowAirport: any WaitTimeProviding] = [
+            .atl: ATLStubWaitTimeProvider(),
+            .jfk: JFKAzureAPIWaitTimeProvider(),
+            .lhr: LHRStubWaitTimeProvider(),
+            .ams: AMSWaitTimeProvider()
+        ]
+    ) {
+        self.providers = providers
+    }
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
-
-        switch airport {
-
-        case .atl:
-            return try await atlProvider.fetchWaitTimes(for: airport)
-
-        case .jfk:
-            return try await jfkProvider.fetchWaitTimes(for: airport)
-
-        case .lhr:
-            return try await lhrProvider.fetchWaitTimes(for: airport)
-
-        case .ams:
-            return try await amsProvider.fetchWaitTimes(for: airport)
-
-        case .cdg, .dxb, .sin, .fra, .mad:
+        guard let provider = providers[airport] else {
             return []
         }
+
+        return try await provider.fetchWaitTimes(for: airport)
     }
 }

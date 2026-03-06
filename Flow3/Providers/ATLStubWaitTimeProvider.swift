@@ -10,56 +10,31 @@ struct ATLStubWaitTimeProvider: WaitTimeProviding {
         let now = Date()
         let waits = try await provider.fetch()
 
-        // South is PreCheck-only on ATL's display
-        let south = waits.first { $0.checkpointName.uppercased().contains("SOUTH") }?.minutes
+        return waits
+            .map { item in
+                let isSouth = item.checkpointName.uppercased().contains("SOUTH")
 
-        // General = minimum of the remaining checkpoints
-        let general = waits
-            .filter { !$0.checkpointName.uppercased().contains("SOUTH") }
-            .map { $0.minutes }
-            .min()
-
-        var results: [WaitTimeEstimate] = []
-
-        if let general {
-            results.append(
-                WaitTimeEstimate(
+                return WaitTimeEstimate(
                     airport: .atl,
                     terminal: nil,
-                    queueType: .general,
-                    minutes: general,
-                    observedAt: now
+                    queueType: isSouth ? .precheck : .general,
+                    minutes: item.minutes,
+                    observedAt: now,
+                    checkpointName: item.checkpointName.uppercased(),
+                    areaName: item.terminal == .domestic ? "Domestic" : "International",
+                    sourceType: .live
                 )
-            )
-        }
+            }
+            .sorted { lhs, rhs in
+                let lhsArea = lhs.areaName ?? ""
+                let rhsArea = rhs.areaName ?? ""
 
-        if let south, let precheckType = QueueType.precheckOrNil() {
-            results.append(
-                WaitTimeEstimate(
-                    airport: .atl,
-                    terminal: nil,
-                    queueType: precheckType,
-                    minutes: south,
-                    observedAt: now
-                )
-            )
-        }
+                if lhsArea != rhsArea {
+                    if lhsArea == "Domestic" { return true }
+                    if rhsArea == "Domestic" { return false }
+                }
 
-        return results
-    }
-}
-
-// MARK: - Detect your PreCheck enum case safely
-private extension QueueType {
-
-    /// Attempts to find the enum case that represents TSA Pre / PreCheck.
-    /// This requires QueueType to be CaseIterable.
-    static func precheckOrNil() -> QueueType? {
-        // If this line fails to compile, QueueType isn't CaseIterable.
-        for c in QueueType.allCases {
-            let s = String(describing: c).lowercased()
-            if s.contains("pre") { return c }
-        }
-        return nil
+                return (lhs.checkpointName ?? "") < (rhs.checkpointName ?? "")
+            }
     }
 }

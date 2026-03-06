@@ -3,20 +3,17 @@ import SwiftUI
 struct LandingView: View {
 
     @ObservedObject var store: LandingStore
-    @State private var selectedTerminal: Int? = nil
+    @State private var selectedRowID: String? = nil
 
-    // ATL selection state
-    @State private var atlSelectedCheckpointName: String = "MAIN"
-    @State private var atlSelectedCheckpointMinutes: Int? = nil
-    @State private var atlSelectedCheckpointArea: String = "Domestic"
+    private var displayRows: [AirportDisplayRow] {
+        store.displayRowsForSelectedAirport()
+    }
 
-    // LHR selection state
-    @State private var lhrSelectedTerminal: Int? = 5
-    @State private var lhrSelectedCheckpointName: String = "North"
-    @State private var lhrSelectedCheckpointMinutes: Int? = nil
-
-    private var presentation: AirportPresentation {
-        AirportPresentation.make(for: store.selectedAirport)
+    private var selectedRow: AirportDisplayRow? {
+        if let selectedRowID {
+            return displayRows.first(where: { $0.id == selectedRowID }) ?? displayRows.first
+        }
+        return displayRows.first
     }
 
     var body: some View {
@@ -26,44 +23,16 @@ struct LandingView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
-
                     headerSection
-
                     weatherRow
+                    securityHero
 
-                    if presentation.isLive {
-                        securityHero
+                    GenericAirportBreakdownCard(
+                        store: store,
+                        selectedRowID: $selectedRowID
+                    )
 
-                        if store.selectedAirport == .atl {
-                            ATLCheckpointCard(
-                                selectedCheckpointName: $atlSelectedCheckpointName,
-                                selectedCheckpointMinutes: $atlSelectedCheckpointMinutes,
-                                selectedCheckpointArea: $atlSelectedCheckpointArea
-                            )
-                        }
-
-                        if store.selectedAirport == .jfk {
-                            jfkTerminals
-                        }
-
-                        if store.selectedAirport == .lhr {
-                            LHRCheckpointCard(
-                                store: store,
-                                selectedTerminal: $lhrSelectedTerminal
-                            )
-                        }
-                        if store.selectedAirport == .ams {
-                            GenericTerminalCard(store: store)
-                        }                    } else {
-                        placeholderAirportCard
-                    }
-
-                    if let e = store.errorText, !e.isEmpty, presentation.isLive {
-                        Text(e)
-                            .font(.footnote)
-                            .foregroundColor(.white.opacity(0.7))
-                            .padding(.top, 6)
-                    }
+                    errorSection
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
@@ -73,24 +42,11 @@ struct LandingView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await store.refresh()
-
-            if store.selectedAirport == .jfk {
-                selectedTerminal = 1
-            }
-
-            if store.selectedAirport == .atl {
-                atlSelectedCheckpointName = "MAIN"
-                atlSelectedCheckpointMinutes = nil
-                atlSelectedCheckpointArea = "Domestic"
-            }
-
-            if store.selectedAirport == .lhr {
-                lhrSelectedTerminal = 5
-                lhrSelectedCheckpointName = "North"
-                lhrSelectedCheckpointMinutes = nil
-            }
-
+            selectedRowID = store.displayRowsForSelectedAirport().first?.id
             store.startAutoRefresh()
+        }
+        .onChange(of: store.selectedAirport) { _ in
+            selectedRowID = store.displayRowsForSelectedAirport().first?.id
         }
         .onDisappear {
             store.stopAutoRefresh()
@@ -100,45 +56,29 @@ struct LandingView: View {
 
 // MARK: - Header
 
-extension LandingView {
+private extension LandingView {
 
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                Text(presentation.titleText)
-                    .font(.system(size: 34, weight: .heavy))
-                    .foregroundColor(.white)
+            Text(store.selectedAirport.rawValue)
+                .font(.system(size: 34, weight: .heavy))
+                .foregroundColor(.white)
 
-                statusBadge
-            }
-
-            Text(presentation.subtitleText)
+            Text(store.selectedAirport.displayName)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.white.opacity(0.75))
         }
-        .padding(.top, 2)
-    }
-
-    var statusBadge: some View {
-        Text(presentation.badgeText)
-            .font(.system(size: 11, weight: .bold))
-            .foregroundColor(presentation.isLive ? .green : .orange)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(
-                Capsule()
-                    .fill(Color.white.opacity(0.10))
-            )
     }
 }
 
-// MARK: - Weather + Time row
+// MARK: - Weather + Time
 
-extension LandingView {
+// MARK: - Weather + Time
+
+private extension LandingView {
 
     var weatherRow: some View {
-        HStack(alignment: .top, spacing: 12) {
-
+        HStack(spacing: 12) {
             weatherSection
                 .frame(maxWidth: .infinity)
                 .frame(height: 110)
@@ -155,9 +95,11 @@ extension LandingView {
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white)
 
-            Text(store.selectedAirport.rawValue.uppercased())
+            Text(store.selectedAirport.rawValue)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.75))
+
+            Spacer(minLength: 0)
 
             HStack(spacing: 10) {
                 Image(systemName: weatherSymbolName)
@@ -170,7 +112,10 @@ extension LandingView {
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .flowGlassCard()
     }
 
@@ -180,43 +125,46 @@ extension LandingView {
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white)
 
-            Text(store.selectedAirport.rawValue.uppercased())
+            Text(store.selectedAirport.rawValue)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.75))
 
-            TimelineView(.periodic(from: Date(), by: 60)) { context in
-                let tz = store.selectedAirport.timeZone
-                let time = timeString(context.date, in: tz)
-                let abbr = tz.abbreviation(for: context.date) ?? "LOCAL"
+            Spacer(minLength: 0)
 
-                HStack(spacing: 10) {
-                    Image(systemName: "clock.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.95))
+            HStack(spacing: 10) {
+                Image(systemName: "clock.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.95))
 
-                    Text("\(time) • \(abbr)")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.95))
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                }
+                timeClock
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.95))
+                    .monospacedDigit()
             }
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .flowGlassCard()
     }
 
-    func timeString(_ date: Date, in tz: TimeZone) -> String {
-        let f = DateFormatter()
-        f.timeZone = tz
-        f.dateFormat = "HH:mm"
-        return f.string(from: date)
+    var timeClock: some View {
+        TimelineView(.periodic(from: Date(), by: 60)) { context in
+            Text(timeString(for: context.date))
+        }
+    }
+
+    func timeString(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeZone = store.selectedAirport.timeZone
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
     }
 
     var weatherLine: String {
-        guard let w = store.weather else { return "--" }
-        let temp = "\(w.temperatureC)°C"
-        let cond = w.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let weather = store.weather else { return "--" }
+        let temp = "\(weather.temperatureC)°C"
+        let cond = weather.summary.trimmingCharacters(in: .whitespacesAndNewlines)
         return cond.isEmpty ? temp : "\(temp) • \(cond)"
     }
 
@@ -234,68 +182,15 @@ extension LandingView {
 
         return "cloud.sun.fill"
     }
-}
+}// MARK: - Security Hero
 
-// MARK: - Placeholder / Coming Soon
-
-extension LandingView {
-
-    var placeholderAirportCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Security wait")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.white)
-
-            VStack(alignment: .leading, spacing: 12) {
-                Text(presentation.placeholderTitle)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.white)
-
-                Text(presentation.placeholderBody)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.75))
-
-                Text(presentation.placeholderFootnote)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white.opacity(0.65))
-            }
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(Color.black.opacity(0.22))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                    )
-            )
-        }
-        .flowGlassCard()
-    }
-}
-
-// MARK: - Security hero
-
-extension LandingView {
+private extension LandingView {
 
     var securityHero: some View {
         VStack(alignment: .leading, spacing: 10) {
-
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Security wait")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
-
-                    Text(store.selectedAirport.subtitleLine)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white.opacity(0.75))
-                }
-
-                Spacer()
-
-                confidenceBadge
-            }
+            Text("Security wait")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
 
             heroCard
 
@@ -315,104 +210,68 @@ extension LandingView {
                         .stroke(Color.white.opacity(0.10), lineWidth: 1)
                 )
 
-            Text(store.selectedAirport.rawValue.uppercased())
+            Text(store.selectedAirport.rawValue)
                 .font(.system(size: 84, weight: .heavy))
                 .foregroundColor(.white.opacity(0.06))
 
-            if store.selectedAirport == .atl {
-                let fallback = store.overallMinutes(.general)
-                let minutes = atlSelectedCheckpointMinutes ?? fallback
-                let label = atlHeroCheckpointLabel
-
-                VStack(spacing: 6) {
-                    Text(minutes == nil ? "--" : "\(minutes!)")
-                        .font(.system(size: 72, weight: .heavy))
-                        .foregroundColor(.white)
-                        .monospacedDigit()
-
-                    Text(label)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.75))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.9)
-                }
-            } else if store.selectedAirport == .lhr {
-                let terminal = lhrSelectedTerminal ?? 5
-
-                if terminal == 5 {
-                    let north = lhrMinutesForTerminal5("North")
-                    let south = lhrMinutesForTerminal5("South")
-
-                    HStack(spacing: 34) {
-                        heroMetric(value: north, label: "North")
-                        heroMetric(value: south, label: "South")
-                    }
-                } else {
-                    let minutes = store.lhrMinutes(terminal: terminal, category: .general)
-
-                    VStack(spacing: 6) {
-                        Text(minutes == nil ? "--" : "\(minutes!)")
-                            .font(.system(size: 72, weight: .heavy))
-                            .foregroundColor(.white)
-                            .monospacedDigit()
-
-                        Text("Security")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.75))
-                    }
-                }
-
-                VStack {
-                    Spacer()
-                    Text("Terminal \(terminal)")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.85))
-                        .padding(.bottom, 14)
-                }
-            } else {
-                let general = heroMinutes(.general)
-                let pre = heroMinutes(.precheck)
-
-                HStack(spacing: 34) {
-                    heroMetric(value: general, label: "General")
-                    heroMetric(value: pre, label: "PreCheck")
-                }
-            }
-
-            if store.selectedAirport == .jfk, let t = selectedTerminal {
-                VStack {
-                    Spacer()
-                    Text("Terminal \(t)")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.85))
-                        .padding(.bottom, 14)
-                }
-            }
+            heroContent
         }
         .frame(height: 175)
     }
 
-    private func lhrMinutesForTerminal5(_ side: String) -> Int? {
-        if side.lowercased().contains("north") {
-            return store.lhrMinutes(terminal: 5, category: .general)
+    @ViewBuilder
+    var heroContent: some View {
+        if let row = selectedRow {
+            if row.metrics.count > 1 {
+                VStack {
+                    HStack(spacing: 34) {
+                        ForEach(row.metrics) { metric in
+                            heroMetric(value: metric.minutes, label: metric.label)
+                        }
+                    }
+
+                    Spacer()
+
+                    Text(row.title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.85))
+                        .padding(.bottom, 14)
+                }
+                .padding(.top, 18)
+            } else {
+                let metric = row.metrics.first
+
+                VStack(spacing: 6) {
+                    Text(metric?.minutes == nil ? "--" : "\(metric!.minutes!)")
+                        .font(.system(size: 72, weight: .heavy))
+                        .foregroundColor(.white)
+                        .monospacedDigit()
+
+                    Text(row.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.85))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.9)
+
+                    Text(row.subtitle)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.70))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.9)
+                }
+            }
         } else {
-            return store.lhrMinutes(terminal: 5, category: .precheck)
+            VStack(spacing: 6) {
+                Text("--")
+                    .font(.system(size: 72, weight: .heavy))
+                    .foregroundColor(.white)
+                    .monospacedDigit()
+
+                Text("No data")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.75))
+            }
         }
-    }
-
-    var atlHeroCheckpointLabel: String {
-        let area = atlSelectedCheckpointArea.trimmingCharacters(in: .whitespacesAndNewlines)
-        let name = atlSelectedCheckpointName
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .split(separator: " ")
-            .map { $0.prefix(1).uppercased() + $0.dropFirst() }
-            .joined(separator: " ")
-
-        let safeArea = area.isEmpty ? "Domestic" : area
-        let safeName = name.isEmpty ? "Main" : name
-
-        return "\(safeArea) \(safeName) checkpoint"
     }
 
     func heroMetric(value: Int?, label: String) -> some View {
@@ -420,6 +279,7 @@ extension LandingView {
             Text(value == nil ? "--" : "\(value!)")
                 .font(.system(size: 58, weight: .heavy))
                 .foregroundColor(.white)
+                .monospacedDigit()
 
             Text(label)
                 .font(.system(size: 13, weight: .semibold))
@@ -427,160 +287,52 @@ extension LandingView {
         }
     }
 
-    func heroMinutes(_ queue: QueueType) -> Int? {
-        if store.selectedAirport == .jfk {
-            let t = selectedTerminal ?? 1
-            return store.jfkMinutes(terminal: t, category: queue)
-        }
-        return store.overallMinutes(queue)
-    }
-}
-
-// MARK: - JFK terminals list
-
-extension LandingView {
-
-    var jfkTerminals: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("JFK terminals")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.white)
-
-            VStack(spacing: 12) {
-                ForEach(store.jfkTerminalsPresent(), id: \.self) { terminal in
-                    terminalRow(terminal)
-                }
-            }
-        }
-        .flowGlassCard()
-        .onAppear {
-            if selectedTerminal == nil {
-                selectedTerminal = 1
-            }
-        }
-    }
-
-    func terminalRow(_ terminal: Int) -> some View {
-        let general = store.jfkMinutes(terminal: terminal, category: .general)
-        let pre = store.jfkMinutes(terminal: terminal, category: .precheck)
-        let isSelected = selectedTerminal == terminal
-
-        return Button {
-            selectedTerminal = terminal
-        } label: {
-            HStack(spacing: 14) {
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Terminal \(terminal)")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-
-                    Text("Security")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.65))
-                }
-
-                Spacer()
-
-                HStack(spacing: 10) {
-                    queuePill(title: "General", value: general)
-                    queuePill(title: "PreCheck", value: pre)
-                }
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.55))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(isSelected ? FlowBrand.accent.opacity(0.22) : Color.white.opacity(0.10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18)
-                            .stroke(Color.white.opacity(isSelected ? 0.18 : 0.10), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    func queuePill(title: String, value: Int?) -> some View {
-        VStack(spacing: 4) {
-            Text(value == nil ? "--" : "\(value!)m")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
-
-            Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(.white.opacity(0.75))
-        }
-        .frame(width: 78, height: 50)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color.black.opacity(0.22))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                )
-        )
-    }
-}
-
-// MARK: - Updated + Confidence
-
-extension LandingView {
-
     var updatedText: String {
         guard let date = store.lastUpdated else { return "--" }
-        let f = DateFormatter()
-        f.dateFormat = "MMM d, yyyy h:mm a"
-        return f.string(from: date)
-    }
-
-    var confidenceBadge: some View {
-        let c = confidence
-
-        return Text("Confidence \(c.label)")
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundColor(c.color)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(Color.white.opacity(0.10))
-                    .overlay(
-                        Capsule().stroke(Color.white.opacity(0.10), lineWidth: 1)
-                    )
-            )
-    }
-
-    var confidence: (label: String, color: Color) {
-        guard let last = store.lastUpdated else { return ("Low", .red) }
-        let age = Date().timeIntervalSince(last)
-
-        if age < 120 { return ("High", .green) }
-        if age < 300 { return ("Medium", .orange) }
-        return ("Low", .red)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy h:mm a"
+        return formatter.string(from: date)
     }
 }
 
-// MARK: - Flow Brand + helpers
+// MARK: - Error
+
+private extension LandingView {
+
+    @ViewBuilder
+    var errorSection: some View {
+        if let error = store.errorText, !error.isEmpty {
+            Text(error)
+                .font(.footnote)
+                .foregroundColor(.white.opacity(0.7))
+                .padding(.top, 6)
+        } else {
+            EmptyView()
+        }
+    }
+}
+
+// MARK: - Flow Brand
 
 private enum FlowBrand {
-    static let accent = Color(hex: "8B5CF6")
     static let backgroundTop = Color(hex: "2A0C5A")
     static let backgroundMid = Color(hex: "3B136E")
     static let backgroundBottom = Color(hex: "14062F")
 
     static var backgroundGradient: LinearGradient {
         LinearGradient(
-            gradient: Gradient(colors: [backgroundTop, backgroundMid, backgroundBottom]),
+            gradient: Gradient(colors: [
+                backgroundTop,
+                backgroundMid,
+                backgroundBottom
+            ]),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
 }
+
+// MARK: - Glass Card
 
 extension View {
     func flowGlassCard() -> some View {
@@ -595,30 +347,5 @@ extension View {
                     )
             )
             .shadow(color: .black.opacity(0.25), radius: 18, x: 0, y: 10)
-    }
-}
-private extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 6:
-            (a, r, g, b) = (255, (int >> 16) & 255, (int >> 8) & 255, int & 255)
-        case 8:
-            (a, r, g, b) = ((int >> 24) & 255, (int >> 16) & 255, (int >> 8) & 255, int & 255)
-        default:
-            (a, r, g, b) = (255, 255, 255, 255)
-        }
-
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
     }
 }
