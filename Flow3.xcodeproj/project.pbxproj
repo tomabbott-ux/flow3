@@ -24,6 +24,7 @@
 		F80599E52F5B024600146BF1 /* WeatherEstimate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599E42F5B024600146BF1 /* WeatherEstimate.swift */; };
 		F80599E72F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599E62F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift */; };
 		F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599E82F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift */; };
+		F80599EB2F5B3A3600146BF1 /* DENLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599EA2F5B3A3500146BF1 /* DENLiveWaitTimeProvider.swift */; };
 		F80829DC2F5A4554000D5664 /* LandingStore+JFK.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80829DB2F5A4554000D5664 /* LandingStore+JFK.swift */; };
 		F828EF312F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */; };
 		F828EF332F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF322F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift */; };
@@ -88,6 +89,7 @@
 		F80599E42F5B024600146BF1 /* WeatherEstimate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherEstimate.swift; sourceTree = "<group>"; };
 		F80599E62F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YVRLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F80599E82F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YYCLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F80599EA2F5B3A3500146BF1 /* DENLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DENLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F80829DB2F5A4554000D5664 /* LandingStore+JFK.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+JFK.swift"; sourceTree = "<group>"; };
 		F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVEPOINT_JFK_WORKING.swift; sourceTree = "<group>"; };
 		F828EF322F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
@@ -258,6 +260,7 @@
 				F80599E22F5AFED300146BF1 /* YYZLiveWaitTimeProvider.swift */,
 				F80599E62F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift */,
 				F80599E82F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift */,
+				F80599EA2F5B3A3500146BF1 /* DENLiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -446,6 +449,7 @@
 				F828EF3D2F5A03FC00EC53EC /* LandingStore+LHR.swift in Sources */,
 				F828EF312F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift in Sources */,
 				F862F1E22F583AAB001666F2 /* LHRStubWaitTimeProvider.swift in Sources */,
+				F80599EB2F5B3A3600146BF1 /* DENLiveWaitTimeProvider.swift in Sources */,
 				F828EF332F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift in Sources */,
 				F828EF3B2F5A006C00EC53EC /* LHRCheckpointCard.swift in Sources */,
 				F80599D92F5AE51900146BF1 /* JFKAzureAPIWaitTimeProvider.swift in Sources */,

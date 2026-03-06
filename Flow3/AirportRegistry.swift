@@ -20,6 +20,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .yyz, isLive: true),
         AirportDefinition(airport: .yvr, isLive: true),
         AirportDefinition(airport: .yyc, isLive: true),
+        AirportDefinition(airport: .den, isLive: true),
 
         AirportDefinition(airport: .ams, isLive: false),
         AirportDefinition(airport: .cdg, isLive: false),

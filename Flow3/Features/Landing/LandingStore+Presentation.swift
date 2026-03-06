@@ -24,7 +24,7 @@ extension LandingStore {
 
         switch selectedAirport {
 
-        case .atl, .yvr, .yyc:
+        case .atl, .yvr, .yyc, .den:
             return namedCheckpointRows(from: rows)
 
         case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad, .sfo, .lax, .ord, .dfw, .bcn, .fco, .hnd, .icn, .syd:
@@ -44,16 +44,29 @@ extension LandingStore {
                 let parts = key.split(separator: "|").map(String.init)
                 let title = parts.first ?? "Security"
                 let subtitle = parts.count > 1 ? parts[1] : "Terminal"
-                let bestMinutes = items.map(\.minutes).min()
                 let observedAt = items.map(\.observedAt).max()
+
+                let general = items.first(where: { $0.queueType == .general })?.minutes
+                let precheck = items.first(where: { $0.queueType == .precheck })?.minutes
+
+                let metrics: [AirportMetric]
+                if items.contains(where: { $0.queueType == .precheck }) {
+                    metrics = [
+                        AirportMetric(label: "General", minutes: general),
+                        AirportMetric(label: "PreCheck", minutes: precheck)
+                    ]
+                } else {
+                    let bestMinutes = items.map(\.minutes).min()
+                    metrics = [
+                        AirportMetric(label: "Wait", minutes: bestMinutes)
+                    ]
+                }
 
                 return AirportDisplayRow(
                     id: key,
                     title: title,
                     subtitle: subtitle,
-                    metrics: [
-                        AirportMetric(label: "Wait", minutes: bestMinutes)
-                    ],
+                    metrics: metrics,
                     observedAt: observedAt
                 )
             }
