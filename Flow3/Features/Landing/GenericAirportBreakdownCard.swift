@@ -75,55 +75,42 @@ struct GenericAirportBreakdownCard: View {
     }
 
     private func metricPill(_ metric: AirportMetric) -> some View {
-        Group {
+        VStack(spacing: 4) {
             if metric.minutes == 0 {
-                noWaitPill
+                HStack(spacing: 6) {
+                    LivePulseDot()
+
+                    Text("No wait")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.green)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
             } else {
-                standardMetricPill(metric)
+                Text(metricPrimaryText(metric))
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
+
+                Text(metricSecondaryText(metric))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.75))
+                    .lineLimit(1)
             }
         }
-    }
-
-    private func standardMetricPill(_ metric: AirportMetric) -> some View {
-        VStack(spacing: 4) {
-            Text(metricPrimaryText(metric))
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
-                .minimumScaleFactor(0.8)
-                .lineLimit(1)
-
-            Text(metricSecondaryText(metric))
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(.white.opacity(0.75))
-        }
-        .frame(width: 78, height: 50)
+        .frame(width: 92, height: 50)
         .background(
             RoundedRectangle(cornerRadius: 14)
                 .fill(Color.black.opacity(0.22))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                )
-        )
-    }
-
-    private var noWaitPill: some View {
-        HStack(spacing: 6) {
-            LivePulseDot()
-
-            Text("No wait")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(.green)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(width: 92, height: 36)
-        .background(
-            Capsule()
-                .fill(Color.white.opacity(0.10))
-                .overlay(
-                    Capsule()
-                        .stroke(Color.green.opacity(0.28), lineWidth: 1)
+                        .stroke(
+                            metric.minutes == 0
+                            ? Color.green.opacity(0.28)
+                            : Color.white.opacity(0.10),
+                            lineWidth: 1
+                        )
                 )
         )
     }

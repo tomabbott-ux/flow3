@@ -284,10 +284,20 @@ private extension LandingView {
                 let metric = row.metrics.first
 
                 VStack(spacing: 6) {
-                    Text(metric?.minutes == nil ? "--" : "\(metric!.minutes!)")
-                        .font(.system(size: 72, weight: .heavy))
-                        .foregroundColor(.white)
-                        .monospacedDigit()
+                    if let minutes = metric?.minutes, minutes == 0 {
+                        HStack(spacing: 10) {
+                            LivePulseDot()
+
+                            Text("No wait")
+                                .font(.system(size: 40, weight: .heavy))
+                                .foregroundColor(.green)
+                        }
+                    } else {
+                        Text(metric?.minutes == nil ? "--" : "\(metric!.minutes!)")
+                            .font(.system(size: 72, weight: .heavy))
+                            .foregroundColor(.white)
+                            .monospacedDigit()
+                    }
 
                     Text(row.title)
                         .font(.system(size: 14, weight: .semibold))
@@ -316,12 +326,23 @@ private extension LandingView {
         }
     }
 
+    @ViewBuilder
     func heroMetric(value: Int?, label: String) -> some View {
         VStack(spacing: 6) {
-            Text(value == nil ? "--" : "\(value!)")
-                .font(.system(size: 58, weight: .heavy))
-                .foregroundColor(.white)
-                .monospacedDigit()
+            if let minutes = value, minutes == 0 {
+                HStack(spacing: 6) {
+                    LivePulseDot()
+
+                    Text("No wait")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.green)
+                }
+            } else {
+                Text(value == nil ? "--" : "\(value!)")
+                    .font(.system(size: 58, weight: .heavy))
+                    .foregroundColor(.white)
+                    .monospacedDigit()
+            }
 
             Text(label)
                 .font(.system(size: 13, weight: .semibold))
