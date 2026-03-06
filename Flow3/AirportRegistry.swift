@@ -21,7 +21,9 @@ struct AirportRegistry {
         AirportDefinition(airport: .yvr, isLive: true),
         AirportDefinition(airport: .yyc, isLive: true),
         AirportDefinition(airport: .den, isLive: true),
-
+        AirportDefinition(airport: .dfw, isLive: true),
+        
+        
         AirportDefinition(airport: .ams, isLive: false),
         AirportDefinition(airport: .cdg, isLive: false),
         AirportDefinition(airport: .dxb, isLive: false),
@@ -32,8 +34,8 @@ struct AirportRegistry {
         AirportDefinition(airport: .sfo, isLive: false),
         AirportDefinition(airport: .lax, isLive: false),
         AirportDefinition(airport: .ord, isLive: false),
-        AirportDefinition(airport: .dfw, isLive: false),
-
+        
+        
         AirportDefinition(airport: .bcn, isLive: false),
         AirportDefinition(airport: .fco, isLive: false),
         AirportDefinition(airport: .hnd, isLive: false),

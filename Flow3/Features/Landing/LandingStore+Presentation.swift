@@ -24,10 +24,10 @@ extension LandingStore {
 
         switch selectedAirport {
 
-        case .atl, .yvr, .yyc, .den:
+        case .atl, .yvr, .yyc, .den, .dfw:
             return namedCheckpointRows(from: rows)
 
-        case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad, .sfo, .lax, .ord, .dfw, .bcn, .fco, .hnd, .icn, .syd:
+        case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad, .sfo, .lax, .ord, .bcn, .fco, .hnd, .icn, .syd:
             return terminalDisplayRows(from: rows)
         }
     }
