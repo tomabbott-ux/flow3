@@ -75,12 +75,24 @@ struct GenericAirportBreakdownCard: View {
     }
 
     private func metricPill(_ metric: AirportMetric) -> some View {
+        Group {
+            if metric.minutes == 0 {
+                noWaitPill
+            } else {
+                standardMetricPill(metric)
+            }
+        }
+    }
+
+    private func standardMetricPill(_ metric: AirportMetric) -> some View {
         VStack(spacing: 4) {
-            Text(metric.minutes == nil ? "--" : "\(metric.minutes!)m")
+            Text(metricPrimaryText(metric))
                 .font(.system(size: 16, weight: .bold))
                 .foregroundColor(.white)
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
 
-            Text(metric.label)
+            Text(metricSecondaryText(metric))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(.white.opacity(0.75))
         }
@@ -93,5 +105,36 @@ struct GenericAirportBreakdownCard: View {
                         .stroke(Color.white.opacity(0.10), lineWidth: 1)
                 )
         )
+    }
+
+    private var noWaitPill: some View {
+        HStack(spacing: 6) {
+            LivePulseDot()
+
+            Text("No wait")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.green)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(width: 92, height: 36)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.10))
+                .overlay(
+                    Capsule()
+                        .stroke(Color.green.opacity(0.28), lineWidth: 1)
+                )
+        )
+    }
+
+    private func metricPrimaryText(_ metric: AirportMetric) -> String {
+        guard let minutes = metric.minutes else { return "--" }
+        return "\(minutes)m"
+    }
+
+    private func metricSecondaryText(_ metric: AirportMetric) -> String {
+        guard metric.minutes != nil else { return metric.label }
+        return metric.label
     }
 }

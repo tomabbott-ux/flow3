@@ -24,15 +24,15 @@ extension LandingStore {
 
         switch selectedAirport {
 
-        case .atl:
-            return atlDisplayRows(from: rows)
+        case .atl, .yvr, .yyc:
+            return namedCheckpointRows(from: rows)
 
-        case .jfk, .lhr, .ams, .cdg, .dxb, .sin, .fra, .mad, .sfo, .lax, .ord, .dfw, .yyz, .bcn, .fco, .hnd, .icn, .syd:
+        case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad, .sfo, .lax, .ord, .dfw, .bcn, .fco, .hnd, .icn, .syd:
             return terminalDisplayRows(from: rows)
         }
     }
 
-    private func atlDisplayRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
+    private func namedCheckpointRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
         let grouped = Dictionary(grouping: rows) { row in
             let checkpoint = row.checkpointName ?? "Security"
             let area = row.areaName ?? "Terminal"

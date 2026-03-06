@@ -22,6 +22,8 @@
 		F80599DF2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599DE2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift */; };
 		F80599E32F5AFED300146BF1 /* YYZLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599E22F5AFED300146BF1 /* YYZLiveWaitTimeProvider.swift */; };
 		F80599E52F5B024600146BF1 /* WeatherEstimate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599E42F5B024600146BF1 /* WeatherEstimate.swift */; };
+		F80599E72F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599E62F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift */; };
+		F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599E82F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift */; };
 		F80829DC2F5A4554000D5664 /* LandingStore+JFK.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80829DB2F5A4554000D5664 /* LandingStore+JFK.swift */; };
 		F828EF312F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */; };
 		F828EF332F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF322F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift */; };
@@ -84,6 +86,8 @@
 		F80599DE2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EstimatedAirportWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F80599E22F5AFED300146BF1 /* YYZLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YYZLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F80599E42F5B024600146BF1 /* WeatherEstimate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherEstimate.swift; sourceTree = "<group>"; };
+		F80599E62F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YVRLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F80599E82F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YYCLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F80829DB2F5A4554000D5664 /* LandingStore+JFK.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+JFK.swift"; sourceTree = "<group>"; };
 		F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVEPOINT_JFK_WORKING.swift; sourceTree = "<group>"; };
 		F828EF322F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
@@ -252,6 +256,8 @@
 				F828EF3E2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift */,
 				F80599CE2F5ACFE200146BF1 /* AMSWaitTimeProvider.swift */,
 				F80599E22F5AFED300146BF1 /* YYZLiveWaitTimeProvider.swift */,
+				F80599E62F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift */,
+				F80599E82F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -422,6 +428,7 @@
 				F862F1EA2F583B20001666F2 /* LandingView.swift in Sources */,
 				F862F1ED2F583B45001666F2 /* ContentView.swift in Sources */,
 				F80599E32F5AFED300146BF1 /* YYZLiveWaitTimeProvider.swift in Sources */,
+				F80599E72F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift in Sources */,
 				F80599CD2F5ACDB500146BF1 /* AirportPresentation.swift in Sources */,
 				F80599CF2F5ACFE200146BF1 /* AMSWaitTimeProvider.swift in Sources */,
 				F862F1E82F583B0C001666F2 /* LandingStore.swift in Sources */,
@@ -445,6 +452,7 @@
 				F80599DD2F5AECB200146BF1 /* LivePulseDot.swift in Sources */,
 				F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */,
 				F80599D32F5AD36B00146BF1 /* LandingStore+Presentation.swift in Sources */,
+				F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */,
 				F862F1D32F5839B4001666F2 /* WaitTimeModels.swift in Sources */,
 				F80599DF2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift in Sources */,
 				F80599D72F5AD4A200146BF1 /* Color+Hex.swift in Sources */,

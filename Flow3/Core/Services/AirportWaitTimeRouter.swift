@@ -9,6 +9,9 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
             .atl: ATLStubWaitTimeProvider(),
             .jfk: JFKAzureAPIWaitTimeProvider(),
             .lhr: LHRStubWaitTimeProvider(),
+            .yyz: YYZLiveWaitTimeProvider(),
+            .yvr: YVRLiveWaitTimeProvider(),
+            .yyc: YYCLiveWaitTimeProvider(),
 
             .ams: AMSWaitTimeProvider(),
             .cdg: EstimatedAirportWaitTimeProvider(
@@ -85,8 +88,6 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
                     (3, 12)
                 ]
             ),
-
-            .yyz: YYZLiveWaitTimeProvider(),
 
             .bcn: EstimatedAirportWaitTimeProvider(
                 airport: .bcn,

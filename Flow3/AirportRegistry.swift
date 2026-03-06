@@ -8,7 +8,6 @@ struct AirportDefinition: Identifiable, Hashable {
     var id: FlowAirport {
         airport
     }
-
 }
 
 struct AirportRegistry {
@@ -19,6 +18,8 @@ struct AirportRegistry {
         AirportDefinition(airport: .jfk, isLive: true),
         AirportDefinition(airport: .lhr, isLive: true),
         AirportDefinition(airport: .yyz, isLive: true),
+        AirportDefinition(airport: .yvr, isLive: true),
+        AirportDefinition(airport: .yyc, isLive: true),
 
         AirportDefinition(airport: .ams, isLive: false),
         AirportDefinition(airport: .cdg, isLive: false),
@@ -37,7 +38,6 @@ struct AirportRegistry {
         AirportDefinition(airport: .hnd, isLive: false),
         AirportDefinition(airport: .icn, isLive: false),
         AirportDefinition(airport: .syd, isLive: false)
-
     ]
 
     static var all: [AirportDefinition] {
@@ -47,5 +47,4 @@ struct AirportRegistry {
     static func definition(for airport: FlowAirport) -> AirportDefinition? {
         airports.first(where: { $0.airport == airport })
     }
-
 }
