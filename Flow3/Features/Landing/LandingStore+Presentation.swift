@@ -24,7 +24,7 @@ extension LandingStore {
 
         switch selectedAirport {
 
-        case .atl, .yvr, .yyc, .den, .dfw:
+        case .atl, .yvr, .yyc, .den, .dfw, .hou:
             return namedCheckpointRows(from: rows)
 
         case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad, .sfo, .lax, .ord, .bcn, .fco, .hnd, .icn, .syd:

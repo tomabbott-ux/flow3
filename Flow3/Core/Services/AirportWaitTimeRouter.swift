@@ -14,8 +14,8 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
             .yyc: YYCLiveWaitTimeProvider(),
             .den: DENLiveWaitTimeProvider(),
             .dfw: DFWLiveWaitTimeProvider(),
-            
-            
+            .hou: HOULiveWaitTimeProvider(),
+
             .ams: AMSWaitTimeProvider(),
             .cdg: EstimatedAirportWaitTimeProvider(
                 airport: .cdg,
@@ -83,7 +83,6 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
                     (3, 13)
                 ]
             ),
-    
 
             .bcn: EstimatedAirportWaitTimeProvider(
                 airport: .bcn,

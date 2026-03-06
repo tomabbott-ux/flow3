@@ -9,6 +9,8 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
     case yvr = "YVR"
     case yyc = "YYC"
     case den = "DEN"
+    case dfw = "DFW"
+    case hou = "HOU"
 
     case ams = "AMS"
     case cdg = "CDG"
@@ -20,7 +22,6 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
     case sfo = "SFO"
     case lax = "LAX"
     case ord = "ORD"
-    case dfw = "DFW"
 
     case bcn = "BCN"
     case fco = "FCO"
@@ -39,6 +40,8 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .yvr: return "Vancouver"
         case .yyc: return "Calgary"
         case .den: return "Denver"
+        case .dfw: return "Dallas Fort Worth"
+        case .hou: return "Houston Hobby"
 
         case .ams: return "Amsterdam Schiphol"
         case .cdg: return "Paris CDG"
@@ -50,7 +53,6 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .sfo: return "San Francisco"
         case .lax: return "Los Angeles"
         case .ord: return "Chicago O'Hare"
-        case .dfw: return "Dallas Fort Worth"
 
         case .bcn: return "Barcelona"
         case .fco: return "Rome Fiumicino"
@@ -69,6 +71,8 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .yvr: return "Vancouver (YVR)"
         case .yyc: return "Calgary (YYC)"
         case .den: return "Denver (DEN)"
+        case .dfw: return "Dallas Fort Worth (DFW)"
+        case .hou: return "Houston Hobby (HOU)"
 
         case .ams: return "Amsterdam Schiphol (AMS)"
         case .cdg: return "Paris CDG (CDG)"
@@ -80,7 +84,6 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .sfo: return "San Francisco (SFO)"
         case .lax: return "Los Angeles (LAX)"
         case .ord: return "Chicago O'Hare (ORD)"
-        case .dfw: return "Dallas Fort Worth (DFW)"
 
         case .bcn: return "Barcelona (BCN)"
         case .fco: return "Rome Fiumicino (FCO)"
@@ -98,14 +101,11 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .lax, .sfo, .yvr:
             return TimeZone(identifier: "America/Los_Angeles")!
 
-        case .ord, .dfw, .den:
+        case .ord, .dfw, .den, .hou, .yyc:
             return TimeZone(identifier: "America/Chicago")!
 
         case .yyz:
             return TimeZone(identifier: "America/Toronto")!
-
-        case .yyc:
-            return TimeZone(identifier: "America/Edmonton")!
 
         case .lhr:
             return TimeZone(identifier: "Europe/London")!

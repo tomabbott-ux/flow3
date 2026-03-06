@@ -1,7 +1,6 @@
 import Foundation
 
 struct AirportDefinition: Identifiable, Hashable {
-
     let airport: FlowAirport
     let isLive: Bool
 
@@ -13,7 +12,6 @@ struct AirportDefinition: Identifiable, Hashable {
 struct AirportRegistry {
 
     static let airports: [AirportDefinition] = [
-
         AirportDefinition(airport: .atl, isLive: true),
         AirportDefinition(airport: .jfk, isLive: true),
         AirportDefinition(airport: .lhr, isLive: true),
@@ -22,8 +20,8 @@ struct AirportRegistry {
         AirportDefinition(airport: .yyc, isLive: true),
         AirportDefinition(airport: .den, isLive: true),
         AirportDefinition(airport: .dfw, isLive: true),
-        
-        
+        AirportDefinition(airport: .hou, isLive: true),
+
         AirportDefinition(airport: .ams, isLive: false),
         AirportDefinition(airport: .cdg, isLive: false),
         AirportDefinition(airport: .dxb, isLive: false),
@@ -34,8 +32,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .sfo, isLive: false),
         AirportDefinition(airport: .lax, isLive: false),
         AirportDefinition(airport: .ord, isLive: false),
-        
-        
+
         AirportDefinition(airport: .bcn, isLive: false),
         AirportDefinition(airport: .fco, isLive: false),
         AirportDefinition(airport: .hnd, isLive: false),
