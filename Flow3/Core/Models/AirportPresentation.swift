@@ -20,7 +20,7 @@ struct AirportPresentation: Hashable {
     }
 
     static func make(for airport: FlowAirport) -> AirportPresentation {
-        let isLive = AirportRegistry.item(for: airport)?.isLive ?? false
+        let isLive = AirportRegistry.definition(for: airport)?.isLive ?? false
 
         return AirportPresentation(
             airport: airport,
@@ -30,7 +30,7 @@ struct AirportPresentation: Hashable {
             subtitleText: airport.shortName,
             placeholderTitle: "Live data coming soon",
             placeholderBody: "\(airport.displayName) is available in Flow, but its live security wait-time feed has not been connected yet.",
-            placeholderFootnote: "Weather and local time are ready. Security wait data will appear here once the provider is wired in."
+            placeholderFootnote: "Estimated display only for now."
         )
     }
 }

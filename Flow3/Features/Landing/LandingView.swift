@@ -16,6 +16,10 @@ struct LandingView: View {
         return displayRows.first
     }
 
+    private var isLiveAirport: Bool {
+        AirportRegistry.definition(for: store.selectedAirport)?.isLive ?? false
+    }
+
     var body: some View {
         ZStack {
             FlowBrand.backgroundGradient
@@ -70,8 +74,6 @@ private extension LandingView {
         }
     }
 }
-
-// MARK: - Weather + Time
 
 // MARK: - Weather + Time
 
@@ -182,15 +184,55 @@ private extension LandingView {
 
         return "cloud.sun.fill"
     }
-}// MARK: - Security Hero
+}
+
+// MARK: - Security Hero
 
 private extension LandingView {
 
     var securityHero: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Security wait")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.white)
+            HStack {
+                Text("Security wait")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                if isLiveAirport {
+                    HStack(spacing: 6) {
+                        LivePulseDot()
+
+                        Text("LIVE")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.green)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.10))
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                            )
+                    )
+                } else {
+                    Text("EST")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.orange)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(Color.white.opacity(0.10))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                                )
+                        )
+                }
+            }
 
             heroCard
 

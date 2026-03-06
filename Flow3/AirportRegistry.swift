@@ -1,38 +1,51 @@
 import Foundation
 
-struct AirportRegistryItem: Identifiable, Hashable {
+struct AirportDefinition: Identifiable, Hashable {
+
     let airport: FlowAirport
-    let isEnabled: Bool
     let isLive: Bool
 
-    var id: String { airport.id }
+    var id: FlowAirport {
+        airport
+    }
+
 }
 
-enum AirportRegistry {
+struct AirportRegistry {
 
-    static let all: [AirportRegistryItem] = [
-        AirportRegistryItem(airport: .atl, isEnabled: true, isLive: true),
-        AirportRegistryItem(airport: .jfk, isEnabled: true, isLive: true),
-        AirportRegistryItem(airport: .lhr, isEnabled: true, isLive: true),
+    static let airports: [AirportDefinition] = [
 
-        // Enabled in app, but not yet wired to live wait-time providers
-        AirportRegistryItem(airport: .ams, isEnabled: true, isLive: true),
-        AirportRegistryItem(airport: .cdg, isEnabled: true, isLive: false),
-        AirportRegistryItem(airport: .dxb, isEnabled: true, isLive: false),
-        AirportRegistryItem(airport: .sin, isEnabled: true, isLive: false),
-        AirportRegistryItem(airport: .fra, isEnabled: true, isLive: false),
-        AirportRegistryItem(airport: .mad, isEnabled: true, isLive: false)
+        AirportDefinition(airport: .atl, isLive: true),
+        AirportDefinition(airport: .jfk, isLive: true),
+        AirportDefinition(airport: .lhr, isLive: true),
+        AirportDefinition(airport: .yyz, isLive: true),
+
+        AirportDefinition(airport: .ams, isLive: false),
+        AirportDefinition(airport: .cdg, isLive: false),
+        AirportDefinition(airport: .dxb, isLive: false),
+        AirportDefinition(airport: .sin, isLive: false),
+        AirportDefinition(airport: .fra, isLive: false),
+        AirportDefinition(airport: .mad, isLive: false),
+
+        AirportDefinition(airport: .sfo, isLive: false),
+        AirportDefinition(airport: .lax, isLive: false),
+        AirportDefinition(airport: .ord, isLive: false),
+        AirportDefinition(airport: .dfw, isLive: false),
+
+        AirportDefinition(airport: .bcn, isLive: false),
+        AirportDefinition(airport: .fco, isLive: false),
+        AirportDefinition(airport: .hnd, isLive: false),
+        AirportDefinition(airport: .icn, isLive: false),
+        AirportDefinition(airport: .syd, isLive: false)
+
     ]
 
-    static var enabled: [AirportRegistryItem] {
-        all.filter { $0.isEnabled }
+    static var all: [AirportDefinition] {
+        airports
     }
 
-    static var live: [AirportRegistryItem] {
-        enabled.filter { $0.isLive }
+    static func definition(for airport: FlowAirport) -> AirportDefinition? {
+        airports.first(where: { $0.airport == airport })
     }
 
-    static func item(for airport: FlowAirport) -> AirportRegistryItem? {
-        all.first(where: { $0.airport == airport })
-    }
 }

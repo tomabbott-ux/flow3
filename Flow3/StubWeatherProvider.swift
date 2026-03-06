@@ -3,7 +3,6 @@ import Foundation
 struct StubWeatherProvider: WeatherProviding {
 
     func fetchWeather(for airport: FlowAirport) async throws -> WeatherSnapshot {
-
         let now = Date()
 
         switch airport {
@@ -11,32 +10,39 @@ struct StubWeatherProvider: WeatherProviding {
         case .atl:
             return WeatherSnapshot(
                 airport: .atl,
-                temperatureC: 18,
-                summary: "Clear",
+                temperatureC: 26,
+                summary: "Sunny",
                 observedAt: now
             )
 
         case .jfk:
             return WeatherSnapshot(
                 airport: .jfk,
-                temperatureC: 9,
-                summary: "Windy",
+                temperatureC: 22,
+                summary: "Cloudy",
                 observedAt: now
             )
 
         case .lhr:
             return WeatherSnapshot(
                 airport: .lhr,
-                temperatureC: 7,
-                summary: "Cloudy",
+                temperatureC: 18,
+                summary: "Rain",
                 observedAt: now
             )
 
-        // Future airports (temporary stub)
-        case .ams, .cdg, .dxb, .sin, .fra, .mad:
+        case .yyz:
+            return WeatherSnapshot(
+                airport: .yyz,
+                temperatureC: -2,
+                summary: "Snow",
+                observedAt: now
+            )
+
+        default:
             return WeatherSnapshot(
                 airport: airport,
-                temperatureC: 20,
+                temperatureC: 24,
                 summary: "Clear",
                 observedAt: now
             )

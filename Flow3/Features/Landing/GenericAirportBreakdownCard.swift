@@ -5,42 +5,32 @@ struct GenericAirportBreakdownCard: View {
     @ObservedObject var store: LandingStore
     @Binding var selectedRowID: String?
 
-    var rows: [AirportDisplayRow] {
+    private var rows: [AirportDisplayRow] {
         store.displayRowsForSelectedAirport()
     }
 
-    var sectionTitle: String {
-        if store.selectedAirport == .atl {
-            return "\(store.selectedAirport.rawValue) checkpoints"
-        } else {
-            return "\(store.selectedAirport.rawValue) terminals"
-        }
-    }
-
     var body: some View {
-        if !rows.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
 
-                Text(sectionTitle)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(.white)
+            Text("\(store.selectedAirport.rawValue) checkpoints")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
 
-                VStack(spacing: 12) {
-                    ForEach(rows) { row in
-                        breakdownRow(row)
-                    }
+            VStack(spacing: 12) {
+                ForEach(rows) { row in
+                    rowView(row)
                 }
             }
-            .flowGlassCard()
-            .onAppear {
-                if selectedRowID == nil {
-                    selectedRowID = rows.first?.id
-                }
+        }
+        .flowGlassCard()
+        .onAppear {
+            if selectedRowID == nil {
+                selectedRowID = rows.first?.id
             }
         }
     }
 
-    func breakdownRow(_ row: AirportDisplayRow) -> some View {
+    private func rowView(_ row: AirportDisplayRow) -> some View {
         let isSelected = selectedRowID == row.id
 
         return Button {
@@ -74,7 +64,7 @@ struct GenericAirportBreakdownCard: View {
             .padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 18)
-                    .fill(isSelected ? FlowBrand.accent.opacity(0.22) : Color.white.opacity(0.10))
+                    .fill(isSelected ? Color.white.opacity(0.16) : Color.white.opacity(0.10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 18)
                             .stroke(Color.white.opacity(isSelected ? 0.18 : 0.10), lineWidth: 1)
@@ -84,7 +74,7 @@ struct GenericAirportBreakdownCard: View {
         .buttonStyle(.plain)
     }
 
-    func metricPill(_ metric: AirportDisplayMetric) -> some View {
+    private func metricPill(_ metric: AirportMetric) -> some View {
         VStack(spacing: 4) {
             Text(metric.minutes == nil ? "--" : "\(metric.minutes!)m")
                 .font(.system(size: 16, weight: .bold))
@@ -104,8 +94,4 @@ struct GenericAirportBreakdownCard: View {
                 )
         )
     }
-}
-
-private enum FlowBrand {
-    static let accent = Color(hex: "8B5CF6")
 }

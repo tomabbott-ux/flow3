@@ -1,213 +1,117 @@
 import Foundation
 
-struct AirportDisplayMetric: Identifiable, Hashable {
-    let id: String
+struct AirportMetric: Identifiable, Hashable {
+    let id = UUID()
     let label: String
     let minutes: Int?
 }
+
+typealias AirportDisplayMetric = AirportMetric
 
 struct AirportDisplayRow: Identifiable, Hashable {
     let id: String
     let title: String
     let subtitle: String
-    let metrics: [AirportDisplayMetric]
-    let sortOrder: Int
+    let metrics: [AirportMetric]
+    let observedAt: Date?
 }
 
 extension LandingStore {
 
     func displayRowsForSelectedAirport() -> [AirportDisplayRow] {
-        let airportWaits = allWaitTimes()
+        let rows = allWaitTimes()
             .filter { $0.airport == selectedAirport }
 
         switch selectedAirport {
+
         case .atl:
-            return makeATLRows(from: airportWaits)
+            return atlDisplayRows(from: rows)
 
-        case .jfk:
-            return makeJFKRows(from: airportWaits)
-
-        case .lhr:
-            return makeLHRRows(from: airportWaits)
-
-        case .ams, .cdg, .dxb, .sin, .fra, .mad:
-            return makeGenericTerminalRows(from: airportWaits)
+        case .jfk, .lhr, .ams, .cdg, .dxb, .sin, .fra, .mad, .sfo, .lax, .ord, .dfw, .yyz, .bcn, .fco, .hnd, .icn, .syd:
+            return terminalDisplayRows(from: rows)
         }
     }
-}
 
-// MARK: - ATL
+    private func atlDisplayRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
+        let grouped = Dictionary(grouping: rows) { row in
+            let checkpoint = row.checkpointName ?? "Security"
+            let area = row.areaName ?? "Terminal"
+            return "\(checkpoint)|\(area)"
+        }
 
-private extension LandingStore {
-
-    func makeATLRows(from waits: [WaitTimeEstimate]) -> [AirportDisplayRow] {
-        waits
-            .map { item in
-                let checkpoint = item.checkpointName ?? "Checkpoint"
-                let area = item.areaName ?? "Airport"
-
-                let metricLabel = item.queueType == .precheck ? "PreCheck" : "Wait"
-                let subtitle: String
-
-                if item.queueType == .precheck {
-                    subtitle = "\(area) • PreCheck Only"
-                } else {
-                    subtitle = "\(area) • Security"
-                }
-
-                let areaSort: Int
-                switch area.lowercased() {
-                case "domestic":
-                    areaSort = 0
-                case "international":
-                    areaSort = 1
-                default:
-                    areaSort = 9
-                }
-
-                let checkpointSort = atlCheckpointSortOrder(checkpoint)
+        return grouped
+            .map { key, items in
+                let parts = key.split(separator: "|").map(String.init)
+                let title = parts.first ?? "Security"
+                let subtitle = parts.count > 1 ? parts[1] : "Terminal"
+                let bestMinutes = items.map(\.minutes).min()
+                let observedAt = items.map(\.observedAt).max()
 
                 return AirportDisplayRow(
-                    id: "atl-\(area)-\(checkpoint)-\(metricLabel)",
-                    title: checkpoint,
+                    id: key,
+                    title: title,
                     subtitle: subtitle,
                     metrics: [
-                        AirportDisplayMetric(
-                            id: "atl-metric-\(area)-\(checkpoint)-\(metricLabel)",
-                            label: metricLabel,
-                            minutes: item.minutes
-                        )
+                        AirportMetric(label: "Wait", minutes: bestMinutes)
                     ],
-                    sortOrder: (areaSort * 100) + checkpointSort
+                    observedAt: observedAt
                 )
             }
-            .sorted { $0.sortOrder < $1.sortOrder }
+            .sorted { $0.title < $1.title }
     }
 
-    func atlCheckpointSortOrder(_ checkpoint: String) -> Int {
-        let upper = checkpoint.uppercased()
+    private func terminalDisplayRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
+        let grouped = Dictionary(grouping: rows) { $0.terminal ?? -1 }
 
-        if upper.contains("MAIN") { return 0 }
-        if upper == "NORTH" { return 1 }
-        if upper.contains("LOWER NORTH") { return 2 }
-        if upper.contains("SOUTH") { return 3 }
+        return grouped
+            .compactMap { terminal, items -> AirportDisplayRow? in
+                guard terminal >= 0 else { return nil }
 
-        return 99
-    }
-}
+                let title = "Terminal \(terminal)"
+                let observedAt = items.map(\.observedAt).max()
 
-// MARK: - JFK
+                if selectedAirport == .yyz {
+                    let best = items.min(by: { $0.minutes < $1.minutes })
 
-private extension LandingStore {
-
-    func makeJFKRows(from waits: [WaitTimeEstimate]) -> [AirportDisplayRow] {
-        let terminals = Array(Set(waits.compactMap { $0.terminal })).sorted()
-
-        return terminals.map { terminal in
-            let terminalWaits = waits.filter { $0.terminal == terminal }
-
-            let general = terminalWaits.first(where: { $0.queueType == .general })?.minutes
-            let precheck = terminalWaits.first(where: { $0.queueType == .precheck })?.minutes
-
-            return AirportDisplayRow(
-                id: "jfk-\(terminal)",
-                title: "Terminal \(terminal)",
-                subtitle: "Security",
-                metrics: [
-                    AirportDisplayMetric(
-                        id: "jfk-\(terminal)-general",
-                        label: "General",
-                        minutes: general
-                    ),
-                    AirportDisplayMetric(
-                        id: "jfk-\(terminal)-precheck",
-                        label: "PreCheck",
-                        minutes: precheck
+                    return AirportDisplayRow(
+                        id: "\(selectedAirport.rawValue)-T\(terminal)",
+                        title: title,
+                        subtitle: best?.checkpointName ?? "Security",
+                        metrics: [
+                            AirportMetric(label: "Wait", minutes: best?.minutes)
+                        ],
+                        observedAt: observedAt
                     )
-                ],
-                sortOrder: terminal
-            )
-        }
-    }
-}
+                }
 
-// MARK: - LHR
+                let general = items.first(where: { $0.queueType == .general })?.minutes
+                let precheck = items.first(where: { $0.queueType == .precheck })?.minutes
 
-private extension LandingStore {
+                if items.contains(where: { $0.queueType == .precheck }) {
+                    return AirportDisplayRow(
+                        id: "\(selectedAirport.rawValue)-T\(terminal)",
+                        title: title,
+                        subtitle: "Security",
+                        metrics: [
+                            AirportMetric(label: "General", minutes: general),
+                            AirportMetric(label: "PreCheck", minutes: precheck)
+                        ],
+                        observedAt: observedAt
+                    )
+                } else {
+                    let best = items.map(\.minutes).min()
 
-    func makeLHRRows(from waits: [WaitTimeEstimate]) -> [AirportDisplayRow] {
-        let terminals = Array(Set(waits.compactMap { $0.terminal })).sorted()
-
-        return terminals.map { terminal in
-            let terminalWaits = waits.filter { $0.terminal == terminal }
-
-            if terminal == 5 {
-                let north = terminalWaits.first(where: { $0.queueType == .general })?.minutes
-                let south = terminalWaits.first(where: { $0.queueType == .precheck })?.minutes
-
-                return AirportDisplayRow(
-                    id: "lhr-\(terminal)",
-                    title: "Terminal \(terminal)",
-                    subtitle: "Security",
-                    metrics: [
-                        AirportDisplayMetric(
-                            id: "lhr-\(terminal)-north",
-                            label: "North",
-                            minutes: north
-                        ),
-                        AirportDisplayMetric(
-                            id: "lhr-\(terminal)-south",
-                            label: "South",
-                            minutes: south
-                        )
-                    ],
-                    sortOrder: terminal
-                )
-            } else {
-                let minutes = terminalWaits.first(where: { $0.queueType == .general })?.minutes
-
-                return AirportDisplayRow(
-                    id: "lhr-\(terminal)",
-                    title: "Terminal \(terminal)",
-                    subtitle: "Security",
-                    metrics: [
-                        AirportDisplayMetric(
-                            id: "lhr-\(terminal)-wait",
-                            label: "Wait",
-                            minutes: minutes
-                        )
-                    ],
-                    sortOrder: terminal
-                )
+                    return AirportDisplayRow(
+                        id: "\(selectedAirport.rawValue)-T\(terminal)",
+                        title: title,
+                        subtitle: items.first?.checkpointName ?? "Security",
+                        metrics: [
+                            AirportMetric(label: "Wait", minutes: best)
+                        ],
+                        observedAt: observedAt
+                    )
+                }
             }
-        }
-    }
-}
-
-// MARK: - Generic terminal airports
-
-private extension LandingStore {
-
-    func makeGenericTerminalRows(from waits: [WaitTimeEstimate]) -> [AirportDisplayRow] {
-        let terminals = Array(Set(waits.compactMap { $0.terminal })).sorted()
-
-        return terminals.map { terminal in
-            let terminalWaits = waits.filter { $0.terminal == terminal }
-            let minutes = terminalWaits.map { $0.minutes }.min()
-
-            return AirportDisplayRow(
-                id: "\(selectedAirport.rawValue)-\(terminal)",
-                title: "Terminal \(terminal)",
-                subtitle: "Security",
-                metrics: [
-                    AirportDisplayMetric(
-                        id: "\(selectedAirport.rawValue)-\(terminal)-wait",
-                        label: "Wait",
-                        minutes: minutes
-                    )
-                ],
-                sortOrder: terminal
-            )
-        }
+            .sorted { $0.title < $1.title }
     }
 }

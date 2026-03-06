@@ -9,7 +9,6 @@ final class JFKAzureAPIWaitTimeProvider: WaitTimeProviding {
     }
 
     private let session: URLSession
-
     private let warmupURL = URL(string: "https://www.jfkairport.com/")!
     private let apiURL = URL(string: "https://avi-prod-mpp-webapp-api.azurewebsites.net/api/v1/SecurityWaitTimesPoints/JFK")!
 
@@ -21,11 +20,9 @@ final class JFKAzureAPIWaitTimeProvider: WaitTimeProviding {
         guard airport == .jfk else { return [] }
 
         try? await warmup()
-
         let data = try await fetchAPIData()
 
         let rows: [JFKRow]
-
         do {
             rows = try JSONDecoder().decode([JFKRow].self, from: data)
         } catch {
@@ -35,7 +32,6 @@ final class JFKAzureAPIWaitTimeProvider: WaitTimeProviding {
         var byTerminal: [Int: (general: Int?, precheck: Int?)] = [:]
 
         for r in rows {
-
             guard let terminal = r.terminalInt else { continue }
             guard let minutes = r.timeInMinutes else { continue }
 
@@ -51,7 +47,6 @@ final class JFKAzureAPIWaitTimeProvider: WaitTimeProviding {
             if !(statusOK || minutes == 0) { continue }
 
             switch mapQueueType(r.queueType) {
-
             case .general:
                 var existing = byTerminal[terminal] ?? (general: nil, precheck: nil)
                 existing.general = minutes
@@ -75,7 +70,6 @@ final class JFKAzureAPIWaitTimeProvider: WaitTimeProviding {
         var results: [WaitTimeEstimate] = []
 
         for terminal in byTerminal.keys.sorted() {
-
             let values = byTerminal[terminal]!
 
             if let g = values.general {
@@ -111,38 +105,18 @@ final class JFKAzureAPIWaitTimeProvider: WaitTimeProviding {
     }
 
     private func warmup() async throws {
-
         var request = URLRequest(url: warmupURL)
         request.httpMethod = "GET"
-
-        request.setValue(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-            forHTTPHeaderField: "User-Agent"
-        )
-
+        request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", forHTTPHeaderField: "User-Agent")
         _ = try await session.data(for: request)
     }
 
     private func fetchAPIData() async throws -> Data {
-
         var request = URLRequest(url: apiURL)
-
         request.httpMethod = "GET"
-
-        request.setValue(
-            "application/json, text/plain, */*",
-            forHTTPHeaderField: "Accept"
-        )
-
-        request.setValue(
-            "https://www.jfkairport.com/",
-            forHTTPHeaderField: "Referer"
-        )
-
-        request.setValue(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-            forHTTPHeaderField: "User-Agent"
-        )
+        request.setValue("application/json, text/plain, */*", forHTTPHeaderField: "Accept")
+        request.setValue("https://www.jfkairport.com/", forHTTPHeaderField: "Referer")
+        request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await session.data(for: request)
 
@@ -164,28 +138,18 @@ final class JFKAzureAPIWaitTimeProvider: WaitTimeProviding {
     }
 
     private func mapQueueType(_ raw: String?) -> MappedQueue {
-
-        let q = (raw ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
+        let q = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
         if q == "reg" { return .general }
         if q == "tsapre" { return .precheck }
-
-        if q.contains("regular") || q.contains("general") {
-            return .general
-        }
-
-        if q.contains("pre") || q.contains("tsa") {
-            return .precheck
-        }
+        if q.contains("regular") || q.contains("general") { return .general }
+        if q.contains("pre") || q.contains("tsa") { return .precheck }
 
         return .unknown
     }
 }
 
 private struct JFKRow: Decodable {
-
     let terminal: String?
     let timeInMinutes: Int?
     let queueType: String?
@@ -195,12 +159,10 @@ private struct JFKRow: Decodable {
     let isWaitTimeAvailable: Bool?
 
     var terminalInt: Int? {
-
         if let t = terminal,
            let n = Int(t.trimmingCharacters(in: .whitespacesAndNewlines)) {
             return n
         }
-
         return nil
     }
 }
