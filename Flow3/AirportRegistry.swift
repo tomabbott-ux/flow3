@@ -33,7 +33,8 @@ struct AirportRegistry {
         AirportDefinition(airport: .atl, feedType: .live),
         AirportDefinition(airport: .jfk, feedType: .live),
         AirportDefinition(airport: .lhr, feedType: .live),
-
+        AirportDefinition(airport: .ist, feedType: .live),
+        
         AirportDefinition(airport: .yyz, feedType: .live),
         AirportDefinition(airport: .yvr, feedType: .live),
         AirportDefinition(airport: .yyc, feedType: .live),

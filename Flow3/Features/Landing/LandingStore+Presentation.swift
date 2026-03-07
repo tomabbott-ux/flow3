@@ -24,7 +24,7 @@ extension LandingStore {
 
         switch selectedAirport {
 
-        case .atl, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
+        case .atl, .ist, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
             return namedCheckpointRows(from: rows)
 
         case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
@@ -74,7 +74,9 @@ extension LandingStore {
 
         return grouped
             .compactMap { terminal, items -> AirportDisplayRow? in
-                guard terminal >= 0 else { return nil }
+                guard terminal >= 0 else {
+                    return nil
+                }
 
                 let title = "Terminal \(terminal)"
                 let observedAt = items.map(\.observedAt).max()

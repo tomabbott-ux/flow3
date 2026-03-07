@@ -7,9 +7,12 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
     init(
         liveProviders: [FlowAirport: any WaitTimeProviding] = [
+
             .atl: ATLStubWaitTimeProvider(),
             .jfk: JFKAzureAPIWaitTimeProvider(),
             .lhr: LHRStubWaitTimeProvider(),
+
+            .ist: ISTLiveWaitTimeProvider(),
 
             .yyz: YYZLiveWaitTimeProvider(),
             .yvr: YVRLiveWaitTimeProvider(),
