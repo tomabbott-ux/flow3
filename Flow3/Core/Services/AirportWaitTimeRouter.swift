@@ -6,27 +6,7 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
     private let estimatedProvider = EstimatedWaitTimeProvider()
 
     init(
-        liveProviders: [FlowAirport: any WaitTimeProviding] = [
-
-            .atl: ATLStubWaitTimeProvider(),
-            .jfk: JFKAzureAPIWaitTimeProvider(),
-            .lhr: LHRStubWaitTimeProvider(),
-
-            .ist: ISTLiveWaitTimeProvider(),
-
-            .yyz: YYZLiveWaitTimeProvider(),
-            .yvr: YVRLiveWaitTimeProvider(),
-            .yyc: YYCLiveWaitTimeProvider(),
-
-            .den: DENLiveWaitTimeProvider(),
-            .dfw: DFWLiveWaitTimeProvider(),
-            .hou: HOULiveWaitTimeProvider(),
-            .mco: MCOLiveWaitTimeProvider(),
-            .phx: PHXLiveWaitTimeProvider(),
-            .phl: PHLLiveWaitTimeProvider(),
-
-            .ams: AMSWaitTimeProvider()
-        ]
+        liveProviders: [FlowAirport: any WaitTimeProviding] = AirportWaitTimeRouter.defaultProviders
     ) {
         self.liveProviders = liveProviders
     }
@@ -43,4 +23,30 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         return []
     }
+}
+
+extension AirportWaitTimeRouter {
+
+    static let defaultProviders: [FlowAirport: any WaitTimeProviding] = [
+
+        .atl: ATLStubWaitTimeProvider(),
+        .jfk: JFKAzureAPIWaitTimeProvider(),
+        .lhr: LHRStubWaitTimeProvider(),
+        .ist: ISTLiveWaitTimeProvider(),
+
+        .yyz: YYZLiveWaitTimeProvider(),
+        .yvr: YVRLiveWaitTimeProvider(),
+        .yyc: YYCLiveWaitTimeProvider(),
+
+        .den: DENLiveWaitTimeProvider(),
+        .dfw: DFWLiveWaitTimeProvider(),
+        .hou: HOULiveWaitTimeProvider(),
+        .mco: MCOLiveWaitTimeProvider(),
+        .phx: PHXLiveWaitTimeProvider(),
+        .phl: PHLLiveWaitTimeProvider(),
+
+        .ord: ORDLiveWaitTimeProvider(),
+
+        .ams: AMSWaitTimeProvider()
+    ]
 }

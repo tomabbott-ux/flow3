@@ -34,6 +34,7 @@
 		F80599FA2F5B960600146BF1 /* EstimatedWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599F92F5B960600146BF1 /* EstimatedWaitTimeProvider.swift */; };
 		F80829DC2F5A4554000D5664 /* LandingStore+JFK.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80829DB2F5A4554000D5664 /* LandingStore+JFK.swift */; };
 		F822A8CC2F5C9466009F6107 /* ISTLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8CB2F5C9466009F6107 /* ISTLiveWaitTimeProvider.swift */; };
+		F822A8CE2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8CD2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift */; };
 		F828EF312F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */; };
 		F828EF332F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF322F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift */; };
 		F828EF352F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF342F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift */; };
@@ -107,6 +108,7 @@
 		F80599F92F5B960600146BF1 /* EstimatedWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EstimatedWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F80829DB2F5A4554000D5664 /* LandingStore+JFK.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+JFK.swift"; sourceTree = "<group>"; };
 		F822A8CB2F5C9466009F6107 /* ISTLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISTLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F822A8CD2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ORDLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVEPOINT_JFK_WORKING.swift; sourceTree = "<group>"; };
 		F828EF322F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F828EF342F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLSecurityWaitTimesParser.swift; sourceTree = "<group>"; };
@@ -282,9 +284,9 @@
 				F828EF362F59CE1300EC53EC /* ATLCheckpointCard.swift */,
 				F828EF3A2F5A006C00EC53EC /* LHRCheckpointCard.swift */,
 				F828EF3E2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift */,
+				F80599E62F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift */,
 				F80599CE2F5ACFE200146BF1 /* AMSWaitTimeProvider.swift */,
 				F80599E22F5AFED300146BF1 /* YYZLiveWaitTimeProvider.swift */,
-				F80599E62F5B27B600146BF1 /* YVRLiveWaitTimeProvider.swift */,
 				F80599E82F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift */,
 				F80599EA2F5B3A3500146BF1 /* DENLiveWaitTimeProvider.swift */,
 				F80599EC2F5B407700146BF1 /* DFWLiveWaitTimeProvider.swift */,
@@ -293,6 +295,7 @@
 				F80599F22F5B6D0E00146BF1 /* PHXLiveWaitTimeProvider.swift */,
 				F80599F42F5B815600146BF1 /* PHLLiveWaitTimeProvider.swift */,
 				F822A8CB2F5C9466009F6107 /* ISTLiveWaitTimeProvider.swift */,
+				F822A8CD2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -491,6 +494,7 @@
 				F828EF3B2F5A006C00EC53EC /* LHRCheckpointCard.swift in Sources */,
 				F80599D92F5AE51900146BF1 /* JFKAzureAPIWaitTimeProvider.swift in Sources */,
 				F80599FA2F5B960600146BF1 /* EstimatedWaitTimeProvider.swift in Sources */,
+				F822A8CE2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift in Sources */,
 				F80599DD2F5AECB200146BF1 /* LivePulseDot.swift in Sources */,
 				F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */,
 				F80599D32F5AD36B00146BF1 /* LandingStore+Presentation.swift in Sources */,

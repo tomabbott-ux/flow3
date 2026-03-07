@@ -86,6 +86,12 @@ struct GenericAirportBreakdownCard: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
+
+                Text(metric.label)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.75))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             } else {
                 Text(metricPrimaryText(metric))
                     .font(.system(size: 16, weight: .bold))
