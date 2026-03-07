@@ -27,7 +27,9 @@ extension LandingStore {
         case .atl, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
             return namedCheckpointRows(from: rows)
 
-        case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad, .sfo, .lax, .ord, .bcn, .fco, .hnd, .icn, .syd:
+        case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
+             .sfo, .lax, .ord, .las, .bos, .sea, .san, .mia,
+             .bcn, .fco, .hnd, .icn, .syd:
             return terminalDisplayRows(from: rows)
         }
     }

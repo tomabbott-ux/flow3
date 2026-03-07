@@ -4,6 +4,10 @@ struct WelcomeView: View {
     @ObservedObject var store: LandingStore
 
     var body: some View {
-        AirportSelectorView(store: store)
+        AirportSelectorView(
+            store: store,
+            onAirportSelected: {}
+        )
+        
     }
 }

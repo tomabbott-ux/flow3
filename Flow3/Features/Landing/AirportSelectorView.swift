@@ -3,48 +3,30 @@ import SwiftUI
 struct AirportSelectorView: View {
 
     @ObservedObject var store: LandingStore
-    @State private var showLanding = false
+    let onAirportSelected: () -> Void
 
-    private let backgroundTop = Color(hex: "2A0C5A")
-    private let backgroundMid = Color(hex: "3B136E")
-    private let backgroundBottom = Color(hex: "14062F")
+    private let airports = AirportRegistry.airports
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    backgroundTop,
-                    backgroundMid,
-                    backgroundBottom
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            FlowSelectorBrand.backgroundGradient
+                .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
-
                     Text("Select Airport")
                         .font(.system(size: 34, weight: .heavy))
                         .foregroundColor(.white)
-                        .padding(.top, 12)
+                        .padding(.top, 8)
 
                     VStack(spacing: 12) {
-                        ForEach(AirportRegistry.airports) { airportDef in
-                            airportRow(for: airportDef)
+                        ForEach(airports) { definition in
+                            airportRow(definition)
                         }
                     }
-
-                    NavigationLink(
-                        destination: LandingView(store: store),
-                        isActive: $showLanding
-                    ) {
-                        EmptyView()
-                    }
-                    .hidden()
                 }
                 .padding(.horizontal, 16)
+                .padding(.top, 14)
                 .padding(.bottom, 30)
             }
         }
@@ -53,79 +35,115 @@ struct AirportSelectorView: View {
     }
 
     @ViewBuilder
-    private func airportRow(for airportDef: AirportDefinition) -> some View {
+    private func airportRow(_ definition: AirportDefinition) -> some View {
         Button {
-            store.selectedAirport = airportDef.airport
-            showLanding = true
+            store.selectedAirport = definition.airport
+            onAirportSelected()
         } label: {
-            HStack(spacing: 12) {
-
+            HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(airportDef.airport.displayName)
-                        .font(.system(size: 18, weight: .semibold))
+                    Text(definition.airport.displayName)
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
 
-                    Text(airportDef.airport.rawValue)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white.opacity(0.72))
+                    Text(definition.airport.rawValue)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.75))
                 }
 
                 Spacer()
 
-                if airportDef.isLive {
-                    HStack(spacing: 6) {
-                        LivePulseDot()
+                badge(for: definition)
 
-                        Text("LIVE")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.green)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(Color.white.opacity(0.10))
-                            .overlay(
-                                Capsule()
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                            )
-                    )
-                } else {
-                    Text("EST")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.orange)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.10))
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                                )
-                        )
-                }
-
-                if store.selectedAirport == airportDef.airport {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white.opacity(0.55))
-                }
+                Image(systemName: store.selectedAirport == definition.airport ? "checkmark" : "chevron.right")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white.opacity(0.9))
             }
-            .padding(14)
+            .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: 22)
+                RoundedRectangle(cornerRadius: 24)
                     .fill(Color.white.opacity(0.08))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 22)
+                        RoundedRectangle(cornerRadius: 24)
                             .stroke(Color.white.opacity(0.10), lineWidth: 1)
                     )
             )
+            .shadow(color: .black.opacity(0.20), radius: 14, x: 0, y: 8)
         }
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func badge(for definition: AirportDefinition) -> some View {
+        if definition.isLive {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 8, height: 8)
+
+                Text("LIVE")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.green)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(0.10))
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+            )
+
+        } else if definition.isEstimated {
+            Text("ESTIMATE")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.orange)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .fill(Color.white.opacity(0.10))
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        )
+                )
+
+        } else {
+            Text("COMING SOON")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.gray)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .fill(Color.white.opacity(0.10))
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        )
+                )
+        }
+    }
+}
+
+private enum FlowSelectorBrand {
+    static let backgroundTop = Color(hex: "2A0C5A")
+    static let backgroundMid = Color(hex: "3B136E")
+    static let backgroundBottom = Color(hex: "14062F")
+
+    static var backgroundGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                backgroundTop,
+                backgroundMid,
+                backgroundBottom
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 }

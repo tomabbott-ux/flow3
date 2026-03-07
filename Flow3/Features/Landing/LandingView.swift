@@ -4,8 +4,11 @@ struct LandingView: View {
 
     @ObservedObject var store: LandingStore
     @State private var selectedRowID: String? = nil
+    @State private var now = Date()
+    @State private var isShowingAirportSelector = false
 
     private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+    private let updatedTicker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var displayRows: [AirportDisplayRow] {
         store.displayRowsForSelectedAirport()
@@ -18,10 +21,6 @@ struct LandingView: View {
         return displayRows.first
     }
 
-    private var isLiveAirport: Bool {
-        AirportRegistry.definition(for: store.selectedAirport)?.isLive ?? false
-    }
-
     var body: some View {
         ZStack {
             FlowBrand.backgroundGradient
@@ -29,6 +28,7 @@ struct LandingView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
+                    airportSelectorPill
                     headerSection
                     weatherRow
                     securityHero
@@ -45,7 +45,16 @@ struct LandingView: View {
                 .padding(.bottom, 30)
             }
         }
+        .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $isShowingAirportSelector) {
+            AirportSelectorView(
+                store: store,
+                onAirportSelected: {
+                    isShowingAirportSelector = false
+                }
+            )
+        }
         .task {
             await refreshNow()
         }
@@ -53,6 +62,9 @@ struct LandingView: View {
             Task {
                 await refreshNow()
             }
+        }
+        .onReceive(updatedTicker) { value in
+            now = value
         }
         .onChange(of: store.selectedAirport) { _ in
             Task {
@@ -63,6 +75,7 @@ struct LandingView: View {
 
     private func refreshNow() async {
         await store.refresh()
+        now = Date()
 
         let latestRows = store.displayRowsForSelectedAirport()
 
@@ -72,6 +85,40 @@ struct LandingView: View {
         } else {
             self.selectedRowID = latestRows.first?.id
         }
+    }
+}
+
+// MARK: - Top Pill
+
+private extension LandingView {
+
+    var airportSelectorPill: some View {
+        Button {
+            isShowingAirportSelector = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 13, weight: .bold))
+
+                Text("Select Airport")
+                    .font(.system(size: 15, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .foregroundColor(.white.opacity(0.95))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(0.10))
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    )
+            )
+            .shadow(color: .black.opacity(0.22), radius: 12, x: 0, y: 6)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -216,14 +263,45 @@ private extension LandingView {
 
                 Spacer()
 
-                if isLiveAirport {
-                    HStack(spacing: 6) {
-                        LivePulseDot()
+                statusBadge
+            }
 
-                        Text("LIVE")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.green)
-                    }
+            heroCard
+
+            Text(updatedRelativeText)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.white.opacity(0.7))
+        }
+        .flowGlassCard()
+    }
+
+    @ViewBuilder
+    var statusBadge: some View {
+        if let definition = AirportRegistry.definition(for: store.selectedAirport) {
+
+            if definition.isLive {
+                HStack(spacing: 6) {
+                    LivePulseDot()
+
+                    Text("LIVE")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.green)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .fill(Color.white.opacity(0.10))
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        )
+                )
+
+            } else if definition.isEstimated {
+                Text("ESTIMATE")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.orange)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .background(
@@ -234,30 +312,23 @@ private extension LandingView {
                                     .stroke(Color.white.opacity(0.10), lineWidth: 1)
                             )
                     )
-                } else {
-                    Text("EST")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.orange)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.10))
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                                )
-                        )
-                }
+
+            } else {
+                Text("COMING SOON")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.gray)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.10))
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                            )
+                    )
             }
-
-            heroCard
-
-            Text("Updated: \(updatedText)")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.white.opacity(0.7))
         }
-        .flowGlassCard()
     }
 
     var heroCard: some View {
@@ -367,11 +438,27 @@ private extension LandingView {
         }
     }
 
-    var updatedText: String {
-        guard let date = store.lastUpdated else { return "--" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy h:mm a"
-        return formatter.string(from: date)
+    var updatedRelativeText: String {
+        guard let date = store.lastUpdated else { return "Updated --" }
+
+        let seconds = max(0, Int(now.timeIntervalSince(date)))
+
+        if seconds < 60 {
+            return "Updated \(seconds)s ago"
+        }
+
+        let minutes = seconds / 60
+        if minutes < 60 {
+            return "Updated \(minutes)m ago"
+        }
+
+        let hours = minutes / 60
+        if hours < 24 {
+            return "Updated \(hours)h ago"
+        }
+
+        let days = hours / 24
+        return "Updated \(days)d ago"
     }
 }
 

@@ -1,36 +1,16 @@
 import Foundation
 
-enum AirportLiveStatus: String, Codable, Hashable {
-    case live
-    case comingSoon
-}
+extension FlowAirport {
 
-struct AirportPresentation: Hashable {
-    let airport: FlowAirport
-    let liveStatus: AirportLiveStatus
-    let badgeText: String
-    let titleText: String
-    let subtitleText: String
-    let placeholderTitle: String
-    let placeholderBody: String
-    let placeholderFootnote: String
+    var prefersCheckpointPresentation: Bool {
+        switch self {
+        case .atl, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
+            return true
 
-    var isLive: Bool {
-        liveStatus == .live
-    }
-
-    static func make(for airport: FlowAirport) -> AirportPresentation {
-        let isLive = AirportRegistry.definition(for: airport)?.isLive ?? false
-
-        return AirportPresentation(
-            airport: airport,
-            liveStatus: isLive ? .live : .comingSoon,
-            badgeText: isLive ? "LIVE" : "COMING SOON",
-            titleText: airport.rawValue,
-            subtitleText: airport.shortName,
-            placeholderTitle: "Live data coming soon",
-            placeholderBody: "\(airport.displayName) is available in Flow, but its live security wait-time feed has not been connected yet.",
-            placeholderFootnote: "Estimated display only for now."
-        )
+        case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
+             .sfo, .lax, .ord, .las, .bos, .sea, .san, .mia,
+             .bcn, .fco, .hnd, .icn, .syd:
+            return false
+        }
     }
 }
