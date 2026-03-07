@@ -2,18 +2,18 @@ import Foundation
 
 struct AirportWaitTimeRouter: WaitTimeProviding {
 
-    private let liveProviders: [FlowAirport: any WaitTimeProviding]
+    private let providers: [FlowAirport: any WaitTimeProviding]
     private let estimatedProvider = EstimatedWaitTimeProvider()
 
     init(
-        liveProviders: [FlowAirport: any WaitTimeProviding] = AirportWaitTimeRouter.defaultProviders
+        providers: [FlowAirport: any WaitTimeProviding] = AirportWaitTimeRouter.defaultProviders
     ) {
-        self.liveProviders = liveProviders
+        self.providers = providers
     }
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
 
-        if let provider = liveProviders[airport] {
+        if let provider = providers[airport] {
             return try await provider.fetchWaitTimes(for: airport)
         }
 
@@ -44,9 +44,9 @@ extension AirportWaitTimeRouter {
         .mco: MCOLiveWaitTimeProvider(),
         .phx: PHXLiveWaitTimeProvider(),
         .phl: PHLLiveWaitTimeProvider(),
+        .slc: SLCLiveWaitTimeProvider(),
 
         .ord: ORDLiveWaitTimeProvider(),
-
         .ams: AMSWaitTimeProvider()
     ]
 }

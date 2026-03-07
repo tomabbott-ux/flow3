@@ -92,6 +92,18 @@ struct GenericAirportBreakdownCard: View {
                     .foregroundColor(.white.opacity(0.75))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
+            } else if metric.minutes == nil {
+                Text("Open")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.green)
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
+
+                Text(metric.label)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.75))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             } else {
                 Text(metricPrimaryText(metric))
                     .font(.system(size: 16, weight: .bold))
@@ -112,7 +124,7 @@ struct GenericAirportBreakdownCard: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
                         .stroke(
-                            metric.minutes == 0
+                            metric.minutes == 0 || metric.minutes == nil
                             ? Color.green.opacity(0.28)
                             : Color.white.opacity(0.10),
                             lineWidth: 1
@@ -122,12 +134,11 @@ struct GenericAirportBreakdownCard: View {
     }
 
     private func metricPrimaryText(_ metric: AirportMetric) -> String {
-        guard let minutes = metric.minutes else { return "--" }
+        guard let minutes = metric.minutes else { return "Open" }
         return "\(minutes)m"
     }
 
     private func metricSecondaryText(_ metric: AirportMetric) -> String {
-        guard metric.minutes != nil else { return metric.label }
         return metric.label
     }
 }

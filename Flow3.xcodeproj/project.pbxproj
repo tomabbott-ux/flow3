@@ -35,6 +35,8 @@
 		F80829DC2F5A4554000D5664 /* LandingStore+JFK.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80829DB2F5A4554000D5664 /* LandingStore+JFK.swift */; };
 		F822A8CC2F5C9466009F6107 /* ISTLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8CB2F5C9466009F6107 /* ISTLiveWaitTimeProvider.swift */; };
 		F822A8CE2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8CD2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift */; };
+		F822A8D02F5CD692009F6107 /* FRALiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8CF2F5CD691009F6107 /* FRALiveWaitTimeProvider.swift */; };
+		F822A8D62F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8D52F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift */; };
 		F828EF312F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */; };
 		F828EF332F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF322F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift */; };
 		F828EF352F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF342F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift */; };
@@ -109,6 +111,8 @@
 		F80829DB2F5A4554000D5664 /* LandingStore+JFK.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+JFK.swift"; sourceTree = "<group>"; };
 		F822A8CB2F5C9466009F6107 /* ISTLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISTLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F822A8CD2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ORDLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F822A8CF2F5CD691009F6107 /* FRALiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FRALiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F822A8D52F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLCLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVEPOINT_JFK_WORKING.swift; sourceTree = "<group>"; };
 		F828EF322F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F828EF342F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLSecurityWaitTimesParser.swift; sourceTree = "<group>"; };
@@ -296,6 +300,8 @@
 				F80599F42F5B815600146BF1 /* PHLLiveWaitTimeProvider.swift */,
 				F822A8CB2F5C9466009F6107 /* ISTLiveWaitTimeProvider.swift */,
 				F822A8CD2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift */,
+				F822A8CF2F5CD691009F6107 /* FRALiveWaitTimeProvider.swift */,
+				F822A8D52F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -499,7 +505,9 @@
 				F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */,
 				F80599D32F5AD36B00146BF1 /* LandingStore+Presentation.swift in Sources */,
 				F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */,
+				F822A8D62F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift in Sources */,
 				F862F1D32F5839B4001666F2 /* WaitTimeModels.swift in Sources */,
+				F822A8D02F5CD692009F6107 /* FRALiveWaitTimeProvider.swift in Sources */,
 				F80599DF2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift in Sources */,
 				F80599F52F5B815600146BF1 /* PHLLiveWaitTimeProvider.swift in Sources */,
 				F80599D72F5AD4A200146BF1 /* Color+Hex.swift in Sources */,
@@ -682,6 +690,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				NEW_SETTING = "";
 				PRODUCT_BUNDLE_IDENTIFIER = Flow.Flow3;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -711,6 +720,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				NEW_SETTING = "";
 				PRODUCT_BUNDLE_IDENTIFIER = Flow.Flow3;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

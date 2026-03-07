@@ -30,26 +30,31 @@ struct AirportRegistry {
 
     static let airports: [AirportDefinition] = [
 
+        // Core Live Airports
         AirportDefinition(airport: .atl, feedType: .live),
         AirportDefinition(airport: .jfk, feedType: .live),
         AirportDefinition(airport: .lhr, feedType: .live),
         AirportDefinition(airport: .ist, feedType: .live),
 
+        // Canada
         AirportDefinition(airport: .yyz, feedType: .live),
         AirportDefinition(airport: .yvr, feedType: .live),
         AirportDefinition(airport: .yyc, feedType: .live),
 
+        // USA Live
         AirportDefinition(airport: .den, feedType: .live),
         AirportDefinition(airport: .dfw, feedType: .live),
         AirportDefinition(airport: .hou, feedType: .live),
         AirportDefinition(airport: .mco, feedType: .live),
         AirportDefinition(airport: .phx, feedType: .live),
         AirportDefinition(airport: .phl, feedType: .live),
+        AirportDefinition(airport: .slc, feedType: .live),
 
+        // Additional Live Airports
         AirportDefinition(airport: .ord, feedType: .live),
-
         AirportDefinition(airport: .ams, feedType: .live),
 
+        // Estimated Airports
         AirportDefinition(airport: .cdg, feedType: .estimated),
         AirportDefinition(airport: .dxb, feedType: .estimated),
         AirportDefinition(airport: .sin, feedType: .estimated),

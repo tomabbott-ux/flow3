@@ -24,7 +24,7 @@ extension LandingStore {
 
         switch selectedAirport {
 
-        case .atl, .ist, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
+        case .atl, .ist, .slc, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
             return namedCheckpointRows(from: rows)
 
         case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
@@ -41,7 +41,7 @@ extension LandingStore {
             return "\(checkpoint)|\(area)"
         }
 
-        return grouped
+        var displayRows = grouped
             .map { key, items in
                 let parts = key.split(separator: "|").map(String.init)
                 let title = parts.first ?? "Security"
@@ -61,12 +61,31 @@ extension LandingStore {
                     observedAt: observedAt
                 )
             }
-            .sorted { lhs, rhs in
-                if lhs.subtitle == rhs.subtitle {
-                    return lhs.title < rhs.title
-                }
-                return lhs.subtitle < rhs.subtitle
+
+        if selectedAirport == .slc,
+           let observedAt = rows.map(\.observedAt).max() {
+            displayRows.append(
+                AirportDisplayRow(
+                    id: "SLC-PRECHECK-AVAILABLE",
+                    title: "PreCheck",
+                    subtitle: "Available",
+                    metrics: [
+                        AirportMetric(label: "PreCheck", minutes: nil)
+                    ],
+                    observedAt: observedAt
+                )
+            )
+        }
+
+        return displayRows.sorted { lhs, rhs in
+            if lhs.id == "SLC-PRECHECK-AVAILABLE" { return false }
+            if rhs.id == "SLC-PRECHECK-AVAILABLE" { return true }
+
+            if lhs.subtitle == rhs.subtitle {
+                return lhs.title < rhs.title
             }
+            return lhs.subtitle < rhs.subtitle
+        }
     }
 
     private func terminalDisplayRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
