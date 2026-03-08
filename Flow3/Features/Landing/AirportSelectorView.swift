@@ -98,19 +98,23 @@ struct AirportSelectorView: View {
             )
 
         } else if definition.isEstimated {
-            Text("ESTIMATE")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(.orange)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(Color.white.opacity(0.10))
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                        )
-                )
+            HStack(spacing: 6) {
+                SelectorOrangePulseDot()
+
+                Text("ESTIMATE")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.orange)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(0.10))
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+            )
 
         } else {
             Text("COMING SOON")
@@ -145,5 +149,28 @@ private enum FlowSelectorBrand {
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+    }
+}
+
+private struct SelectorOrangePulseDot: View {
+    @State private var animate = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.orange.opacity(0.22))
+                .frame(width: 16, height: 16)
+                .scaleEffect(animate ? 1.35 : 0.85)
+                .opacity(animate ? 0.20 : 0.65)
+
+            Circle()
+                .fill(Color.orange)
+                .frame(width: 8, height: 8)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
+                animate = true
+            }
+        }
     }
 }

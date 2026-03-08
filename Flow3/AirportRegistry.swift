@@ -50,7 +50,14 @@ struct AirportRegistry {
         AirportDefinition(airport: .phl, feedType: .live),
         AirportDefinition(airport: .slc, feedType: .live),
 
-        // Additional Live Airports
+        // TSA Average / Estimated
+        AirportDefinition(airport: .san, feedType: .estimated),
+        AirportDefinition(airport: .las, feedType: .estimated),
+        AirportDefinition(airport: .bos, feedType: .estimated),
+        AirportDefinition(airport: .sea, feedType: .estimated),
+        AirportDefinition(airport: .mia, feedType: .estimated),
+
+        // Additional Live
         AirportDefinition(airport: .ord, feedType: .live),
         AirportDefinition(airport: .ams, feedType: .live),
 
@@ -63,11 +70,6 @@ struct AirportRegistry {
 
         AirportDefinition(airport: .sfo, feedType: .estimated),
         AirportDefinition(airport: .lax, feedType: .estimated),
-        AirportDefinition(airport: .las, feedType: .estimated),
-        AirportDefinition(airport: .bos, feedType: .estimated),
-        AirportDefinition(airport: .sea, feedType: .estimated),
-        AirportDefinition(airport: .san, feedType: .estimated),
-        AirportDefinition(airport: .mia, feedType: .estimated),
 
         AirportDefinition(airport: .bcn, feedType: .estimated),
         AirportDefinition(airport: .fco, feedType: .estimated),

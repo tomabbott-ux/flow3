@@ -29,15 +29,18 @@ extension AirportWaitTimeRouter {
 
     static let defaultProviders: [FlowAirport: any WaitTimeProviding] = [
 
+        // Core live airports
         .atl: ATLStubWaitTimeProvider(),
         .jfk: JFKAzureAPIWaitTimeProvider(),
         .lhr: LHRStubWaitTimeProvider(),
         .ist: ISTLiveWaitTimeProvider(),
 
+        // Canada
         .yyz: YYZLiveWaitTimeProvider(),
         .yvr: YVRLiveWaitTimeProvider(),
         .yyc: YYCLiveWaitTimeProvider(),
 
+        // USA live
         .den: DENLiveWaitTimeProvider(),
         .dfw: DFWLiveWaitTimeProvider(),
         .hou: HOULiveWaitTimeProvider(),
@@ -46,6 +49,14 @@ extension AirportWaitTimeRouter {
         .phl: PHLLiveWaitTimeProvider(),
         .slc: SLCLiveWaitTimeProvider(),
 
+        // TSA average airports
+        .san: TSAAverageWaitTimeProvider(),
+        .las: TSAAverageWaitTimeProvider(),
+        .bos: TSAAverageWaitTimeProvider(),
+        .sea: TSAAverageWaitTimeProvider(),
+        .mia: TSAAverageWaitTimeProvider(),
+
+        // Additional live airports
         .ord: ORDLiveWaitTimeProvider(),
         .ams: AMSWaitTimeProvider()
     ]

@@ -21,6 +21,15 @@ struct LandingView: View {
         return displayRows.first
     }
 
+    private var usesAverageWaitPresentation: Bool {
+        switch store.selectedAirport {
+        case .san, .las, .bos, .sea, .mia:
+            return true
+        default:
+            return false
+        }
+    }
+
     var body: some View {
         ZStack {
             FlowBrand.backgroundGradient
@@ -277,7 +286,25 @@ private extension LandingView {
 
     @ViewBuilder
     var statusBadge: some View {
-        if let definition = AirportRegistry.definition(for: store.selectedAirport) {
+        if usesAverageWaitPresentation {
+            HStack(spacing: 6) {
+                OrangePulseDot()
+
+                Text("ESTIMATE")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.orange)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(0.10))
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+            )
+        } else if let definition = AirportRegistry.definition(for: store.selectedAirport) {
 
             if definition.isLive {
                 HStack(spacing: 6) {
@@ -299,19 +326,23 @@ private extension LandingView {
                 )
 
             } else if definition.isEstimated {
-                Text("ESTIMATE")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.orange)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(Color.white.opacity(0.10))
-                            .overlay(
-                                Capsule()
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                            )
-                    )
+                HStack(spacing: 6) {
+                    OrangePulseDot()
+
+                    Text("ESTIMATE")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.orange)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .fill(Color.white.opacity(0.10))
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        )
+                )
 
             } else {
                 Text("COMING SOON")
@@ -371,7 +402,7 @@ private extension LandingView {
             } else {
                 let metric = row.metrics.first
 
-                VStack(spacing: 6) {
+                VStack(spacing: 4) {
                     if let minutes = metric?.minutes, minutes == 0 {
                         HStack(spacing: 10) {
                             LivePulseDot()
@@ -385,6 +416,13 @@ private extension LandingView {
                             .font(.system(size: 72, weight: .heavy))
                             .foregroundColor(.white)
                             .monospacedDigit()
+                    }
+
+                    if usesAverageWaitPresentation {
+                        Text("Average wait time")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.orange.opacity(0.95))
+                            .padding(.bottom, 2)
                     }
 
                     Text(row.title)
@@ -406,6 +444,12 @@ private extension LandingView {
                     .font(.system(size: 72, weight: .heavy))
                     .foregroundColor(.white)
                     .monospacedDigit()
+
+                if usesAverageWaitPresentation {
+                    Text("Average wait time")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.orange.opacity(0.95))
+                }
 
                 Text("No data")
                     .font(.system(size: 14, weight: .semibold))
@@ -439,26 +483,37 @@ private extension LandingView {
     }
 
     var updatedRelativeText: String {
-        guard let date = store.lastUpdated else { return "Updated --" }
+        guard let date = store.lastUpdated else {
+            return usesAverageWaitPresentation
+                ? "Source: TSAWaitTimes · Checked --"
+                : "Updated --"
+        }
 
         let seconds = max(0, Int(now.timeIntervalSince(date)))
 
+        let relative: String
         if seconds < 60 {
-            return "Updated \(seconds)s ago"
+            relative = "\(seconds)s ago"
+        } else {
+            let minutes = seconds / 60
+            if minutes < 60 {
+                relative = "\(minutes)m ago"
+            } else {
+                let hours = minutes / 60
+                if hours < 24 {
+                    relative = "\(hours)h ago"
+                } else {
+                    let days = hours / 24
+                    relative = "\(days)d ago"
+                }
+            }
         }
 
-        let minutes = seconds / 60
-        if minutes < 60 {
-            return "Updated \(minutes)m ago"
+        if usesAverageWaitPresentation {
+            return "Source: TSAWaitTimes · Checked \(relative)"
+        } else {
+            return "Updated \(relative)"
         }
-
-        let hours = minutes / 60
-        if hours < 24 {
-            return "Updated \(hours)h ago"
-        }
-
-        let days = hours / 24
-        return "Updated \(days)d ago"
     }
 }
 
@@ -496,6 +551,31 @@ private enum FlowBrand {
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+    }
+}
+
+// MARK: - Orange Pulse Dot
+
+private struct OrangePulseDot: View {
+    @State private var animate = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.orange.opacity(0.22))
+                .frame(width: 16, height: 16)
+                .scaleEffect(animate ? 1.35 : 0.85)
+                .opacity(animate ? 0.20 : 0.65)
+
+            Circle()
+                .fill(Color.orange)
+                .frame(width: 8, height: 8)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
+                animate = true
+            }
+        }
     }
 }
 

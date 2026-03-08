@@ -37,6 +37,10 @@
 		F822A8CE2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8CD2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift */; };
 		F822A8D02F5CD692009F6107 /* FRALiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8CF2F5CD691009F6107 /* FRALiveWaitTimeProvider.swift */; };
 		F822A8D62F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8D52F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift */; };
+		F822A8D82F5CE9CE009F6107 /* TSAGenericWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8D72F5CE9CE009F6107 /* TSAGenericWaitTimeProvider.swift */; };
+		F822A8DC2F5CF81B009F6107 /* SANAverageWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8DB2F5CF81B009F6107 /* SANAverageWaitTimeProvider.swift */; };
+		F822A8DE2F5CFE93009F6107 /* TSAAverageWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8DD2F5CFE93009F6107 /* TSAAverageWaitTimeProvider.swift */; };
+		F822A8E02F5CFEED009F6107 /* FlowAirport+TSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = F822A8DF2F5CFEED009F6107 /* FlowAirport+TSA.swift */; };
 		F828EF312F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */; };
 		F828EF332F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF322F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift */; };
 		F828EF352F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF342F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift */; };
@@ -113,6 +117,10 @@
 		F822A8CD2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ORDLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F822A8CF2F5CD691009F6107 /* FRALiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FRALiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F822A8D52F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SLCLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F822A8D72F5CE9CE009F6107 /* TSAGenericWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSAGenericWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F822A8DB2F5CF81B009F6107 /* SANAverageWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SANAverageWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F822A8DD2F5CFE93009F6107 /* TSAAverageWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSAAverageWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F822A8DF2F5CFEED009F6107 /* FlowAirport+TSA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FlowAirport+TSA.swift"; sourceTree = "<group>"; };
 		F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVEPOINT_JFK_WORKING.swift; sourceTree = "<group>"; };
 		F828EF322F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F828EF342F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLSecurityWaitTimesParser.swift; sourceTree = "<group>"; };
@@ -174,8 +182,18 @@
 			children = (
 				F80599F72F5B95DB00146BF1 /* EstimatedAirportProfiles.swift */,
 				F80599F92F5B960600146BF1 /* EstimatedWaitTimeProvider.swift */,
+				F822A8D72F5CE9CE009F6107 /* TSAGenericWaitTimeProvider.swift */,
 			);
 			path = "Estimated Provider";
+			sourceTree = "<group>";
+		};
+		F822A8D92F5CF7E4009F6107 /* Average */ = {
+			isa = PBXGroup;
+			children = (
+				F822A8DB2F5CF81B009F6107 /* SANAverageWaitTimeProvider.swift */,
+				F822A8DD2F5CFE93009F6107 /* TSAAverageWaitTimeProvider.swift */,
+			);
+			path = Average;
 			sourceTree = "<group>";
 		};
 		F862F1962F583923001666F2 = {
@@ -202,6 +220,7 @@
 		F862F1A12F583923001666F2 /* Flow3 */ = {
 			isa = PBXGroup;
 			children = (
+				F822A8D92F5CF7E4009F6107 /* Average */,
 				F80599F62F5B95B900146BF1 /* Estimated Provider */,
 				F862F1EB2F583B29001666F2 /* App */,
 				F862F1E52F583ACB001666F2 /* Features */,
@@ -215,6 +234,7 @@
 				F80599C82F5AC8F200146BF1 /* AirportRegistry.swift */,
 				F80599D82F5AE51900146BF1 /* JFKAzureAPIWaitTimeProvider.swift */,
 				F80599DE2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift */,
+				F822A8DF2F5CFEED009F6107 /* FlowAirport+TSA.swift */,
 			);
 			path = Flow3;
 			sourceTree = "<group>";
@@ -477,6 +497,7 @@
 				F80599CD2F5ACDB500146BF1 /* AirportPresentation.swift in Sources */,
 				F822A8CC2F5C9466009F6107 /* ISTLiveWaitTimeProvider.swift in Sources */,
 				F80599F32F5B6D0E00146BF1 /* PHXLiveWaitTimeProvider.swift in Sources */,
+				F822A8DC2F5CF81B009F6107 /* SANAverageWaitTimeProvider.swift in Sources */,
 				F80599CF2F5ACFE200146BF1 /* AMSWaitTimeProvider.swift in Sources */,
 				F862F1E82F583B0C001666F2 /* LandingStore.swift in Sources */,
 				F862F1D12F583995001666F2 /* FlowTypes.swift in Sources */,
@@ -491,6 +512,7 @@
 				F862F1E02F583A94001666F2 /* ATLStubWaitTimeProvider.swift in Sources */,
 				F80599EF2F5B679F00146BF1 /* HOULiveWaitTimeProvider.swift in Sources */,
 				F80599C92F5AC8F200146BF1 /* AirportRegistry.swift in Sources */,
+				F822A8DE2F5CFE93009F6107 /* TSAAverageWaitTimeProvider.swift in Sources */,
 				F828EF3D2F5A03FC00EC53EC /* LandingStore+LHR.swift in Sources */,
 				F828EF312F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift in Sources */,
 				F862F1E22F583AAB001666F2 /* LHRStubWaitTimeProvider.swift in Sources */,
@@ -510,6 +532,7 @@
 				F822A8D02F5CD692009F6107 /* FRALiveWaitTimeProvider.swift in Sources */,
 				F80599DF2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift in Sources */,
 				F80599F52F5B815600146BF1 /* PHLLiveWaitTimeProvider.swift in Sources */,
+				F822A8D82F5CE9CE009F6107 /* TSAGenericWaitTimeProvider.swift in Sources */,
 				F80599D72F5AD4A200146BF1 /* Color+Hex.swift in Sources */,
 				F80599C72F5AC48E00146BF1 /* WelcomeView.swift in Sources */,
 				F862F1F42F5844CE001666F2 /* StubWeatherProvider.swift in Sources */,
@@ -518,6 +541,7 @@
 				F828EF3F2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift in Sources */,
 				F862F1D92F583A17001666F2 /* WaitTimeProviding.swift in Sources */,
 				F80599D52F5AD3A100146BF1 /* GenericAirportBreakdownCard.swift in Sources */,
+				F822A8E02F5CFEED009F6107 /* FlowAirport+TSA.swift in Sources */,
 				F862F1D52F5839C9001666F2 /* WeatherModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
