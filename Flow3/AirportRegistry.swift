@@ -30,18 +30,16 @@ struct AirportRegistry {
 
     static let airports: [AirportDefinition] = [
 
-        // Core Live Airports
         AirportDefinition(airport: .atl, feedType: .live),
         AirportDefinition(airport: .jfk, feedType: .live),
         AirportDefinition(airport: .lhr, feedType: .live),
         AirportDefinition(airport: .ist, feedType: .live),
+        AirportDefinition(airport: .lga, feedType: .live),
 
-        // Canada
         AirportDefinition(airport: .yyz, feedType: .live),
         AirportDefinition(airport: .yvr, feedType: .live),
         AirportDefinition(airport: .yyc, feedType: .live),
 
-        // USA Live
         AirportDefinition(airport: .den, feedType: .live),
         AirportDefinition(airport: .dfw, feedType: .live),
         AirportDefinition(airport: .hou, feedType: .live),
@@ -51,18 +49,15 @@ struct AirportRegistry {
         AirportDefinition(airport: .phl, feedType: .live),
         AirportDefinition(airport: .slc, feedType: .live),
 
-        // TSA Average / Estimated
         AirportDefinition(airport: .san, feedType: .estimated),
         AirportDefinition(airport: .las, feedType: .estimated),
         AirportDefinition(airport: .bos, feedType: .estimated),
         AirportDefinition(airport: .sea, feedType: .estimated),
         AirportDefinition(airport: .mia, feedType: .estimated),
 
-        // Additional Live
         AirportDefinition(airport: .ord, feedType: .live),
         AirportDefinition(airport: .ams, feedType: .live),
 
-        // Estimated Airports
         AirportDefinition(airport: .cdg, feedType: .estimated),
         AirportDefinition(airport: .dxb, feedType: .estimated),
         AirportDefinition(airport: .sin, feedType: .estimated),

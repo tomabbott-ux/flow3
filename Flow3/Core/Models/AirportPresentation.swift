@@ -7,7 +7,7 @@ extension FlowAirport {
         case .atl, .ist, .slc, .iah, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
             return true
 
-        case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
+        case .jfk, .lhr, .lga, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
              .sfo, .lax, .ord, .las, .bos, .sea, .san, .mia,
              .bcn, .fco, .hnd, .icn, .syd:
             return false

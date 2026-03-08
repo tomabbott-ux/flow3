@@ -6,6 +6,7 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
     case jfk = "JFK"
     case lhr = "LHR"
     case ist = "IST"
+    case lga = "LGA"
 
     case phl = "PHL"
     case mco = "MCO"
@@ -52,6 +53,7 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .jfk: return "New York JFK"
         case .lhr: return "London Heathrow"
         case .ist: return "Istanbul Airport"
+        case .lga: return "New York LaGuardia"
 
         case .phl: return "Philadelphia"
         case .mco: return "Orlando"
@@ -98,6 +100,7 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .jfk: return "New York (JFK)"
         case .lhr: return "London Heathrow (LHR)"
         case .ist: return "Istanbul (IST)"
+        case .lga: return "New York LaGuardia (LGA)"
 
         case .phl: return "Philadelphia (PHL)"
         case .mco: return "Orlando (MCO)"
@@ -140,7 +143,7 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
     var timeZone: TimeZone {
         switch self {
 
-        case .atl, .jfk, .phl, .mco, .bos, .mia, .yyz:
+        case .atl, .jfk, .lga, .phl, .mco, .bos, .mia, .yyz:
             return TimeZone(identifier: "America/New_York")!
 
         case .dfw, .hou, .ord, .iah:
