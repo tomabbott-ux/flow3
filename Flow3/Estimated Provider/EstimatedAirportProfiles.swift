@@ -53,6 +53,15 @@ enum EstimatedAirportProfiles {
         )
     ]
 
+    static let allDaySchedules: [EstimatedCheckpointSchedule] = [
+        EstimatedCheckpointSchedule(
+            weekdays: [1, 2, 3, 4, 5, 6, 7],
+            hours: [
+                EstimatedHourRange(startHour: 0, endHour: 24)
+            ]
+        )
+    ]
+
     static let profiles: [FlowAirport: EstimatedAirportProfile] = [
 
         .cdg: EstimatedAirportProfile(
@@ -67,9 +76,9 @@ enum EstimatedAirportProfiles {
         .dxb: EstimatedAirportProfile(
             airport: .dxb,
             checkpoints: [
-                EstimatedCheckpointProfile(name: "Security", areaName: "Terminal 1", terminal: 1, supportsGeneral: true, supportsPrecheck: false, generalBaseMinutes: 16, precheckBaseMinutes: nil, schedules: defaultSchedules),
-                EstimatedCheckpointProfile(name: "Security", areaName: "Terminal 2", terminal: 2, supportsGeneral: true, supportsPrecheck: false, generalBaseMinutes: 12, precheckBaseMinutes: nil, schedules: defaultSchedules),
-                EstimatedCheckpointProfile(name: "Security", areaName: "Terminal 3", terminal: 3, supportsGeneral: true, supportsPrecheck: false, generalBaseMinutes: 20, precheckBaseMinutes: nil, schedules: defaultSchedules)
+                EstimatedCheckpointProfile(name: "Security", areaName: "Terminal 1", terminal: 1, supportsGeneral: true, supportsPrecheck: false, generalBaseMinutes: 16, precheckBaseMinutes: nil, schedules: allDaySchedules),
+                EstimatedCheckpointProfile(name: "Security", areaName: "Terminal 2", terminal: 2, supportsGeneral: true, supportsPrecheck: false, generalBaseMinutes: 12, precheckBaseMinutes: nil, schedules: allDaySchedules),
+                EstimatedCheckpointProfile(name: "Security", areaName: "Terminal 3", terminal: 3, supportsGeneral: true, supportsPrecheck: false, generalBaseMinutes: 20, precheckBaseMinutes: nil, schedules: allDaySchedules)
             ]
         ),
 

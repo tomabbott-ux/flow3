@@ -149,7 +149,7 @@ extension LandingStore {
                     return AirportDisplayRow(
                         id: "\(selectedAirport.rawValue)-T\(terminal)",
                         title: title,
-                        subtitle: isClosed ? "Closed" : (best?.checkpointName ?? "Security"),
+                        subtitle: isClosed ? "Closed" : cleanedTerminalSubtitle(title: title, subtitle: best?.checkpointName ?? "Security"),
                         metrics: isClosed
                             ? [AirportMetric(label: "Closed", minutes: nil)]
                             : [AirportMetric(label: "Wait", minutes: best?.minutes)],
@@ -168,16 +168,35 @@ extension LandingStore {
                     isClosed: isClosed
                 )
 
+                let subtitle = isClosed
+                    ? "Closed"
+                    : cleanedTerminalSubtitle(title: title, subtitle: items.first?.checkpointName ?? "Security")
+
                 return AirportDisplayRow(
                     id: "\(selectedAirport.rawValue)-T\(terminal)",
                     title: title,
-                    subtitle: isClosed ? "Closed" : (items.first?.checkpointName ?? "Security"),
+                    subtitle: subtitle,
                     metrics: metrics,
                     observedAt: observedAt,
                     isClosed: isClosed
                 )
             }
             .sorted { $0.title < $1.title }
+    }
+
+    private func cleanedTerminalSubtitle(title: String, subtitle: String) -> String {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let trimmedSubtitle = subtitle.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        if trimmedSubtitle.isEmpty {
+            return "Security"
+        }
+
+        if trimmedTitle == trimmedSubtitle {
+            return "Security"
+        }
+
+        return subtitle
     }
 
     private func metricsForRow(

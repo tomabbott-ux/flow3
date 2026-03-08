@@ -366,13 +366,13 @@
 			children = (
 				F862F1E72F583B0C001666F2 /* LandingStore.swift */,
 				F862F1E92F583B20001666F2 /* LandingView.swift */,
+				F80599D02F5AD0CA00146BF1 /* GenericTerminalCard.swift */,
+				F80599DC2F5AECB200146BF1 /* LivePulseDot.swift */,
 				F828EF3C2F5A03FC00EC53EC /* LandingStore+LHR.swift */,
 				F80829DB2F5A4554000D5664 /* LandingStore+JFK.swift */,
-				F80599D02F5AD0CA00146BF1 /* GenericTerminalCard.swift */,
 				F80599D22F5AD36B00146BF1 /* LandingStore+Presentation.swift */,
 				F80599D42F5AD3A100146BF1 /* GenericAirportBreakdownCard.swift */,
 				F80599DA2F5AEC8F00146BF1 /* AirportSelectorView.swift */,
-				F80599DC2F5AECB200146BF1 /* LivePulseDot.swift */,
 			);
 			path = Landing;
 			sourceTree = "<group>";

@@ -2,19 +2,13 @@ import Foundation
 
 final class TSAAverageWaitTimeProvider: WaitTimeProviding {
 
-    enum ProviderError: Error {
-        case badHTTPStatus(Int)
-        case invalidResponse
-        case missingAverageWait
-    }
-
     private struct CacheEntry {
         let waitTimes: [WaitTimeEstimate]
         let fetchedAt: Date
     }
 
     private let session: URLSession
-    private let cacheTTL: TimeInterval = 600 // 10 minutes
+    private let cacheTTL: TimeInterval = 600
 
     private static var cache: [FlowAirport: CacheEntry] = [:]
     private static let cacheQueue = DispatchQueue(label: "TSAAverageWaitTimeProvider.cache")
@@ -25,15 +19,21 @@ final class TSAAverageWaitTimeProvider: WaitTimeProviding {
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
 
+        // If airport is not TSA supported just return nothing
         guard airport.isTSAAverageAirport else { return [] }
-        guard let url = airport.tsaAverageURL else { throw ProviderError.invalidResponse }
+
+        // If URL missing, fallback immediately
+        guard let url = airport.tsaAverageURL else {
+            return fallbackWait(for: airport)
+        }
 
         if let cached = Self.cachedEntry(for: airport, ttl: cacheTTL) {
             return cached.waitTimes
         }
 
-        let html = try await fetchHTML(url: url)
-        let minutes = try parseAverageMinutes(from: html)
+        let html = (try? await fetchHTML(url: url)) ?? ""
+
+        let minutes = (try? parseAverageMinutes(from: html)) ?? 12
 
         let now = Date()
 
@@ -55,6 +55,24 @@ final class TSAAverageWaitTimeProvider: WaitTimeProviding {
         return results
     }
 
+    private func fallbackWait(for airport: FlowAirport) -> [WaitTimeEstimate] {
+
+        let now = Date()
+
+        return [
+            WaitTimeEstimate(
+                airport: airport,
+                terminal: 1,
+                queueType: .general,
+                minutes: 12,
+                observedAt: now,
+                checkpointName: "Terminal 1",
+                areaName: "Security",
+                sourceType: .estimated
+            )
+        ]
+    }
+
     private func fetchHTML(url: URL) async throws -> String {
 
         var request = URLRequest(url: url)
@@ -70,33 +88,17 @@ final class TSAAverageWaitTimeProvider: WaitTimeProviding {
             forHTTPHeaderField: "Accept"
         )
 
-        let (data, response) = try await session.data(for: request)
+        let (data, _) = try await session.data(for: request)
 
-        guard let http = response as? HTTPURLResponse else {
-            throw ProviderError.invalidResponse
-        }
-
-        guard (200...299).contains(http.statusCode) else {
-            throw ProviderError.badHTTPStatus(http.statusCode)
-        }
-
-        guard let html = String(data: data, encoding: .utf8) else {
-            throw ProviderError.invalidResponse
-        }
-
-        return html
+        return String(data: data, encoding: .utf8) ?? ""
     }
 
     private func parseAverageMinutes(from html: String) throws -> Int {
 
-        // Pattern 1:
-        // "3 minutes and 12 seconds"
         let minutesSecondsPattern = #"(\d+)\s+minutes?\s+and\s+(\d+)\s+seconds?"#
 
-        if let regex = try? NSRegularExpression(
-            pattern: minutesSecondsPattern,
-            options: [.caseInsensitive]
-        ) {
+        if let regex = try? NSRegularExpression(pattern: minutesSecondsPattern, options: [.caseInsensitive]) {
+
             let nsrange = NSRange(html.startIndex..<html.endIndex, in: html)
 
             if let match = regex.firstMatch(in: html, options: [], range: nsrange),
@@ -109,14 +111,10 @@ final class TSAAverageWaitTimeProvider: WaitTimeProviding {
             }
         }
 
-        // Pattern 2:
-        // "17 minutes"
         let minutesOnlyPattern = #"(\d+)\s+minutes?"#
 
-        if let regex = try? NSRegularExpression(
-            pattern: minutesOnlyPattern,
-            options: [.caseInsensitive]
-        ) {
+        if let regex = try? NSRegularExpression(pattern: minutesOnlyPattern, options: [.caseInsensitive]) {
+
             let nsrange = NSRange(html.startIndex..<html.endIndex, in: html)
 
             if let match = regex.firstMatch(in: html, options: [], range: nsrange),
@@ -127,7 +125,7 @@ final class TSAAverageWaitTimeProvider: WaitTimeProviding {
             }
         }
 
-        throw ProviderError.missingAverageWait
+        throw NSError(domain: "ParseError", code: 0)
     }
 
     private static func cachedEntry(for airport: FlowAirport, ttl: TimeInterval) -> CacheEntry? {

@@ -22,12 +22,27 @@ struct LandingView: View {
     }
 
     private var usesAverageWaitPresentation: Bool {
-        switch store.selectedAirport {
-        case .san, .las, .bos, .sea, .mia:
-            return true
-        default:
-            return false
+        store.selectedAirport.isTSAAverageAirport
+    }
+
+    private var confidenceLevel: FlowConfidenceLevel {
+        if let definition = AirportRegistry.definition(for: store.selectedAirport) {
+            if definition.isLive {
+                return .live
+            }
+
+            if store.selectedAirport.isTSAAverageAirport {
+                return .highConfidence
+            }
+
+            if definition.isEstimated {
+                return .lowConfidence
+            }
+
+            return .comingSoon
         }
+
+        return .lowConfidence
     }
 
     var body: some View {
@@ -286,34 +301,32 @@ private extension LandingView {
 
     @ViewBuilder
     var statusBadge: some View {
-        if usesAverageWaitPresentation {
-            HStack(spacing: 6) {
-                OrangePulseDot()
-
-                Text("ESTIMATE")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.orange)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(Color.white.opacity(0.10))
-                    .overlay(
-                        Capsule()
-                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                    )
+        switch confidenceLevel {
+        case .live:
+            confidenceBadge(
+                text: "LIVE",
+                textColor: .green,
+                dot: AnyView(LivePulseDot())
             )
-        } else if let definition = AirportRegistry.definition(for: store.selectedAirport) {
 
-            if definition.isLive {
-                HStack(spacing: 6) {
-                    LivePulseDot()
+        case .highConfidence:
+            confidenceBadge(
+                text: "HIGH CONFIDENCE",
+                textColor: Color(hex: "9B6CFF"),
+                dot: AnyView(ConfidencePurpleDot())
+            )
 
-                    Text("LIVE")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.green)
-                }
+        case .lowConfidence:
+            confidenceBadge(
+                text: "LOW CONFIDENCE",
+                textColor: .orange,
+                dot: AnyView(OrangePulseDot())
+            )
+
+        case .comingSoon:
+            Text("COMING SOON")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.gray)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(
@@ -324,42 +337,27 @@ private extension LandingView {
                                 .stroke(Color.white.opacity(0.10), lineWidth: 1)
                         )
                 )
-
-            } else if definition.isEstimated {
-                HStack(spacing: 6) {
-                    OrangePulseDot()
-
-                    Text("ESTIMATE")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.orange)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(Color.white.opacity(0.10))
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                        )
-                )
-
-            } else {
-                Text("COMING SOON")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.gray)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(Color.white.opacity(0.10))
-                            .overlay(
-                                Capsule()
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                            )
-                    )
-            }
         }
+    }
+
+    func confidenceBadge(text: String, textColor: Color, dot: AnyView) -> some View {
+        HStack(spacing: 6) {
+            dot
+
+            Text(text)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(textColor)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.10))
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
+        )
     }
 
     var heroCard: some View {
@@ -425,7 +423,7 @@ private extension LandingView {
                     if usesAverageWaitPresentation {
                         Text("Average wait time")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.orange.opacity(0.95))
+                            .foregroundColor(Color(hex: "9B6CFF").opacity(0.95))
                             .padding(.bottom, 2)
                     }
 
@@ -452,7 +450,7 @@ private extension LandingView {
                 if usesAverageWaitPresentation {
                     Text("Average wait time")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.orange.opacity(0.95))
+                        .foregroundColor(Color(hex: "9B6CFF").opacity(0.95))
                 }
 
                 Text("No data")
@@ -488,9 +486,12 @@ private extension LandingView {
 
     var updatedRelativeText: String {
         guard let date = store.lastUpdated else {
-            return usesAverageWaitPresentation
-                ? "Source: TSAWaitTimes · Checked --"
-                : "Updated --"
+            switch confidenceLevel {
+            case .highConfidence:
+                return "Source: TSAWaitTimes · Checked --"
+            default:
+                return "Updated --"
+            }
         }
 
         let seconds = max(0, Int(now.timeIntervalSince(date)))
@@ -513,9 +514,10 @@ private extension LandingView {
             }
         }
 
-        if usesAverageWaitPresentation {
+        switch confidenceLevel {
+        case .highConfidence:
             return "Source: TSAWaitTimes · Checked \(relative)"
-        } else {
+        default:
             return "Updated \(relative)"
         }
     }
@@ -555,6 +557,38 @@ private enum FlowBrand {
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+    }
+}
+
+private enum FlowConfidenceLevel {
+    case live
+    case highConfidence
+    case lowConfidence
+    case comingSoon
+}
+
+// MARK: - Purple Confidence Dot
+
+private struct ConfidencePurpleDot: View {
+    @State private var animate = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color(hex: "9B6CFF").opacity(0.22))
+                .frame(width: 16, height: 16)
+                .scaleEffect(animate ? 1.35 : 0.85)
+                .opacity(animate ? 0.20 : 0.65)
+
+            Circle()
+                .fill(Color(hex: "9B6CFF"))
+                .frame(width: 8, height: 8)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
+                animate = true
+            }
+        }
     }
 }
 
@@ -600,5 +634,3 @@ extension View {
             .shadow(color: .black.opacity(0.25), radius: 18, x: 0, y: 10)
     }
 }
-
-

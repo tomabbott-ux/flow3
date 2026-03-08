@@ -10,7 +10,8 @@ extension FlowAirport {
              .las,
              .bos,
              .sea,
-             .mia:
+             .mia,
+             .sfo:
             return true
 
         default:
@@ -36,6 +37,9 @@ extension FlowAirport {
 
         case .mia:
             return URL(string: "https://www.tsawaittimes.com/security-wait-times/MIA/Miami-International")
+
+        case .sfo:
+            return URL(string: "https://www.tsawaittimes.com/security-wait-times/SFO/San-Francisco-International")
 
         default:
             return nil
