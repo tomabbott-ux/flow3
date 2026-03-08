@@ -44,6 +44,7 @@ extension AirportWaitTimeRouter {
         .den: DENLiveWaitTimeProvider(),
         .dfw: DFWLiveWaitTimeProvider(),
         .hou: HOULiveWaitTimeProvider(),
+        .iah: IAHLiveWaitTimeProvider(),
         .mco: MCOLiveWaitTimeProvider(),
         .phx: PHXLiveWaitTimeProvider(),
         .phl: PHLLiveWaitTimeProvider(),

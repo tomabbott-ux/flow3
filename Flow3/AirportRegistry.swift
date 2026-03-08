@@ -45,6 +45,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .den, feedType: .live),
         AirportDefinition(airport: .dfw, feedType: .live),
         AirportDefinition(airport: .hou, feedType: .live),
+        AirportDefinition(airport: .iah, feedType: .live),
         AirportDefinition(airport: .mco, feedType: .live),
         AirportDefinition(airport: .phx, feedType: .live),
         AirportDefinition(airport: .phl, feedType: .live),

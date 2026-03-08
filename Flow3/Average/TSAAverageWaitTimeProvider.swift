@@ -8,7 +8,16 @@ final class TSAAverageWaitTimeProvider: WaitTimeProviding {
         case missingAverageWait
     }
 
+    private struct CacheEntry {
+        let waitTimes: [WaitTimeEstimate]
+        let fetchedAt: Date
+    }
+
     private let session: URLSession
+    private let cacheTTL: TimeInterval = 600 // 10 minutes
+
+    private static var cache: [FlowAirport: CacheEntry] = [:]
+    private static let cacheQueue = DispatchQueue(label: "TSAAverageWaitTimeProvider.cache")
 
     init(session: URLSession = .shared) {
         self.session = session
@@ -19,12 +28,16 @@ final class TSAAverageWaitTimeProvider: WaitTimeProviding {
         guard airport.isTSAAverageAirport else { return [] }
         guard let url = airport.tsaAverageURL else { throw ProviderError.invalidResponse }
 
+        if let cached = Self.cachedEntry(for: airport, ttl: cacheTTL) {
+            return cached.waitTimes
+        }
+
         let html = try await fetchHTML(url: url)
         let minutes = try parseAverageMinutes(from: html)
 
         let now = Date()
 
-        return [
+        let results = [
             WaitTimeEstimate(
                 airport: airport,
                 terminal: 1,
@@ -36,6 +49,10 @@ final class TSAAverageWaitTimeProvider: WaitTimeProviding {
                 sourceType: .estimated
             )
         ]
+
+        Self.storeCache(results, for: airport, fetchedAt: now)
+
+        return results
     }
 
     private func fetchHTML(url: URL) async throws -> String {
@@ -111,5 +128,19 @@ final class TSAAverageWaitTimeProvider: WaitTimeProviding {
         }
 
         throw ProviderError.missingAverageWait
+    }
+
+    private static func cachedEntry(for airport: FlowAirport, ttl: TimeInterval) -> CacheEntry? {
+        cacheQueue.sync {
+            guard let entry = cache[airport] else { return nil }
+            let age = Date().timeIntervalSince(entry.fetchedAt)
+            return age <= ttl ? entry : nil
+        }
+    }
+
+    private static func storeCache(_ waitTimes: [WaitTimeEstimate], for airport: FlowAirport, fetchedAt: Date) {
+        cacheQueue.sync {
+            cache[airport] = CacheEntry(waitTimes: waitTimes, fetchedAt: fetchedAt)
+        }
     }
 }

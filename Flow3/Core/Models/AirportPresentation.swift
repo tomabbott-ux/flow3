@@ -4,7 +4,7 @@ extension FlowAirport {
 
     var prefersCheckpointPresentation: Bool {
         switch self {
-        case .atl, .ist, .slc, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
+        case .atl, .ist, .slc, .iah, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
             return true
 
         case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,

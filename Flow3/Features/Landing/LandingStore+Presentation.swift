@@ -19,22 +19,24 @@ struct AirportDisplayRow: Identifiable, Hashable {
 extension LandingStore {
 
     func displayRowsForSelectedAirport() -> [AirportDisplayRow] {
+
         let rows = allWaitTimes()
             .filter { $0.airport == selectedAirport }
 
-        switch selectedAirport {
+        // Airports that display checkpoint style rows
+        let checkpointAirports: Set<FlowAirport> = [
+            .atl, .ist, .slc, .iah,
+            .yvr, .yyc,
+            .den, .dfw, .hou, .mco, .phx, .phl,
+            .san, .las, .bos, .sea, .mia
+        ]
 
-        case .atl, .ist, .slc, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl,
-             .san, .las, .bos, .sea, .mia:
+        if checkpointAirports.contains(selectedAirport) {
             return namedCheckpointRows(from: rows)
-
-        case .jfk, .lhr, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
-             .sfo, .lax, .ord,
-             .bcn, .fco, .hnd, .icn, .syd:
+        } else {
             return terminalDisplayRows(from: rows)
         }
     }
-
     private func namedCheckpointRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
         let grouped = Dictionary(grouping: rows) { row in
             let checkpoint = row.checkpointName ?? "Security"
