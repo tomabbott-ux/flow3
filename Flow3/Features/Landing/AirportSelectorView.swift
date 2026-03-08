@@ -10,27 +10,34 @@ struct AirportSelectorView: View {
 
     private let airports = AirportRegistry.airports
 
-    private var filteredAndSortedAirports: [AirportDefinition] {
+    private var filteredAirports: [AirportDefinition] {
 
-        let filtered = airports.filter { definition in
-            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let query = searchText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
 
-            guard !query.isEmpty else { return true }
+        return airports.filter { definition in
+
+            if query.isEmpty { return true }
 
             return definition.airport.displayName.lowercased().contains(query)
                 || definition.airport.rawValue.lowercased().contains(query)
                 || definition.airport.shortName.lowercased().contains(query)
         }
+    }
 
-        let favorites = filtered
+    private var favoriteAirportsList: [AirportDefinition] {
+
+        filteredAirports
             .filter { isFavorite($0.airport) }
             .sorted { $0.airport.displayName < $1.airport.displayName }
+    }
 
-        let nonFavorites = filtered
+    private var nonFavoriteAirportsList: [AirportDefinition] {
+
+        filteredAirports
             .filter { !isFavorite($0.airport) }
             .sorted { $0.airport.displayName < $1.airport.displayName }
-
-        return favorites + nonFavorites
     }
 
     var body: some View {
@@ -51,13 +58,29 @@ struct AirportSelectorView: View {
 
                     searchBar
 
-                    VStack(spacing: 12) {
+                    if filteredAirports.isEmpty {
+                        emptyState
+                    } else {
 
-                        if filteredAndSortedAirports.isEmpty {
-                            emptyState
-                        } else {
-                            ForEach(filteredAndSortedAirports) { definition in
-                                airportRow(definition)
+                        if !favoriteAirportsList.isEmpty {
+
+                            sectionHeader("Favourites")
+
+                            VStack(spacing: 12) {
+                                ForEach(favoriteAirportsList) { definition in
+                                    airportRow(definition)
+                                }
+                            }
+                        }
+
+                        if !nonFavoriteAirportsList.isEmpty {
+
+                            sectionHeader("All Airports")
+
+                            VStack(spacing: 12) {
+                                ForEach(nonFavoriteAirportsList) { definition in
+                                    airportRow(definition)
+                                }
                             }
                         }
                     }
@@ -103,6 +126,14 @@ struct AirportSelectorView: View {
                         .stroke(Color.white.opacity(0.10))
                 )
         )
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+
+        Text(title)
+            .font(.system(size: 14, weight: .bold))
+            .foregroundColor(.white.opacity(0.7))
+            .padding(.top, 6)
     }
 
     @ViewBuilder
@@ -270,6 +301,7 @@ Check back soon — your airport may be next.
     }
 
     private var favoriteAirports: Set<String> {
+
         Set(
             favoriteAirportCodesStorage
                 .split(separator: ",")
