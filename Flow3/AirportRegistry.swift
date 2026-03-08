@@ -35,6 +35,12 @@ struct AirportRegistry {
         AirportDefinition(airport: .lhr, feedType: .live),
         AirportDefinition(airport: .ist, feedType: .live),
         AirportDefinition(airport: .lga, feedType: .live),
+        AirportDefinition(airport: .ham, feedType: .live),
+        AirportDefinition(airport: .cph, feedType: .live),
+        AirportDefinition(airport: .dus, feedType: .live),
+        AirportDefinition(airport: .edi, feedType: .live),
+        AirportDefinition(airport: .str, feedType: .live),
+        AirportDefinition(airport: .bru, feedType: .live),
 
         AirportDefinition(airport: .yyz, feedType: .live),
         AirportDefinition(airport: .yvr, feedType: .live),
@@ -68,7 +74,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .lax, feedType: .estimated),
 
         AirportDefinition(airport: .bcn, feedType: .estimated),
-        AirportDefinition(airport: .fco, feedType: .estimated),
+        AirportDefinition(airport: .fco, feedType: .live),
         AirportDefinition(airport: .hnd, feedType: .estimated),
         AirportDefinition(airport: .icn, feedType: .estimated),
         AirportDefinition(airport: .syd, feedType: .estimated)

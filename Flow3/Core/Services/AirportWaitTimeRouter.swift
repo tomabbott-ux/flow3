@@ -34,6 +34,13 @@ extension AirportWaitTimeRouter {
         .lhr: LHRStubWaitTimeProvider(),
         .ist: ISTLiveWaitTimeProvider(),
         .lga: LGALiveWaitTimeProvider(),
+        .ham: HAMLiveWaitTimeProvider(),
+        .cph: CPHLiveWaitTimeProvider(),
+        .dus: DUSLiveWaitTimeProvider(),
+        .edi: EDILiveWaitTimeProvider(),
+        .str: STRLiveWaitTimeProvider(),
+        .bru: BRULiveWaitTimeProvider(),
+        .fco: FCOLiveWaitTimeProvider(),
 
         .yyz: YYZLiveWaitTimeProvider(),
         .yvr: YVRLiveWaitTimeProvider(),

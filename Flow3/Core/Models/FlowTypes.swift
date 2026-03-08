@@ -7,6 +7,12 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
     case lhr = "LHR"
     case ist = "IST"
     case lga = "LGA"
+    case ham = "HAM"
+    case cph = "CPH"
+    case dus = "DUS"
+    case edi = "EDI"
+    case str = "STR"
+    case bru = "BRU"
 
     case phl = "PHL"
     case mco = "MCO"
@@ -54,6 +60,12 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .lhr: return "London Heathrow"
         case .ist: return "Istanbul Airport"
         case .lga: return "New York LaGuardia"
+        case .ham: return "Hamburg"
+        case .cph: return "Copenhagen"
+        case .dus: return "Düsseldorf"
+        case .edi: return "Edinburgh"
+        case .str: return "Stuttgart"
+        case .bru: return "Brussels"
 
         case .phl: return "Philadelphia"
         case .mco: return "Orlando"
@@ -101,6 +113,12 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .lhr: return "London Heathrow (LHR)"
         case .ist: return "Istanbul (IST)"
         case .lga: return "New York LaGuardia (LGA)"
+        case .ham: return "Hamburg (HAM)"
+        case .cph: return "Copenhagen (CPH)"
+        case .dus: return "Düsseldorf (DUS)"
+        case .edi: return "Edinburgh (EDI)"
+        case .str: return "Stuttgart (STR)"
+        case .bru: return "Brussels (BRU)"
 
         case .phl: return "Philadelphia (PHL)"
         case .mco: return "Orlando (MCO)"
@@ -146,6 +164,9 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .atl, .jfk, .lga, .phl, .mco, .bos, .mia, .yyz:
             return TimeZone(identifier: "America/New_York")!
 
+        case .edi, .lhr:
+            return TimeZone(identifier: "Europe/London")!
+
         case .dfw, .hou, .ord, .iah:
             return TimeZone(identifier: "America/Chicago")!
 
@@ -158,11 +179,14 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .lax, .sfo, .las, .sea, .san, .yvr:
             return TimeZone(identifier: "America/Los_Angeles")!
 
-        case .lhr:
-            return TimeZone(identifier: "Europe/London")!
-
         case .ist:
             return TimeZone(identifier: "Europe/Istanbul")!
+
+        case .ham, .dus, .fra, .str:
+            return TimeZone(identifier: "Europe/Berlin")!
+
+        case .bru:
+            return TimeZone(identifier: "Europe/Brussels")!
 
         case .ams:
             return TimeZone(identifier: "Europe/Amsterdam")!
@@ -170,14 +194,14 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .cdg:
             return TimeZone(identifier: "Europe/Paris")!
 
-        case .fra:
-            return TimeZone(identifier: "Europe/Berlin")!
-
         case .mad, .bcn:
             return TimeZone(identifier: "Europe/Madrid")!
 
         case .fco:
             return TimeZone(identifier: "Europe/Rome")!
+
+        case .cph:
+            return TimeZone(identifier: "Europe/Copenhagen")!
 
         case .dxb:
             return TimeZone(identifier: "Asia/Dubai")!

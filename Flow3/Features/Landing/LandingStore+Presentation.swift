@@ -14,6 +14,7 @@ struct AirportDisplayRow: Identifiable, Hashable {
     let subtitle: String
     let metrics: [AirportMetric]
     let observedAt: Date?
+    let isClosed: Bool
 }
 
 extension LandingStore {
@@ -25,16 +26,15 @@ extension LandingStore {
 
         switch selectedAirport {
 
-        case .atl, .ist, .slc, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl,
-             .san, .las, .bos, .sea, .mia, .iah:
+        case .atl, .ist, .slc, .iah, .ham, .dus, .edi, .str, .bru, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl,
+             .san, .las, .bos, .sea, .mia:
             return namedCheckpointRows(from: rows)
 
-        case .jfk, .lhr, .lga, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
-             .sfo, .lax, .ord,
-             .bcn, .fco, .hnd, .icn, .syd:
+        case .jfk, .lhr, .lga, .cph, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
+             .sfo, .lax, .ord, .fco,
+             .bcn, .hnd, .icn, .syd:
             return terminalDisplayRows(from: rows)
         }
-        
     }
 
     private func namedCheckpointRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
@@ -54,14 +54,16 @@ extension LandingStore {
                 let subtitle = parts.count > 1 ? parts[1] : "Terminal"
 
                 let observedAt = items.map(\.observedAt).max()
+                let isClosed = items.allSatisfy(\.isClosed)
 
-                let general = items.first(where: { $0.queueType == .general })?.minutes
-                let precheck = items.first(where: { $0.queueType == .precheck })?.minutes
+                let general = items.first(where: { $0.queueType == .general && !$0.isClosed })?.minutes
+                let precheck = items.first(where: { $0.queueType == .precheck && !$0.isClosed })?.minutes
 
                 let metrics = metricsForRow(
                     general: general,
                     precheck: precheck,
-                    items: items
+                    items: items,
+                    isClosed: isClosed
                 )
 
                 return AirportDisplayRow(
@@ -69,7 +71,8 @@ extension LandingStore {
                     title: title,
                     subtitle: subtitle,
                     metrics: metrics,
-                    observedAt: observedAt
+                    observedAt: observedAt,
+                    isClosed: isClosed
                 )
             }
 
@@ -84,7 +87,8 @@ extension LandingStore {
                     metrics: [
                         AirportMetric(label: "PreCheck", minutes: nil)
                     ],
-                    observedAt: observedAt
+                    observedAt: observedAt,
+                    isClosed: false
                 )
             )
         }
@@ -135,37 +139,42 @@ extension LandingStore {
                 }
 
                 let observedAt = items.map(\.observedAt).max()
+                let isClosed = items.allSatisfy(\.isClosed)
 
                 if selectedAirport == .yyz {
-
-                    let best = items.min(by: { $0.minutes < $1.minutes })
+                    let best = items
+                        .filter { !$0.isClosed }
+                        .min(by: { $0.minutes < $1.minutes })
 
                     return AirportDisplayRow(
                         id: "\(selectedAirport.rawValue)-T\(terminal)",
                         title: title,
-                        subtitle: best?.checkpointName ?? "Security",
-                        metrics: [
-                            AirportMetric(label: "Wait", minutes: best?.minutes)
-                        ],
-                        observedAt: observedAt
+                        subtitle: isClosed ? "Closed" : (best?.checkpointName ?? "Security"),
+                        metrics: isClosed
+                            ? [AirportMetric(label: "Closed", minutes: nil)]
+                            : [AirportMetric(label: "Wait", minutes: best?.minutes)],
+                        observedAt: observedAt,
+                        isClosed: isClosed
                     )
                 }
 
-                let general = items.first(where: { $0.queueType == .general })?.minutes
-                let precheck = items.first(where: { $0.queueType == .precheck })?.minutes
+                let general = items.first(where: { $0.queueType == .general && !$0.isClosed })?.minutes
+                let precheck = items.first(where: { $0.queueType == .precheck && !$0.isClosed })?.minutes
 
                 let metrics = metricsForRow(
                     general: general,
                     precheck: precheck,
-                    items: items
+                    items: items,
+                    isClosed: isClosed
                 )
 
                 return AirportDisplayRow(
                     id: "\(selectedAirport.rawValue)-T\(terminal)",
                     title: title,
-                    subtitle: items.first?.checkpointName ?? "Security",
+                    subtitle: isClosed ? "Closed" : (items.first?.checkpointName ?? "Security"),
                     metrics: metrics,
-                    observedAt: observedAt
+                    observedAt: observedAt,
+                    isClosed: isClosed
                 )
             }
             .sorted { $0.title < $1.title }
@@ -174,11 +183,17 @@ extension LandingStore {
     private func metricsForRow(
         general: Int?,
         precheck: Int?,
-        items: [WaitTimeEstimate]
+        items: [WaitTimeEstimate],
+        isClosed: Bool
     ) -> [AirportMetric] {
 
-        if general != nil && precheck != nil {
+        if isClosed {
+            return [
+                AirportMetric(label: "Closed", minutes: nil)
+            ]
+        }
 
+        if general != nil && precheck != nil {
             return [
                 AirportMetric(label: "General", minutes: general),
                 AirportMetric(label: "PreCheck", minutes: precheck)
@@ -186,20 +201,21 @@ extension LandingStore {
         }
 
         if precheck != nil {
-
             return [
                 AirportMetric(label: "PreCheck", minutes: precheck)
             ]
         }
 
         if general != nil {
-
             return [
                 AirportMetric(label: "Wait", minutes: general)
             ]
         }
 
-        let bestMinutes = items.map(\.minutes).min()
+        let bestMinutes = items
+            .filter { !$0.isClosed }
+            .map(\.minutes)
+            .min()
 
         return [
             AirportMetric(label: "Wait", minutes: bestMinutes)

@@ -403,7 +403,11 @@ private extension LandingView {
                 let metric = row.metrics.first
 
                 VStack(spacing: 4) {
-                    if let minutes = metric?.minutes, minutes == 0 {
+                    if row.isClosed {
+                        Text("Closed")
+                            .font(.system(size: 40, weight: .heavy))
+                            .foregroundColor(.red)
+                    } else if let minutes = metric?.minutes, minutes == 0 {
                         HStack(spacing: 10) {
                             LivePulseDot()
 
@@ -431,7 +435,7 @@ private extension LandingView {
                         .lineLimit(1)
                         .minimumScaleFactor(0.9)
 
-                    Text(row.subtitle)
+                    Text(row.isClosed ? "Closed" : row.subtitle)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.white.opacity(0.70))
                         .lineLimit(1)
@@ -596,3 +600,5 @@ extension View {
             .shadow(color: .black.opacity(0.25), radius: 18, x: 0, y: 10)
     }
 }
+
+

@@ -43,7 +43,7 @@ struct GenericAirportBreakdownCard: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
 
-                    Text(row.subtitle)
+                    Text(subtitleText(for: row))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.white.opacity(0.65))
                 }
@@ -51,8 +51,12 @@ struct GenericAirportBreakdownCard: View {
                 Spacer()
 
                 HStack(spacing: 10) {
-                    ForEach(row.metrics) { metric in
-                        metricPill(metric)
+                    if row.isClosed {
+                        closedPill()
+                    } else {
+                        ForEach(row.metrics) { metric in
+                            metricPill(metric)
+                        }
                     }
                 }
 
@@ -74,6 +78,49 @@ struct GenericAirportBreakdownCard: View {
         .buttonStyle(.plain)
     }
 
+    private func subtitleText(for row: AirportDisplayRow) -> String {
+        if row.isClosed,
+           let terminalSubtitle = terminalSubtitleFromRow(row) {
+            return terminalSubtitle
+        }
+
+        return row.subtitle
+    }
+
+    private func terminalSubtitleFromRow(_ row: AirportDisplayRow) -> String? {
+        if row.subtitle.lowercased().contains("terminal") {
+            return row.subtitle
+        }
+
+        let id = row.id.uppercased()
+
+        if let range = id.range(of: "-T") {
+            let suffix = id[range.upperBound...]
+            let digits = suffix.prefix { $0.isNumber }
+
+            if let terminal = Int(digits) {
+                return "Terminal \(terminal)"
+            }
+        }
+
+        return nil
+    }
+
+    private func closedPill() -> some View {
+        Text("Closed")
+            .font(.system(size: 14, weight: .bold))
+            .foregroundColor(.red)
+            .frame(width: 92, height: 50)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.black.opacity(0.22))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+            )
+    }
+
     private func metricPill(_ metric: AirportMetric) -> some View {
         VStack(spacing: 4) {
             if metric.minutes == 0 {
@@ -93,9 +140,9 @@ struct GenericAirportBreakdownCard: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             } else if metric.minutes == nil {
-                Text("Open")
+                Text("--")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.green)
+                    .foregroundColor(.white)
                     .minimumScaleFactor(0.8)
                     .lineLimit(1)
 
@@ -124,7 +171,7 @@ struct GenericAirportBreakdownCard: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
                         .stroke(
-                            metric.minutes == 0 || metric.minutes == nil
+                            metric.minutes == 0
                             ? Color.green.opacity(0.28)
                             : Color.white.opacity(0.10),
                             lineWidth: 1
@@ -134,7 +181,7 @@ struct GenericAirportBreakdownCard: View {
     }
 
     private func metricPrimaryText(_ metric: AirportMetric) -> String {
-        guard let minutes = metric.minutes else { return "Open" }
+        guard let minutes = metric.minutes else { return "--" }
         return "\(minutes)m"
     }
 

@@ -42,6 +42,7 @@ struct WaitTimeEstimate: Identifiable, Codable, Hashable {
     let checkpointName: String?
     let areaName: String?
     let sourceType: WaitTimeSourceType
+    let isClosed: Bool
 
     init(
         id: UUID = UUID(),
@@ -52,7 +53,8 @@ struct WaitTimeEstimate: Identifiable, Codable, Hashable {
         observedAt: Date,
         checkpointName: String? = nil,
         areaName: String? = nil,
-        sourceType: WaitTimeSourceType = .live
+        sourceType: WaitTimeSourceType = .live,
+        isClosed: Bool = false
     ) {
         self.id = id
         self.airport = airport
@@ -63,5 +65,6 @@ struct WaitTimeEstimate: Identifiable, Codable, Hashable {
         self.checkpointName = checkpointName
         self.areaName = areaName
         self.sourceType = sourceType
+        self.isClosed = isClosed
     }
 }
