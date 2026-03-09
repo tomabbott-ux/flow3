@@ -261,6 +261,29 @@ Check back soon — your airport may be next.
                     )
             )
 
+        } else if definition.isHighConfidence {
+
+            HStack(spacing: 6) {
+
+                SelectorHighConfidencePulseDot()
+
+                Text("HIGH CONFIDENCE")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Color(hex: "CBB7FF"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(0.10))
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.10))
+                    )
+            )
+
         } else if definition.isEstimated {
 
             HStack(spacing: 6) {
@@ -365,6 +388,33 @@ private struct SelectorOrangePulseDot: View {
 
             Circle()
                 .fill(Color.orange)
+                .frame(width: 8, height: 8)
+        }
+        .onAppear {
+
+            withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
+                animate = true
+            }
+        }
+    }
+}
+
+private struct SelectorHighConfidencePulseDot: View {
+
+    @State private var animate = false
+
+    var body: some View {
+
+        ZStack {
+
+            Circle()
+                .fill(Color.white.opacity(0.20))
+                .frame(width: 16, height: 16)
+                .scaleEffect(animate ? 1.35 : 0.85)
+                .opacity(animate ? 0.18 : 0.55)
+
+            Circle()
+                .fill(Color(hex: "CBB7FF"))
                 .frame(width: 8, height: 8)
         }
         .onAppear {

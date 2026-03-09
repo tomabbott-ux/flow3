@@ -2,6 +2,7 @@ import Foundation
 
 enum AirportFeedType: String, Codable, Hashable {
     case live
+    case highConfidence
     case estimated
     case comingSoon
 }
@@ -17,6 +18,10 @@ struct AirportDefinition: Identifiable, Hashable {
         feedType == .live
     }
 
+    var isHighConfidence: Bool {
+        feedType == .highConfidence
+    }
+
     var isEstimated: Bool {
         feedType == .estimated
     }
@@ -30,6 +35,7 @@ struct AirportRegistry {
 
     static let airports: [AirportDefinition] = [
 
+        // LIVE — official APIs / direct live feeds
         AirportDefinition(airport: .atl, feedType: .live),
         AirportDefinition(airport: .jfk, feedType: .live),
         AirportDefinition(airport: .lhr, feedType: .live),
@@ -55,26 +61,26 @@ struct AirportRegistry {
         AirportDefinition(airport: .phl, feedType: .live),
         AirportDefinition(airport: .slc, feedType: .live),
 
-        AirportDefinition(airport: .san, feedType: .estimated),
-        AirportDefinition(airport: .las, feedType: .estimated),
-        AirportDefinition(airport: .bos, feedType: .estimated),
-        AirportDefinition(airport: .sea, feedType: .estimated),
-        AirportDefinition(airport: .mia, feedType: .estimated),
-
         AirportDefinition(airport: .ord, feedType: .live),
         AirportDefinition(airport: .ams, feedType: .live),
+        AirportDefinition(airport: .fco, feedType: .live),
 
+        // HIGH CONFIDENCE — structured TSA / airport website sources
+        AirportDefinition(airport: .san, feedType: .highConfidence),
+        AirportDefinition(airport: .las, feedType: .highConfidence),
+        AirportDefinition(airport: .bos, feedType: .highConfidence),
+        AirportDefinition(airport: .sea, feedType: .highConfidence),
+        AirportDefinition(airport: .mia, feedType: .highConfidence),
+        AirportDefinition(airport: .sfo, feedType: .highConfidence),
+
+        // ESTIMATED — true fallback estimates
         AirportDefinition(airport: .cdg, feedType: .estimated),
         AirportDefinition(airport: .dxb, feedType: .estimated),
         AirportDefinition(airport: .sin, feedType: .estimated),
         AirportDefinition(airport: .fra, feedType: .estimated),
         AirportDefinition(airport: .mad, feedType: .estimated),
-
-        AirportDefinition(airport: .sfo, feedType: .estimated),
         AirportDefinition(airport: .lax, feedType: .estimated),
-
         AirportDefinition(airport: .bcn, feedType: .estimated),
-        AirportDefinition(airport: .fco, feedType: .live),
         AirportDefinition(airport: .hnd, feedType: .estimated),
         AirportDefinition(airport: .icn, feedType: .estimated),
         AirportDefinition(airport: .syd, feedType: .estimated)
