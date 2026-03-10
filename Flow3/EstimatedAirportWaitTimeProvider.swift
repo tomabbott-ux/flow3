@@ -18,6 +18,7 @@ struct EstimatedAirportWaitTimeProvider: WaitTimeProviding {
                 minutes: item.minutes,
                 observedAt: now,
                 checkpointName: "Security",
+                areaName: self.airport.displayName,
                 sourceType: .estimated
             )
         }

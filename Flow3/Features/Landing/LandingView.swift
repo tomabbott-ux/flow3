@@ -22,27 +22,25 @@ struct LandingView: View {
     }
 
     private var usesAverageWaitPresentation: Bool {
-        store.selectedAirport.isTSAAverageAirport
+        AirportRegistry.definition(for: store.selectedAirport)?.feedType == .highConfidence
     }
 
     private var confidenceLevel: FlowConfidenceLevel {
-        if let definition = AirportRegistry.definition(for: store.selectedAirport) {
-            if definition.isLive {
-                return .live
-            }
 
-            if store.selectedAirport.isTSAAverageAirport {
-                return .highConfidence
-            }
-
-            if definition.isEstimated {
-                return .lowConfidence
-            }
-
+        guard let definition = AirportRegistry.definition(for: store.selectedAirport) else {
             return .comingSoon
         }
 
-        return .lowConfidence
+        switch definition.feedType {
+        case .live:
+            return .live
+        case .highConfidence:
+            return .highConfidence
+        case .estimated:
+            return .lowConfidence
+        case .comingSoon:
+            return .comingSoon
+        }
     }
 
     var body: some View {
@@ -488,7 +486,7 @@ private extension LandingView {
         guard let date = store.lastUpdated else {
             switch confidenceLevel {
             case .highConfidence:
-                return "Source: TSAWaitTimes · Checked --"
+                return "Source: High confidence feed · Checked --"
             default:
                 return "Updated --"
             }
@@ -516,7 +514,7 @@ private extension LandingView {
 
         switch confidenceLevel {
         case .highConfidence:
-            return "Source: TSAWaitTimes · Checked \(relative)"
+            return "Source: High confidence feed · Checked \(relative)"
         default:
             return "Updated \(relative)"
         }

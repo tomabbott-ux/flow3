@@ -27,11 +27,11 @@ extension LandingStore {
         switch selectedAirport {
 
         case .atl, .ist, .slc, .iah, .ham, .dus, .edi, .str, .bru, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl,
-             .san, .las, .bos, .sea, .mia:
+             .san, .las, .bos, .sea, .mia, .sfo:
             return namedCheckpointRows(from: rows)
 
         case .jfk, .lhr, .lga, .cph, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
-             .sfo, .lax, .ord, .fco,
+             .lax, .ord, .fco,
              .bcn, .hnd, .icn, .syd:
             return terminalDisplayRows(from: rows)
         }

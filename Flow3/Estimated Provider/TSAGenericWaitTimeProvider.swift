@@ -5,6 +5,7 @@ final class TSAGenericWaitTimeProvider: WaitTimeProviding {
     enum ProviderError: Error {
         case badHTTPStatus(Int)
         case invalidResponse
+        case invalidJSON
     }
 
     private let session: URLSession
@@ -38,150 +39,175 @@ final class TSAGenericWaitTimeProvider: WaitTimeProviding {
             throw ProviderError.invalidResponse
         }
 
+        print("🌐 TSA API \(airport.rawValue) status:", http.statusCode)
+
         guard (200...299).contains(http.statusCode) else {
+            if let raw = String(data: data, encoding: .utf8) {
+                print("❌ TSA API \(airport.rawValue) raw error body:", raw)
+            }
             throw ProviderError.badHTTPStatus(http.statusCode)
         }
 
-        let payload = try JSONDecoder().decode(TSAResponse.self, from: data)
+        if let raw = String(data: data, encoding: .utf8) {
+            print("📦 TSA API \(airport.rawValue) raw body:", raw)
+        }
+
+        let jsonObject = try JSONSerialization.jsonObject(with: data)
+
+        guard let root = jsonObject as? [String: Any] else {
+            throw ProviderError.invalidJSON
+        }
 
         let now = Date()
 
-        // Resolve best available wait time
-        let waitMinutes = payload.rightnowMinutes ?? payload.hourlyFallback ?? 12
+        let airportName =
+            firstNonEmptyString([
+                root["name"],
+                root["airport_name"],
+                root["airportName"],
+                root["title"]
+            ]) ?? airport.displayName
 
-        let airportName = payload.name?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanAirportName = (airportName?.isEmpty == false) ? airportName! : airport.displayName
+        let waitMinutes =
+            firstInt([
+                root["rightnow"],
+                root["right_now"],
+                root["current_wait"],
+                root["currentWait"],
+                root["wait_time"],
+                root["waitTime"],
+                root["minutes"]
+            ])
+            ?? firstEstimatedHourlyWait(from: root)
+            ?? firstNestedInt(in: root)
+
+        guard let minutes = waitMinutes else {
+            print("⚠️ TSA API \(airport.rawValue): no wait minutes found")
+            return []
+        }
+
+        print("✅ TSA API \(airport.rawValue): parsed minutes =", minutes)
 
         return [
             WaitTimeEstimate(
                 airport: airport,
-                terminal: 1,
+                terminal: nil,
                 queueType: .general,
-                minutes: max(0, waitMinutes),
+                minutes: max(0, minutes),
                 observedAt: now,
                 checkpointName: "Security",
-                areaName: cleanAirportName,
-                sourceType: .live
+                areaName: airportName,
+                sourceType: .estimated
             )
         ]
     }
-}
 
-private struct TSAResponse: Decodable {
+    private func firstEstimatedHourlyWait(from root: [String: Any]) -> Int? {
 
-    let code: String?
-    let name: String?
-    let rightnowInt: Int?
-    let rightnowDouble: Double?
-    let rightnowString: String?
-    let estimatedHourlyTimes: [TSAHourlySlot]
-
-    var rightnowMinutes: Int? {
-
-        if let rightnowInt {
-            return rightnowInt
-        }
-
-        if let rightnowDouble {
-            return Int(rightnowDouble.rounded())
-        }
-
-        if let rightnowString {
-
-            let trimmed = rightnowString.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if let intValue = Int(trimmed) {
-                return intValue
+        if let slots = root["estimated_hourly_times"] as? [[String: Any]] {
+            for slot in slots {
+                if let value = firstInt([
+                    slot["waittime"],
+                    slot["wait_time"],
+                    slot["minutes"]
+                ]) {
+                    return value
+                }
             }
+        }
 
-            if let doubleValue = Double(trimmed) {
-                return Int(doubleValue.rounded())
+        if let slots = root["estimatedHourlyTimes"] as? [[String: Any]] {
+            for slot in slots {
+                if let value = firstInt([
+                    slot["waittime"],
+                    slot["wait_time"],
+                    slot["minutes"]
+                ]) {
+                    return value
+                }
             }
         }
 
         return nil
     }
 
-    var hourlyFallback: Int? {
-        estimatedHourlyTimes
-            .compactMap { $0.waitMinutes }
-            .first
-    }
+    private func firstNestedInt(in dictionary: [String: Any]) -> Int? {
+        for (_, value) in dictionary {
 
-    enum CodingKeys: String, CodingKey {
-        case code
-        case name
-        case rightnow
-        case estimatedHourlyTimes = "estimated_hourly_times"
-    }
-
-    init(from decoder: Decoder) throws {
-
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        code = try container.decodeIfPresent(String.self, forKey: .code)
-        name = try container.decodeIfPresent(String.self, forKey: .name)
-
-        rightnowInt = try container.decodeIfPresent(Int.self, forKey: .rightnow)
-        rightnowDouble = try container.decodeIfPresent(Double.self, forKey: .rightnow)
-        rightnowString = try container.decodeIfPresent(String.self, forKey: .rightnow)
-
-        estimatedHourlyTimes = try container.decodeIfPresent(
-            [TSAHourlySlot].self,
-            forKey: .estimatedHourlyTimes
-        ) ?? []
-    }
-}
-
-private struct TSAHourlySlot: Decodable {
-
-    let timeslot: String?
-    let hour: Int?
-    let waitInt: Int?
-    let waitDouble: Double?
-    let waitString: String?
-
-    var waitMinutes: Int? {
-
-        if let waitInt {
-            return waitInt
-        }
-
-        if let waitDouble {
-            return Int(waitDouble.rounded())
-        }
-
-        if let waitString {
-
-            let trimmed = waitString.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if let intValue = Int(trimmed) {
+            if let intValue = value as? Int {
                 return intValue
             }
 
-            if let doubleValue = Double(trimmed) {
+            if let doubleValue = value as? Double {
                 return Int(doubleValue.rounded())
+            }
+
+            if let stringValue = value as? String {
+                let trimmed = stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if let intValue = Int(trimmed) {
+                    return intValue
+                }
+
+                if let doubleValue = Double(trimmed) {
+                    return Int(doubleValue.rounded())
+                }
+            }
+
+            if let nested = value as? [String: Any],
+               let found = firstNestedInt(in: nested) {
+                return found
+            }
+
+            if let array = value as? [[String: Any]] {
+                for item in array {
+                    if let found = firstNestedInt(in: item) {
+                        return found
+                    }
+                }
             }
         }
 
         return nil
     }
 
-    enum CodingKeys: String, CodingKey {
-        case timeslot
-        case hour
-        case waittime
+    private func firstInt(_ values: [Any?]) -> Int? {
+        for value in values {
+
+            if let intValue = value as? Int {
+                return intValue
+            }
+
+            if let doubleValue = value as? Double {
+                return Int(doubleValue.rounded())
+            }
+
+            if let stringValue = value as? String {
+                let trimmed = stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if let intValue = Int(trimmed) {
+                    return intValue
+                }
+
+                if let doubleValue = Double(trimmed) {
+                    return Int(doubleValue.rounded())
+                }
+            }
+        }
+
+        return nil
     }
 
-    init(from decoder: Decoder) throws {
+    private func firstNonEmptyString(_ values: [Any?]) -> String? {
+        for value in values {
+            if let stringValue = value as? String {
+                let trimmed = stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    return trimmed
+                }
+            }
+        }
 
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        timeslot = try container.decodeIfPresent(String.self, forKey: .timeslot)
-        hour = try container.decodeIfPresent(Int.self, forKey: .hour)
-
-        waitInt = try container.decodeIfPresent(Int.self, forKey: .waittime)
-        waitDouble = try container.decodeIfPresent(Double.self, forKey: .waittime)
-        waitString = try container.decodeIfPresent(String.self, forKey: .waittime)
+        return nil
     }
 }

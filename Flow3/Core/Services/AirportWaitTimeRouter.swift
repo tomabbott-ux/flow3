@@ -13,17 +13,14 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
 
-        // Priority 1 — Dedicated provider (live APIs or TSA providers)
         if let provider = providers[airport] {
             return try await provider.fetchWaitTimes(for: airport)
         }
 
-        // Priority 2 — Estimated airport profiles
         if AirportRegistry.definition(for: airport)?.feedType == .estimated {
             return try await estimatedProvider.fetchWaitTimes(for: airport)
         }
 
-        // Priority 3 — No data available
         return []
     }
 }
@@ -61,13 +58,13 @@ extension AirportWaitTimeRouter {
         .phl: PHLLiveWaitTimeProvider(),
         .slc: SLCLiveWaitTimeProvider(),
 
-        // TSA-based estimate feeds
-        .san: TSAAverageWaitTimeProvider(),
-        .las: TSAAverageWaitTimeProvider(),
-        .bos: TSAAverageWaitTimeProvider(),
-        .sea: TSAAverageWaitTimeProvider(),
-        .mia: TSAAverageWaitTimeProvider(),
-        .sfo: TSAAverageWaitTimeProvider(),
+        // HIGH CONFIDENCE — TSA website parsing
+        .san: TSAWebsiteWaitTimeProvider(),
+        .las: TSAWebsiteWaitTimeProvider(),
+        .bos: TSAWebsiteWaitTimeProvider(),
+        .sea: TSAWebsiteWaitTimeProvider(),
+        .mia: TSAWebsiteWaitTimeProvider(),
+        .sfo: TSAWebsiteWaitTimeProvider(),
 
         // Other live providers
         .ord: ORDLiveWaitTimeProvider(),
