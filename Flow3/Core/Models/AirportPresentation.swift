@@ -4,12 +4,13 @@ extension FlowAirport {
 
     var prefersCheckpointPresentation: Bool {
         switch self {
-        case .atl, .ist, .slc, .iah, .ham, .dus, .edi, .str, .bru, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx, .phl:
+
+        case .atl, .ist, .slc, .iah, .ham, .dus, .edi, .str, .bru, .yvr, .yyc, .den, .dfw, .hou, .mco, .phx,
+             .phl, .san, .las, .bos, .sea, .mia, .sfo, .bna, .tpa, .dtw, .clt, .ewr, .bwi, .dca, .pdx:
             return true
 
         case .jfk, .lhr, .lga, .cph, .yyz, .ams, .cdg, .dxb, .sin, .fra, .mad,
-             .sfo, .lax, .ord, .las, .bos, .sea, .san, .mia,
-             .bcn, .fco, .hnd, .icn, .syd:
+             .lax, .ord, .fco, .bcn, .hnd, .icn, .syd, .msp:
             return false
         }
     }

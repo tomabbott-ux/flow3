@@ -81,14 +81,17 @@ struct LandingView: View {
             await refreshNow()
         }
         .onReceive(refreshTimer) { _ in
+            guard !isShowingAirportSelector else { return }
             Task {
                 await refreshNow()
             }
         }
         .onReceive(updatedTicker) { value in
+            guard !isShowingAirportSelector else { return }
             now = value
         }
         .onChange(of: store.selectedAirport) { _ in
+            guard !isShowingAirportSelector else { return }
             Task {
                 await refreshNow()
             }
@@ -485,39 +488,64 @@ private extension LandingView {
     var updatedRelativeText: String {
         guard let date = store.lastUpdated else {
             switch confidenceLevel {
+            case .live:
+                return "Live feed · Waiting for first update"
             case .highConfidence:
-                return "Source: High confidence feed · Checked --"
-            default:
-                return "Updated --"
+                return "High confidence feed · Waiting for first check"
+            case .lowConfidence:
+                return "Estimated feed · Waiting for refresh"
+            case .comingSoon:
+                return "Coming soon"
             }
         }
 
         let seconds = max(0, Int(now.timeIntervalSince(date)))
-
-        let relative: String
-        if seconds < 60 {
-            relative = "\(seconds)s ago"
-        } else {
-            let minutes = seconds / 60
-            if minutes < 60 {
-                relative = "\(minutes)m ago"
-            } else {
-                let hours = minutes / 60
-                if hours < 24 {
-                    relative = "\(hours)h ago"
-                } else {
-                    let days = hours / 24
-                    relative = "\(days)d ago"
-                }
-            }
-        }
+        let relative = relativeAgeString(for: seconds)
 
         switch confidenceLevel {
+        case .live:
+            if seconds >= 900 {
+                return "Live feed · Delayed · Last update \(relative)"
+            } else {
+                return "Live feed · Updated \(relative)"
+            }
+
         case .highConfidence:
-            return "Source: High confidence feed · Checked \(relative)"
-        default:
-            return "Updated \(relative)"
+            if seconds >= 900 {
+                return "High confidence feed · Last checked \(relative)"
+            } else {
+                return "High confidence feed · Checked \(relative)"
+            }
+
+        case .lowConfidence:
+            if seconds >= 900 {
+                return "Estimated feed · Last refresh \(relative)"
+            } else {
+                return "Estimated feed · Refreshed \(relative)"
+            }
+
+        case .comingSoon:
+            return "Coming soon"
         }
+    }
+
+    func relativeAgeString(for seconds: Int) -> String {
+        if seconds < 60 {
+            return "\(seconds)s ago"
+        }
+
+        let minutes = seconds / 60
+        if minutes < 60 {
+            return "\(minutes)m ago"
+        }
+
+        let hours = minutes / 60
+        if hours < 24 {
+            return "\(hours)h ago"
+        }
+
+        let days = hours / 24
+        return "\(days)d ago"
     }
 }
 

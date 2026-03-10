@@ -7,10 +7,50 @@ enum AirportFeedType: String, Codable, Hashable {
     case comingSoon
 }
 
+enum AirportProviderKind: String, Codable, Hashable {
+    case atl
+    case jfk
+    case lhr
+    case ist
+    case lga
+    case ham
+    case cph
+    case dus
+    case edi
+    case str
+    case bru
+    case fco
+
+    case yyz
+    case yvr
+    case yyc
+
+    case den
+    case dfw
+    case hou
+    case iah
+    case mco
+    case phx
+    case phl
+    case slc
+    case ord
+    case ams
+
+    case clt
+    case ewr
+    case bwi
+    case dca
+    case pdx
+    case tsaWebsite
+    case estimated
+    case none
+}
+
 struct AirportDefinition: Identifiable, Hashable {
 
     let airport: FlowAirport
     let feedType: AirportFeedType
+    let providerKind: AirportProviderKind
 
     var id: FlowAirport { airport }
 
@@ -35,55 +75,61 @@ struct AirportRegistry {
 
     static let airports: [AirportDefinition] = [
 
-        // LIVE — official APIs / direct live feeds
-        AirportDefinition(airport: .atl, feedType: .live),
-        AirportDefinition(airport: .jfk, feedType: .live),
-        AirportDefinition(airport: .lhr, feedType: .live),
-        AirportDefinition(airport: .ist, feedType: .live),
-        AirportDefinition(airport: .lga, feedType: .live),
-        AirportDefinition(airport: .ham, feedType: .live),
-        AirportDefinition(airport: .cph, feedType: .live),
-        AirportDefinition(airport: .dus, feedType: .live),
-        AirportDefinition(airport: .edi, feedType: .live),
-        AirportDefinition(airport: .str, feedType: .live),
-        AirportDefinition(airport: .bru, feedType: .live),
+        AirportDefinition(airport: .atl, feedType: .live, providerKind: .atl),
+        AirportDefinition(airport: .jfk, feedType: .live, providerKind: .jfk),
+        AirportDefinition(airport: .lhr, feedType: .live, providerKind: .lhr),
+        AirportDefinition(airport: .ist, feedType: .live, providerKind: .ist),
+        AirportDefinition(airport: .lga, feedType: .live, providerKind: .lga),
+        AirportDefinition(airport: .ham, feedType: .live, providerKind: .ham),
+        AirportDefinition(airport: .cph, feedType: .live, providerKind: .cph),
+        AirportDefinition(airport: .dus, feedType: .live, providerKind: .dus),
+        AirportDefinition(airport: .edi, feedType: .live, providerKind: .edi),
+        AirportDefinition(airport: .str, feedType: .live, providerKind: .str),
+        AirportDefinition(airport: .bru, feedType: .live, providerKind: .bru),
 
-        AirportDefinition(airport: .yyz, feedType: .live),
-        AirportDefinition(airport: .yvr, feedType: .live),
-        AirportDefinition(airport: .yyc, feedType: .live),
+        AirportDefinition(airport: .yyz, feedType: .live, providerKind: .yyz),
+        AirportDefinition(airport: .yvr, feedType: .live, providerKind: .yvr),
+        AirportDefinition(airport: .yyc, feedType: .live, providerKind: .yyc),
 
-        AirportDefinition(airport: .den, feedType: .live),
-        AirportDefinition(airport: .dfw, feedType: .live),
-        AirportDefinition(airport: .hou, feedType: .live),
-        AirportDefinition(airport: .iah, feedType: .live),
-        AirportDefinition(airport: .mco, feedType: .live),
-        AirportDefinition(airport: .phx, feedType: .live),
-        AirportDefinition(airport: .phl, feedType: .live),
-        AirportDefinition(airport: .slc, feedType: .live),
+        AirportDefinition(airport: .den, feedType: .live, providerKind: .den),
+        AirportDefinition(airport: .dfw, feedType: .live, providerKind: .dfw),
+        AirportDefinition(airport: .hou, feedType: .live, providerKind: .hou),
+        AirportDefinition(airport: .iah, feedType: .live, providerKind: .iah),
+        AirportDefinition(airport: .mco, feedType: .live, providerKind: .mco),
+        AirportDefinition(airport: .phx, feedType: .live, providerKind: .phx),
+        AirportDefinition(airport: .phl, feedType: .live, providerKind: .phl),
+        AirportDefinition(airport: .slc, feedType: .live, providerKind: .slc),
 
-        AirportDefinition(airport: .ord, feedType: .live),
-        AirportDefinition(airport: .ams, feedType: .live),
-        AirportDefinition(airport: .fco, feedType: .live),
+        AirportDefinition(airport: .ord, feedType: .live, providerKind: .ord),
+        AirportDefinition(airport: .ams, feedType: .live, providerKind: .ams),
+        AirportDefinition(airport: .fco, feedType: .live, providerKind: .fco),
+        AirportDefinition(airport: .clt, feedType: .live, providerKind: .clt),
+        AirportDefinition(airport: .ewr, feedType: .live, providerKind: .ewr),
+        AirportDefinition(airport: .bwi, feedType: .live, providerKind: .bwi),
+        AirportDefinition(airport: .dca, feedType: .live, providerKind: .dca),
+        AirportDefinition(airport: .pdx, feedType: .live, providerKind: .pdx),
+        
+        AirportDefinition(airport: .san, feedType: .highConfidence, providerKind: .tsaWebsite),
+        AirportDefinition(airport: .las, feedType: .highConfidence, providerKind: .tsaWebsite),
+        AirportDefinition(airport: .bos, feedType: .highConfidence, providerKind: .tsaWebsite),
+        AirportDefinition(airport: .sea, feedType: .highConfidence, providerKind: .tsaWebsite),
+        AirportDefinition(airport: .mia, feedType: .highConfidence, providerKind: .tsaWebsite),
+        AirportDefinition(airport: .sfo, feedType: .highConfidence, providerKind: .tsaWebsite),
+        AirportDefinition(airport: .bna, feedType: .highConfidence, providerKind: .tsaWebsite),
+        AirportDefinition(airport: .tpa, feedType: .highConfidence, providerKind: .tsaWebsite),
+        AirportDefinition(airport: .dtw, feedType: .highConfidence, providerKind: .tsaWebsite),
+        AirportDefinition(airport: .msp, feedType: .comingSoon, providerKind: .none),
 
-        // HIGH CONFIDENCE — structured TSA / airport website sources
-        AirportDefinition(airport: .san, feedType: .highConfidence),
-        AirportDefinition(airport: .las, feedType: .highConfidence),
-        AirportDefinition(airport: .bos, feedType: .highConfidence),
-        AirportDefinition(airport: .sea, feedType: .highConfidence),
-        AirportDefinition(airport: .mia, feedType: .highConfidence),
-        AirportDefinition(airport: .sfo, feedType: .highConfidence),
-
-        // ESTIMATED — true fallback estimates
-        AirportDefinition(airport: .cdg, feedType: .estimated),
-        AirportDefinition(airport: .dxb, feedType: .estimated),
-        AirportDefinition(airport: .sin, feedType: .estimated),
-        AirportDefinition(airport: .fra, feedType: .estimated),
-        AirportDefinition(airport: .mad, feedType: .estimated),
-        AirportDefinition(airport: .lax, feedType: .estimated),
-        AirportDefinition(airport: .bcn, feedType: .estimated),
-        AirportDefinition(airport: .hnd, feedType: .estimated),
-        AirportDefinition(airport: .icn, feedType: .estimated),
-        AirportDefinition(airport: .syd, feedType: .estimated)
+        AirportDefinition(airport: .cdg, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .dxb, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .sin, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .fra, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .mad, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .lax, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .bcn, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .hnd, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .icn, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .syd, feedType: .estimated, providerKind: .estimated)
     ]
 
     static func definition(for airport: FlowAirport) -> AirportDefinition? {

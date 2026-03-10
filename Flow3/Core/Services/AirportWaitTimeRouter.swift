@@ -2,72 +2,120 @@ import Foundation
 
 struct AirportWaitTimeRouter: WaitTimeProviding {
 
-    private let providers: [FlowAirport: any WaitTimeProviding]
     private let estimatedProvider = EstimatedWaitTimeProvider()
-
-    init(
-        providers: [FlowAirport: any WaitTimeProviding] = AirportWaitTimeRouter.defaultProviders
-    ) {
-        self.providers = providers
-    }
-
+    private let tsaWebsiteProvider = TSAWebsiteWaitTimeProvider()
+    private let cltProvider = CLTLiveWaitTimeProvider()
+    private let ewrProvider = EWRLiveWaitTimeProvider()
+    private let bwiProvider = BWILiveWaitTimeProvider()
+    private let dcaProvider = DCALiveWaitTimeProvider()
+    private let pdxProvider = PDXLiveWaitTimeProvider()
+    
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
 
-        if let provider = providers[airport] {
-            return try await provider.fetchWaitTimes(for: airport)
+        guard let definition = AirportRegistry.definition(for: airport) else {
+            return []
         }
 
-        if AirportRegistry.definition(for: airport)?.feedType == .estimated {
+        switch definition.providerKind {
+
+        case .atl:
+            return try await ATLStubWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .jfk:
+            return try await JFKAzureAPIWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .lhr:
+            return try await LHRStubWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .ist:
+            return try await ISTLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .lga:
+            return try await LGALiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .ham:
+            return try await HAMLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .cph:
+            return try await CPHLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .dus:
+            return try await DUSLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .edi:
+            return try await EDILiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .str:
+            return try await STRLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .bru:
+            return try await BRULiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .fco:
+            return try await FCOLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .yyz:
+            return try await YYZLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .yvr:
+            return try await YVRLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .yyc:
+            return try await YYCLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .den:
+            return try await DENLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .dfw:
+            return try await DFWLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .hou:
+            return try await HOULiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .iah:
+            return try await IAHLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .mco:
+            return try await MCOLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .phx:
+            return try await PHXLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .phl:
+            return try await PHLLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .slc:
+            return try await SLCLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .ord:
+            return try await ORDLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .ams:
+            return try await AMSWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .clt:
+            return try await cltProvider.fetchWaitTimes(for: airport)
+
+        case .ewr:
+            return try await ewrProvider.fetchWaitTimes(for: airport)
+
+        case .bwi:
+            return try await bwiProvider.fetchWaitTimes(for: airport)
+
+        case .dca:
+            return try await dcaProvider.fetchWaitTimes(for: airport)
+            
+        case .pdx:
+            return try await pdxProvider.fetchWaitTimes(for: airport)
+            
+        case .tsaWebsite:
+            return try await tsaWebsiteProvider.fetchWaitTimes(for: airport)
+
+        case .estimated:
             return try await estimatedProvider.fetchWaitTimes(for: airport)
+
+        case .none:
+            return []
         }
-
-        return []
     }
-}
-
-extension AirportWaitTimeRouter {
-
-    static let defaultProviders: [FlowAirport: any WaitTimeProviding] = [
-
-        // Core live airports
-        .atl: ATLStubWaitTimeProvider(),
-        .jfk: JFKAzureAPIWaitTimeProvider(),
-        .lhr: LHRStubWaitTimeProvider(),
-        .ist: ISTLiveWaitTimeProvider(),
-        .lga: LGALiveWaitTimeProvider(),
-        .ham: HAMLiveWaitTimeProvider(),
-        .cph: CPHLiveWaitTimeProvider(),
-        .dus: DUSLiveWaitTimeProvider(),
-        .edi: EDILiveWaitTimeProvider(),
-        .str: STRLiveWaitTimeProvider(),
-        .bru: BRULiveWaitTimeProvider(),
-        .fco: FCOLiveWaitTimeProvider(),
-
-        // Canada
-        .yyz: YYZLiveWaitTimeProvider(),
-        .yvr: YVRLiveWaitTimeProvider(),
-        .yyc: YYCLiveWaitTimeProvider(),
-
-        // US live feeds
-        .den: DENLiveWaitTimeProvider(),
-        .dfw: DFWLiveWaitTimeProvider(),
-        .hou: HOULiveWaitTimeProvider(),
-        .iah: IAHLiveWaitTimeProvider(),
-        .mco: MCOLiveWaitTimeProvider(),
-        .phx: PHXLiveWaitTimeProvider(),
-        .phl: PHLLiveWaitTimeProvider(),
-        .slc: SLCLiveWaitTimeProvider(),
-
-        // HIGH CONFIDENCE — TSA website parsing
-        .san: TSAWebsiteWaitTimeProvider(),
-        .las: TSAWebsiteWaitTimeProvider(),
-        .bos: TSAWebsiteWaitTimeProvider(),
-        .sea: TSAWebsiteWaitTimeProvider(),
-        .mia: TSAWebsiteWaitTimeProvider(),
-        .sfo: TSAWebsiteWaitTimeProvider(),
-
-        // Other live providers
-        .ord: ORDLiveWaitTimeProvider(),
-        .ams: AMSWaitTimeProvider()
-    ]
 }
