@@ -170,6 +170,7 @@ private extension LandingView {
 
     var weatherRow: some View {
         HStack(spacing: 12) {
+
             weatherSection
                 .frame(maxWidth: .infinity)
                 .frame(height: 110)
@@ -182,47 +183,47 @@ private extension LandingView {
 
     var weatherSection: some View {
         VStack(alignment: .leading, spacing: 6) {
+
             Text("Weather")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white)
 
-            Text(store.selectedAirport.rawValue)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.75))
-
             Spacer(minLength: 0)
 
             HStack(spacing: 10) {
+
                 Image(systemName: weatherSymbolName)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white.opacity(0.95))
 
-                Text(weatherLine)
+                Text(weatherTemperatureLine)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white.opacity(0.95))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
             }
+
+            Text(weatherConditionLine)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white.opacity(0.82))
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
 
             Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .flowGlassCard()
     }
 
     var timeSection: some View {
         VStack(alignment: .leading, spacing: 6) {
+
             Text("Time")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white)
 
-            Text(store.selectedAirport.rawValue)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.75))
-
             Spacer(minLength: 0)
 
             HStack(spacing: 10) {
+
                 Image(systemName: "clock.fill")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white.opacity(0.95))
@@ -233,9 +234,13 @@ private extension LandingView {
                     .monospacedDigit()
             }
 
+            Text(timeZoneAbbreviation)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white.opacity(0.82))
+
             Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .flowGlassCard()
     }
 
@@ -252,29 +257,55 @@ private extension LandingView {
         return formatter.string(from: date)
     }
 
-    var weatherLine: String {
+    var timeZoneAbbreviation: String {
+        store.selectedAirport.timeZone.abbreviation() ?? ""
+    }
+
+    var weatherTemperatureLine: String {
         guard let weather = store.weather else { return "--" }
-        let temp = "\(weather.temperatureC)°C"
+        return "\(weather.temperatureC)°C"
+    }
+
+    var weatherConditionLine: String {
+        guard let weather = store.weather else { return "--" }
+
         let cond = weather.summary.trimmingCharacters(in: .whitespacesAndNewlines)
-        return cond.isEmpty ? temp : "\(temp) • \(cond)"
+        return cond.isEmpty ? "Clear" : cond
     }
 
     var weatherSymbolName: String {
+
         let s = (store.weather?.summary ?? "").lowercased()
 
         if s.contains("thunder") || s.contains("storm") { return "cloud.bolt.rain.fill" }
-        if s.contains("snow") || s.contains("sleet") { return "cloud.snow.fill" }
-        if s.contains("rain") || s.contains("shower") || s.contains("drizzle") { return "cloud.rain.fill" }
-        if s.contains("wind") { return "wind" }
-        if s.contains("fog") || s.contains("mist") || s.contains("haze") { return "cloud.fog.fill" }
-        if s.contains("overcast") { return "smoke.fill" }
-        if s.contains("cloud") || s.contains("partly") { return "cloud.fill" }
-        if s.contains("clear") || s.contains("sun") { return "sun.max.fill" }
+
+        if s.contains("snow") || s.contains("sleet") || s.contains("ice") || s.contains("hail") {
+            return "cloud.snow.fill"
+        }
+
+        if s.contains("rain") || s.contains("shower") || s.contains("drizzle") {
+            return "cloud.rain.fill"
+        }
+
+        if s.contains("fog") || s.contains("mist") || s.contains("haze") {
+            return "cloud.fog.fill"
+        }
+
+        if s.contains("overcast") || s.contains("broken clouds") {
+            return "smoke.fill"
+        }
+
+        if s.contains("scattered") || s.contains("few clouds") || s.contains("cloud") {
+            return "cloud.sun.fill"
+        }
+
+        if s.contains("clear") || s.contains("sunny") {
+            return "sun.max.fill"
+        }
 
         return "cloud.sun.fill"
     }
 }
-
 // MARK: - Security Hero
 
 private extension LandingView {

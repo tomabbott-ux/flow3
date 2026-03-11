@@ -1,8 +1,78 @@
-//
-//  FlowAirport+ICAO.swift
-//  Flow3
-//
-//  Created by Tom Abbott on 10/03/2026.
-//
-
 import Foundation
+
+extension FlowAirport {
+
+    var icaoCode: String {
+
+        switch self {
+
+        case .atl: return "KATL"
+        case .jfk: return "KJFK"
+        case .lhr: return "EGLL"
+        case .ist: return "LTFM"
+        case .lga: return "KLGA"
+
+        case .phl: return "KPHL"
+        case .mco: return "KMCO"
+        case .slc: return "KSLC"
+        case .iah: return "KIAH"
+        case .bna: return "KBNA"
+        case .tpa: return "KTPA"
+        case .dtw: return "KDTW"
+        case .clt: return "KCLT"
+        case .ewr: return "KEWR"
+        case .msp: return "KMSP"
+
+        case .yyz: return "CYYZ"
+        case .yvr: return "CYVR"
+        case .yyc: return "CYYC"
+
+        case .den: return "KDEN"
+        case .dfw: return "KDFW"
+        case .hou: return "KHOU"
+        case .phx: return "KPHX"
+
+        case .ams: return "EHAM"
+        case .cdg: return "LFPG"
+        case .dxb: return "OMDB"
+        case .sin: return "WSSS"
+        case .fra: return "EDDF"
+        case .mad: return "LEMD"
+
+        case .sfo: return "KSFO"
+        case .lax: return "KLAX"
+        case .ord: return "KORD"
+        case .las: return "KLAS"
+        case .bos: return "KBOS"
+        case .sea: return "KSEA"
+        case .san: return "KSAN"
+        case .mia: return "KMIA"
+
+        default:
+            return airportFallbackICAO
+        }
+    }
+
+    private var airportFallbackICAO: String {
+
+        switch self {
+
+        case .ham: return "EDDH"
+        case .cph: return "EKCH"
+        case .dus: return "EDDL"
+        case .edi: return "EGPH"
+        case .str: return "EDDS"
+        case .bru: return "EBBR"
+
+        case .bcn: return "LEBL"
+        case .fco: return "LIRF"
+
+        case .hnd: return "RJTT"
+        case .icn: return "RKSI"
+        case .syd: return "YSSY"
+
+        default:
+            return "KATL"
+        }
+    }
+}

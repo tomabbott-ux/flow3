@@ -5,82 +5,43 @@ struct AirportSelectorView: View {
     @ObservedObject var store: LandingStore
     let onAirportSelected: () -> Void
 
-    @State private var searchText = ""
-    @AppStorage("flow.favoriteAirports") private var favoriteAirportCodesStorage: String = ""
-
-    private let airports = AirportRegistry.airports
-
-    private var filteredAirports: [AirportDefinition] {
-
-        let query = searchText
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-
-        return airports.filter { definition in
-
-            if query.isEmpty { return true }
-
-            return definition.airport.displayName.lowercased().contains(query)
-                || definition.airport.rawValue.lowercased().contains(query)
-                || definition.airport.shortName.lowercased().contains(query)
-        }
-    }
-
-    private var favoriteAirportsList: [AirportDefinition] {
-
-        filteredAirports
-            .filter { isFavorite($0.airport) }
-            .sorted { $0.airport.displayName < $1.airport.displayName }
-    }
-
-    private var nonFavoriteAirportsList: [AirportDefinition] {
-
-        filteredAirports
-            .filter { !isFavorite($0.airport) }
-            .sorted { $0.airport.displayName < $1.airport.displayName }
-    }
+    @State private var searchText: String = ""
+    @State private var favourites: Set<FlowAirport> = FavouriteAirports.shared.load()
+    @State private var recents: [FlowAirport] = RecentAirports.shared.load()
 
     var body: some View {
-
         ZStack {
-
-            FlowSelectorBrand.backgroundGradient
+            SelectorBrand.backgroundGradient
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-
                 VStack(alignment: .leading, spacing: 18) {
+                    headerSection
+                    searchSection
 
-                    Text("Select Airport")
-                        .font(.system(size: 34, weight: .heavy))
-                        .foregroundColor(.white)
-                        .padding(.top, 8)
-
-                    searchBar
-
-                    if filteredAirports.isEmpty {
-                        emptyState
-                    } else {
-
-                        if !favoriteAirportsList.isEmpty {
-
-                            sectionHeader("Favourites")
-
-                            VStack(spacing: 12) {
-                                ForEach(favoriteAirportsList) { definition in
-                                    airportRow(definition)
-                                }
+                    if !recentDefinitions.isEmpty {
+                        AirportSectionHeader(title: "RECENT")
+                        LazyVStack(spacing: 12) {
+                            ForEach(recentDefinitions) { definition in
+                                airportRow(definition)
                             }
                         }
+                    }
 
-                        if !nonFavoriteAirportsList.isEmpty {
+                    if !pinnedFavouriteDefinitions.isEmpty {
+                        AirportSectionHeader(title: "FAVOURITES")
+                        LazyVStack(spacing: 12) {
+                            ForEach(pinnedFavouriteDefinitions) { definition in
+                                airportRow(definition)
+                            }
+                        }
+                    }
 
-                            sectionHeader("All Airports")
-
-                            VStack(spacing: 12) {
-                                ForEach(nonFavoriteAirportsList) { definition in
-                                    airportRow(definition)
-                                }
+                    if !nonFavouriteDefinitions.isEmpty {
+                        AirportSectionHeader(title: "AIRPORTS")
+                        LazyVStack(spacing: 12) {
+                            ForEach(nonFavouriteDefinitions) { definition in
+                                airportRow(definition)
                             }
                         }
                     }
@@ -89,297 +50,334 @@ struct AirportSelectorView: View {
                 .padding(.top, 14)
                 .padding(.bottom, 30)
             }
-            .scrollDismissesKeyboard(.interactively)
         }
-        .navigationTitle("Select Airport")
+        .navigationBarBackButtonHidden(false)
         .navigationBarTitleDisplayMode(.inline)
     }
+}
 
-    private var searchBar: some View {
+// MARK: - Header
 
-        HStack(spacing: 12) {
+private extension AirportSelectorView {
 
+    var headerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Select Airport")
+                .font(.system(size: 34, weight: .heavy))
+                .foregroundColor(.white)
+        }
+    }
+}
+
+// MARK: - Search
+
+private extension AirportSelectorView {
+
+    var searchSection: some View {
+        HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.white.opacity(0.7))
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white.opacity(0.75))
 
             TextField("Search airport or code", text: $searchText)
                 .textInputAutocapitalization(.characters)
-                .disableAutocorrection(true)
+                .autocorrectionDisabled()
+                .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.white)
 
             if !searchText.isEmpty {
-
                 Button {
                     searchText = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white.opacity(0.6))
                 }
+                .buttonStyle(.plain)
             }
         }
-        .padding(14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .background(
-            RoundedRectangle(cornerRadius: 22)
+            RoundedRectangle(cornerRadius: 18)
                 .fill(Color.white.opacity(0.08))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22)
-                        .stroke(Color.white.opacity(0.10))
-                )
-        )
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-
-        Text(title)
-            .font(.system(size: 14, weight: .bold))
-            .foregroundColor(.white.opacity(0.7))
-            .padding(.top, 6)
-    }
-
-    @ViewBuilder
-    private func airportRow(_ definition: AirportDefinition) -> some View {
-
-        HStack(spacing: 14) {
-
-            Button {
-                toggleFavorite(for: definition.airport)
-            } label: {
-                Image(systemName: isFavorite(definition.airport) ? "star.fill" : "star")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(
-                        isFavorite(definition.airport)
-                        ? Color(hex: "9B6CFF")
-                        : .white.opacity(0.55)
-                    )
-                    .frame(width: 28, height: 28)
-            }
-            .buttonStyle(.plain)
-
-            Button {
-
-                store.selectedAirport = definition.airport
-                onAirportSelected()
-
-            } label: {
-
-                HStack(spacing: 14) {
-
-                    VStack(alignment: .leading, spacing: 4) {
-
-                        Text(definition.airport.displayName)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-
-                        Text(definition.airport.rawValue)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white.opacity(0.75))
-                    }
-
-                    Spacer()
-
-                    badge(for: definition)
-
-                    Image(systemName: store.selectedAirport == definition.airport ? "checkmark" : "chevron.right")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white.opacity(0.9))
-                }
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
+                    RoundedRectangle(cornerRadius: 18)
                         .stroke(Color.white.opacity(0.10), lineWidth: 1)
                 )
         )
-        .shadow(color: .black.opacity(0.20), radius: 14, x: 0, y: 8)
     }
+}
 
-    private var emptyState: some View {
+// MARK: - Airport Row
 
-        VStack(spacing: 12) {
+private extension AirportSelectorView {
 
-            Image(systemName: "airplane.circle")
-                .font(.system(size: 34))
-                .foregroundColor(.white.opacity(0.75))
+    func airportRow(_ definition: AirportDefinition) -> some View {
+        let airport = definition.airport
+        let isFavourite = favourites.contains(airport)
 
-            Text("Airport not found")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
-
-            Text("""
-We couldn’t find that airport yet.
-
-Flow is expanding rapidly and new airports are added regularly.
-Check back soon — your airport may be next.
-""")
-            .font(.system(size: 15, weight: .medium))
-            .foregroundColor(.white.opacity(0.72))
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 8)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 28)
-        .padding(.horizontal, 18)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                )
-        )
-        .shadow(color: .black.opacity(0.20), radius: 14, x: 0, y: 8)
-    }
-
-    @ViewBuilder
-    private func badge(for definition: AirportDefinition) -> some View {
-
-        if definition.isLive {
-
-            HStack(spacing: 6) {
-
-                Circle()
-                    .fill(Color.green)
-                    .frame(width: 8, height: 8)
-
-                Text("LIVE")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.green)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(Color.white.opacity(0.10))
-                    .overlay(
-                        Capsule()
-                            .stroke(Color.white.opacity(0.10))
-                    )
-            )
-
-        } else if definition.isHighConfidence {
-
-            HStack(spacing: 6) {
-
-                SelectorHighConfidencePulseDot()
-
-                Text("HIGH CONFIDENCE")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Color(hex: "CBB7FF"))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(Color.white.opacity(0.10))
-                    .overlay(
-                        Capsule()
-                            .stroke(Color.white.opacity(0.10))
-                    )
-            )
-
-        } else if definition.isEstimated {
-
-            HStack(spacing: 6) {
-
-                SelectorOrangePulseDot()
-
-                Text("ESTIMATE")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.orange)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(Color.white.opacity(0.10))
-                    .overlay(
-                        Capsule()
-                            .stroke(Color.white.opacity(0.10))
-                    )
-            )
-
-        } else {
-
-            Text("COMING SOON")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(.gray)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(Color.white.opacity(0.10))
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.white.opacity(0.10))
+        return Button {
+            store.selectedAirport = airport
+            RecentAirports.shared.add(airport)
+            recents = RecentAirports.shared.load()
+            onAirportSelected()
+        } label: {
+            HStack(spacing: 12) {
+                Button {
+                    toggleFavourite(airport)
+                } label: {
+                    Image(systemName: isFavourite ? "star.fill" : "star")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(
+                            isFavourite
+                            ? Color(hex: "C9B6FF")
+                            : .white.opacity(0.45)
                         )
-                )
+                        .frame(width: 28, height: 28)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(isFavourite ? 0.12 : 0.06))
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.white.opacity(isFavourite ? 0.12 : 0.08), lineWidth: 1)
+                                )
+                        )
+                }
+                .buttonStyle(.plain)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(airport.rawValue)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text(airport.displayName)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.75))
+                }
+
+                Spacer(minLength: 12)
+
+                feedBadge(for: definition.feedType)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+            )
+            .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 6)
         }
+        .buttonStyle(.plain)
     }
+}
 
-    private var favoriteAirports: Set<String> {
+// MARK: - Favourite Logic
 
-        Set(
-            favoriteAirportCodesStorage
-                .split(separator: ",")
-                .map { String($0) }
-        )
-    }
+private extension AirportSelectorView {
 
-    private func isFavorite(_ airport: FlowAirport) -> Bool {
-        favoriteAirports.contains(airport.rawValue)
-    }
-
-    private func toggleFavorite(for airport: FlowAirport) {
-
-        var updated = favoriteAirports
-
-        if updated.contains(airport.rawValue) {
-            updated.remove(airport.rawValue)
+    func toggleFavourite(_ airport: FlowAirport) {
+        if favourites.contains(airport) {
+            favourites.remove(airport)
         } else {
-            updated.insert(airport.rawValue)
+            favourites.insert(airport)
         }
 
-        favoriteAirportCodesStorage = updated
-            .sorted()
-            .joined(separator: ",")
+        FavouriteAirports.shared.save(favourites)
+        recents = RecentAirports.shared.load()
     }
 }
 
-private enum FlowSelectorBrand {
+// MARK: - Feed Badge
 
-    static let backgroundTop = Color(hex: "2A0C5A")
-    static let backgroundMid = Color(hex: "3B136E")
-    static let backgroundBottom = Color(hex: "14062F")
+private extension AirportSelectorView {
 
-    static var backgroundGradient: LinearGradient {
+    @ViewBuilder
+    func feedBadge(for feedType: AirportFeedType) -> some View {
+        switch feedType {
+        case .live:
+            animatedBadge(
+                text: "LIVE",
+                textColor: .green,
+                dot: AnyView(LiveStatusDot())
+            )
 
-        LinearGradient(
-            gradient: Gradient(colors: [
-                backgroundTop,
-                backgroundMid,
-                backgroundBottom
-            ]),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
+        case .highConfidence:
+            animatedBadge(
+                text: "HIGH CONFIDENCE",
+                textColor: Color(hex: "9B6CFF"),
+                dot: AnyView(HighConfidenceStatusDot())
+            )
+
+        case .estimated:
+            animatedBadge(
+                text: "ESTIMATED",
+                textColor: .orange,
+                dot: AnyView(EstimatedStatusDot())
+            )
+
+        case .comingSoon:
+            animatedBadge(
+                text: "COMING SOON",
+                textColor: .gray,
+                dot: AnyView(ComingSoonStatusDot())
+            )
+        }
+    }
+
+    func animatedBadge(text: String, textColor: Color, dot: AnyView) -> some View {
+        HStack(spacing: 6) {
+            dot
+
+            Text(text)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(textColor)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.10))
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
         )
     }
 }
 
-private struct SelectorOrangePulseDot: View {
+// MARK: - Sorting + Filtering
 
+private extension AirportSelectorView {
+
+    var filteredDefinitions: [AirportDefinition] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !query.isEmpty else {
+            return AirportRegistry.airports
+        }
+
+        return AirportRegistry.airports.filter { definition in
+            let airport = definition.airport
+
+            let haystack = [
+                airport.rawValue,
+                airport.displayName,
+                airport.shortName
+            ].joined(separator: " ")
+
+            return haystack.localizedCaseInsensitiveContains(query)
+        }
+    }
+
+    var recentDefinitions: [AirportDefinition] {
+        let recentsSet = Set(recents)
+
+        return filteredDefinitions
+            .filter { recentsSet.contains($0.airport) && !favourites.contains($0.airport) }
+            .sorted { lhs, rhs in
+                let lhsIndex = recents.firstIndex(of: lhs.airport) ?? .max
+                let rhsIndex = recents.firstIndex(of: rhs.airport) ?? .max
+                return lhsIndex < rhsIndex
+            }
+    }
+
+    var pinnedFavouriteDefinitions: [AirportDefinition] {
+        filteredDefinitions
+            .filter { favourites.contains($0.airport) }
+            .sorted {
+                $0.airport.displayName.localizedCaseInsensitiveCompare($1.airport.displayName) == .orderedAscending
+            }
+    }
+
+    var nonFavouriteDefinitions: [AirportDefinition] {
+        let recentsSet = Set(recents)
+
+        return filteredDefinitions
+            .filter { !favourites.contains($0.airport) && !recentsSet.contains($0.airport) }
+            .sorted { lhs, rhs in
+                let lhsPriority = priority(lhs.feedType)
+                let rhsPriority = priority(rhs.feedType)
+
+                if lhsPriority != rhsPriority {
+                    return lhsPriority < rhsPriority
+                }
+
+                return lhs.airport.displayName.localizedCaseInsensitiveCompare(rhs.airport.displayName) == .orderedAscending
+            }
+    }
+
+    func priority(_ feedType: AirportFeedType) -> Int {
+        switch feedType {
+        case .live:
+            return 0
+        case .highConfidence:
+            return 1
+        case .estimated:
+            return 2
+        case .comingSoon:
+            return 3
+        }
+    }
+}
+
+// MARK: - Status Dots
+
+private struct LiveStatusDot: View {
     @State private var animate = false
 
     var body: some View {
-
         ZStack {
+            Circle()
+                .fill(Color.green.opacity(0.22))
+                .frame(width: 16, height: 16)
+                .scaleEffect(animate ? 1.35 : 0.85)
+                .opacity(animate ? 0.20 : 0.65)
 
+            Circle()
+                .fill(Color.green)
+                .frame(width: 8, height: 8)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
+                animate = true
+            }
+        }
+    }
+}
+
+private struct HighConfidenceStatusDot: View {
+    @State private var animate = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color(hex: "9B6CFF").opacity(0.22))
+                .frame(width: 16, height: 16)
+                .scaleEffect(animate ? 1.35 : 0.85)
+                .opacity(animate ? 0.20 : 0.65)
+
+            Circle()
+                .fill(Color(hex: "9B6CFF"))
+                .frame(width: 8, height: 8)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
+                animate = true
+            }
+        }
+    }
+}
+
+private struct EstimatedStatusDot: View {
+    @State private var animate = false
+
+    var body: some View {
+        ZStack {
             Circle()
                 .fill(Color.orange.opacity(0.22))
                 .frame(width: 16, height: 16)
@@ -391,7 +389,6 @@ private struct SelectorOrangePulseDot: View {
                 .frame(width: 8, height: 8)
         }
         .onAppear {
-
             withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
                 animate = true
             }
@@ -399,29 +396,68 @@ private struct SelectorOrangePulseDot: View {
     }
 }
 
-private struct SelectorHighConfidencePulseDot: View {
-
+private struct ComingSoonStatusDot: View {
     @State private var animate = false
 
     var body: some View {
-
         ZStack {
-
             Circle()
-                .fill(Color.white.opacity(0.20))
+                .fill(Color.gray.opacity(0.18))
                 .frame(width: 16, height: 16)
-                .scaleEffect(animate ? 1.35 : 0.85)
-                .opacity(animate ? 0.18 : 0.55)
+                .scaleEffect(animate ? 1.15 : 0.90)
+                .opacity(animate ? 0.18 : 0.45)
 
             Circle()
-                .fill(Color(hex: "CBB7FF"))
+                .fill(Color.gray.opacity(0.85))
                 .frame(width: 8, height: 8)
         }
         .onAppear {
-
-            withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
+            withAnimation(.easeOut(duration: 1.4).repeatForever(autoreverses: false)) {
                 animate = true
             }
         }
+    }
+}
+
+// MARK: - Section Header
+
+private struct AirportSectionHeader: View {
+
+    let title: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.white.opacity(0.65))
+                .tracking(1.2)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.12))
+                .frame(height: 1)
+        }
+        .padding(.top, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Background
+
+private enum SelectorBrand {
+
+    static let backgroundTop = Color(hex: "2A0C5A")
+    static let backgroundMid = Color(hex: "3B136E")
+    static let backgroundBottom = Color(hex: "14062F")
+
+    static var backgroundGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                backgroundTop,
+                backgroundMid,
+                backgroundBottom
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 }

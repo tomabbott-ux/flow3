@@ -80,6 +80,11 @@
 		F88051712F605C64005CF24F /* BWILiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88051702F605C64005CF24F /* BWILiveWaitTimeProvider.swift */; };
 		F88051732F6061A9005CF24F /* DCALiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88051722F6061A9005CF24F /* DCALiveWaitTimeProvider.swift */; };
 		F88051752F606BFA005CF24F /* PDXLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88051742F606BFA005CF24F /* PDXLiveWaitTimeProvider.swift */; };
+		F88051792F60D140005CF24F /* FlowAirport+ICAO.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88051782F60D140005CF24F /* FlowAirport+ICAO.swift */; };
+		F880517B2F60D163005CF24F /* AviationWeatherMETARProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880517A2F60D163005CF24F /* AviationWeatherMETARProvider.swift */; };
+		F880517D2F60D4D8005CF24F /* LiveMETARWeatherProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880517C2F60D4D8005CF24F /* LiveMETARWeatherProvider.swift */; };
+		F880517F2F60E64F005CF24F /* FavouriteAirports.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880517E2F60E64F005CF24F /* FavouriteAirports.swift */; };
+		F88051812F60E732005CF24F /* RecentAirports.swift in Sources */ = {isa = PBXBuildFile; fileRef = F88051802F60E732005CF24F /* RecentAirports.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -176,6 +181,11 @@
 		F88051702F605C64005CF24F /* BWILiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWILiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F88051722F6061A9005CF24F /* DCALiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DCALiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F88051742F606BFA005CF24F /* PDXLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDXLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F88051782F60D140005CF24F /* FlowAirport+ICAO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FlowAirport+ICAO.swift"; sourceTree = "<group>"; };
+		F880517A2F60D163005CF24F /* AviationWeatherMETARProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AviationWeatherMETARProvider.swift; sourceTree = "<group>"; };
+		F880517C2F60D4D8005CF24F /* LiveMETARWeatherProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMETARWeatherProvider.swift; sourceTree = "<group>"; };
+		F880517E2F60E64F005CF24F /* FavouriteAirports.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavouriteAirports.swift; sourceTree = "<group>"; };
+		F88051802F60E732005CF24F /* RecentAirports.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentAirports.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -245,6 +255,7 @@
 		F862F1A12F583923001666F2 /* Flow3 */ = {
 			isa = PBXGroup;
 			children = (
+				F88051772F60D11D005CF24F /* Weather */,
 				F822A8D92F5CF7E4009F6107 /* Average */,
 				F80599F62F5B95B900146BF1 /* Estimated Provider */,
 				F862F1EB2F583B29001666F2 /* App */,
@@ -260,6 +271,8 @@
 				F80599D82F5AE51900146BF1 /* JFKAzureAPIWaitTimeProvider.swift */,
 				F80599DE2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift */,
 				F880516A2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift */,
+				F880517E2F60E64F005CF24F /* FavouriteAirports.swift */,
+				F88051802F60E732005CF24F /* RecentAirports.swift */,
 			);
 			path = Flow3;
 			sourceTree = "<group>";
@@ -397,6 +410,16 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		F88051772F60D11D005CF24F /* Weather */ = {
+			isa = PBXGroup;
+			children = (
+				F88051782F60D140005CF24F /* FlowAirport+ICAO.swift */,
+				F880517A2F60D163005CF24F /* AviationWeatherMETARProvider.swift */,
+				F880517C2F60D4D8005CF24F /* LiveMETARWeatherProvider.swift */,
+			);
+			path = Weather;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -527,6 +550,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F88051792F60D140005CF24F /* FlowAirport+ICAO.swift in Sources */,
 				F862F1DD2F583A5B001666F2 /* WeatherService.swift in Sources */,
 				F862F1EA2F583B20001666F2 /* LandingView.swift in Sources */,
 				F862F1ED2F583B45001666F2 /* ContentView.swift in Sources */,
@@ -561,7 +585,9 @@
 				F862F1E22F583AAB001666F2 /* LHRStubWaitTimeProvider.swift in Sources */,
 				F80599F12F5B6AD700146BF1 /* MCOLiveWaitTimeProvider.swift in Sources */,
 				F880516F2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift in Sources */,
+				F880517D2F60D4D8005CF24F /* LiveMETARWeatherProvider.swift in Sources */,
 				F80599EB2F5B3A3600146BF1 /* DENLiveWaitTimeProvider.swift in Sources */,
+				F88051812F60E732005CF24F /* RecentAirports.swift in Sources */,
 				F822A8E42F5D1206009F6107 /* LGALiveWaitTimeProvider.swift in Sources */,
 				F822A8E62F5DB9E4009F6107 /* HAMLiveWaitProvider.swift in Sources */,
 				F828EF332F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift in Sources */,
@@ -572,9 +598,11 @@
 				F822A8CE2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift in Sources */,
 				F88051752F606BFA005CF24F /* PDXLiveWaitTimeProvider.swift in Sources */,
 				F80599DD2F5AECB200146BF1 /* LivePulseDot.swift in Sources */,
+				F880517B2F60D163005CF24F /* AviationWeatherMETARProvider.swift in Sources */,
 				F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */,
 				F80599D32F5AD36B00146BF1 /* LandingStore+Presentation.swift in Sources */,
 				F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */,
+				F880517F2F60E64F005CF24F /* FavouriteAirports.swift in Sources */,
 				F822A8D62F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift in Sources */,
 				F862F1D32F5839B4001666F2 /* WaitTimeModels.swift in Sources */,
 				F822A8D02F5CD692009F6107 /* FRALiveWaitTimeProvider.swift in Sources */,

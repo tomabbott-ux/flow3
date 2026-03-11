@@ -7,10 +7,10 @@ struct ContentView: View {
             provider: AirportWaitTimeRouter()
         ),
         weatherService: WeatherService(
-            provider: StubWeatherProvider()
+            provider: LiveMETARWeatherProvider()
         )
     )
-
+    
     @State private var hasSelectedAirport = false
 
     var body: some View {
