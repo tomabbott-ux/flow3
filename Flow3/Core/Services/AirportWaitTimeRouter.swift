@@ -110,7 +110,10 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         case .ord:
             return try await ORDLiveWaitTimeProvider().fetchWaitTimes(for: airport)
-
+            
+        case .aena:
+            return try await AenaLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+            
         case .ams:
             return try await AMSWaitTimeProvider().fetchWaitTimes(for: airport)
 

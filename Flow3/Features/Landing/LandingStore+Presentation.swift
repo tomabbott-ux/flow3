@@ -31,12 +31,13 @@ extension LandingStore {
              .yvr, .yyc, .den, .dfw, .hou, .mco, .phx,
              .phl, .san, .las, .bos, .sea, .mia, .sfo,
              .bna, .tpa, .dtw, .clt, .ewr, .bwi, .dca, .pdx,
-             .icn:
+             .icn, .mad, .bcn,
+             .pmi, .agp, .alc, .svq, .bio, .ibz, .vlc, .tfs, .lpa:
             return namedCheckpointRows(from: rows)
 
         case .jfk, .lhr, .lga, .cph, .yyz,
-             .ams, .cdg, .dxb, .sin, .fra, .mad,
-             .lax, .ord, .fco, .bcn, .hnd, .syd, .msp:
+             .ams, .cdg, .dxb, .sin, .fra,
+             .lax, .ord, .fco, .hnd, .syd, .msp:
             return terminalDisplayRows(from: rows)
         }
     }
@@ -45,17 +46,17 @@ extension LandingStore {
 
         let grouped = Dictionary(grouping: rows) { row in
             let checkpoint = row.checkpointName ?? "Security"
-            let area = row.areaName ?? "Terminal"
+            let area = row.areaName ?? ""
             return "\(checkpoint)|\(area)"
         }
 
         var displayRows = grouped
             .map { key, items in
 
-                let parts = key.split(separator: "|").map(String.init)
+                let parts = key.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
 
                 let title = parts.first ?? "Security"
-                let subtitle = parts.count > 1 ? parts[1] : "Terminal"
+                let subtitle = parts.count > 1 ? parts[1] : ""
 
                 let observedAt = items.map(\.observedAt).max()
                 let isClosed = items.allSatisfy(\.isClosed)
@@ -97,17 +98,18 @@ extension LandingStore {
             )
         }
 
-        return displayRows.sorted { lhs, rhs in
+        return displayRows
+            .sorted { lhs, rhs in
+                if lhs.id == "SLC-PRECHECK-AVAILABLE" { return false }
+                if rhs.id == "SLC-PRECHECK-AVAILABLE" { return true }
 
-            if lhs.id == "SLC-PRECHECK-AVAILABLE" { return false }
-            if rhs.id == "SLC-PRECHECK-AVAILABLE" { return true }
+                if lhs.title == rhs.title {
+                    return lhs.subtitle < rhs.subtitle
+                }
 
-            if lhs.subtitle == rhs.subtitle {
                 return lhs.title < rhs.title
             }
-
-            return lhs.subtitle < rhs.subtitle
-        }
+            .uniqued(by: { $0.title + "|" + $0.subtitle })
     }
 
     private func terminalDisplayRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
@@ -243,5 +245,12 @@ extension LandingStore {
         return [
             AirportMetric(label: "Wait", minutes: bestMinutes)
         ]
+    }
+}
+
+extension Array {
+    func uniqued<T: Hashable>(by key: (Element) -> T) -> [Element] {
+        var seen = Set<T>()
+        return filter { seen.insert(key($0)).inserted }
     }
 }

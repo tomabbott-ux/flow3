@@ -9,12 +9,13 @@ extension FlowAirport {
              .arn, .got, .osl, .doh, .zrh, .hel,
              .yvr, .yyc, .den, .dfw, .hou, .mco, .phx,
              .phl, .san, .las, .bos, .sea, .mia, .sfo,
-             .bna, .tpa, .dtw, .clt, .ewr, .bwi, .dca, .icn, .pdx:
+             .bna, .tpa, .dtw, .clt, .ewr, .bwi, .dca, .icn, .pdx,
+             .mad,.pmi, .agp, .alc, .svq, .bio, .ibz, .vlc, .tfs, .lpa, .bcn:
             return true
 
         case .jfk, .lhr, .lga, .cph, .yyz,
-             .ams, .cdg, .dxb, .sin, .fra, .mad,
-             .lax, .ord, .fco, .bcn, .hnd, .syd,
+             .ams, .cdg, .dxb, .sin, .fra,
+             .lax, .ord, .fco, .hnd, .syd,
              .msp:
             return false
         }

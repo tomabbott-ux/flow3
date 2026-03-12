@@ -90,6 +90,7 @@
 		F8BD8FDF2F62AE2C000EE425 /* SwedaviaLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FDE2F62AE2C000EE425 /* SwedaviaLiveWaitTimeProvider.swift */; };
 		F8BD8FE12F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE02F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift */; };
 		F8BD8FE32F631C53000EE425 /* ICNLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */; };
+		F8BD8FE52F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE42F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -196,6 +197,7 @@
 		F8BD8FDE2F62AE2C000EE425 /* SwedaviaLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwedaviaLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FE02F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSLLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICNLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F8BD8FE42F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AenaLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -389,6 +391,7 @@
 				F8BD8FDE2F62AE2C000EE425 /* SwedaviaLiveWaitTimeProvider.swift */,
 				F8BD8FE02F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift */,
 				F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */,
+				F8BD8FE42F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -567,6 +570,7 @@
 			files = (
 				F88051792F60D140005CF24F /* FlowAirport+ICAO.swift in Sources */,
 				F862F1DD2F583A5B001666F2 /* WeatherService.swift in Sources */,
+				F8BD8FE52F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift in Sources */,
 				F862F1EA2F583B20001666F2 /* LandingView.swift in Sources */,
 				F862F1ED2F583B45001666F2 /* ContentView.swift in Sources */,
 				F80599E32F5AFED300146BF1 /* YYZLiveWaitTimeProvider.swift in Sources */,

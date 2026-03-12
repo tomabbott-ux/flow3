@@ -49,7 +49,16 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
     case sin = "SIN"
     case fra = "FRA"
     case mad = "MAD"
-
+    case pmi = "PMI"
+    case agp = "AGP"
+    case alc = "ALC"
+    case svq = "SVQ"
+    case bio = "BIO"
+    case ibz = "IBZ"
+    case vlc = "VLC"
+    case tfs = "TFS"
+    case lpa = "LPA"
+    
     case sfo = "SFO"
     case lax = "LAX"
     case ord = "ORD"
@@ -117,6 +126,15 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .sin: return "Singapore"
         case .fra: return "Frankfurt"
         case .mad: return "Madrid"
+        case .pmi: return "Palma"
+        case .agp: return "Malaga"
+        case .alc: return "Alicante"
+        case .svq: return "Seville"
+        case .bio: return "Bilbao"
+        case .ibz: return "Ibiza"
+        case .vlc: return "Valencia"
+        case .tfs: return "Tenerife South"
+        case .lpa: return "Gran Canaria"
 
         case .sfo: return "San Francisco"
         case .lax: return "Los Angeles"
@@ -185,7 +203,16 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .sin: return "Singapore (SIN)"
         case .fra: return "Frankfurt (FRA)"
         case .mad: return "Madrid (MAD)"
-
+        case .pmi: return "Palma (PMI)"
+        case .agp: return "Malaga (AGP)"
+        case .alc: return "Alicante (ALC)"
+        case .svq: return "Seville (SVQ)"
+        case .bio: return "Bilbao (BIO)"
+        case .ibz: return "Ibiza (IBZ)"
+        case .vlc: return "Valencia (VLC)"
+        case .tfs: return "Tenerife South (TFS)"
+        case .lpa: return "Gran Canaria (LPA)"
+            
         case .sfo: return "San Francisco (SFO)"
         case .lax: return "Los Angeles (LAX)"
         case .ord: return "Chicago (ORD)"
@@ -239,9 +266,12 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .cdg:
             return TimeZone(identifier: "Europe/Paris")!
 
-        case .mad, .bcn:
+        case .mad, .bcn, .pmi, .agp, .alc, .svq, .bio, .ibz, .vlc:
             return TimeZone(identifier: "Europe/Madrid")!
-
+            
+        case .tfs, .lpa:
+            return TimeZone(identifier: "Atlantic/Canary")!
+            
         case .fco:
             return TimeZone(identifier: "Europe/Rome")!
 

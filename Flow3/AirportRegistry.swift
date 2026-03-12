@@ -28,6 +28,7 @@ enum AirportProviderKind: String, Codable, Hashable {
     case zrh
     case hel
     case icn
+    case aena
     
     case yyz
     case yvr
@@ -118,13 +119,26 @@ struct AirportRegistry {
         AirportDefinition(airport: .osl, feedType: .live, providerKind: .osl),
         AirportDefinition(airport: .zrh, feedType: .live, providerKind: .zrh),
         AirportDefinition(airport: .hel, feedType: .live, providerKind: .hel),
-
+        AirportDefinition(airport: .icn, feedType: .live, providerKind: .icn),
+        AirportDefinition(airport: .mad, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .bcn, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .pmi, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .agp, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .alc, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .svq, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .bio, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .ibz, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .vlc, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .tfs, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .lpa, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .clt, feedType: .live, providerKind: .clt),
         AirportDefinition(airport: .ewr, feedType: .live, providerKind: .ewr),
         AirportDefinition(airport: .bwi, feedType: .live, providerKind: .bwi),
         AirportDefinition(airport: .dca, feedType: .live, providerKind: .dca),
         AirportDefinition(airport: .pdx, feedType: .live, providerKind: .pdx),
         AirportDefinition(airport: .icn, feedType: .live, providerKind: .icn),
+        AirportDefinition(airport: .mad, feedType: .live, providerKind: .aena),
+        AirportDefinition(airport: .bcn, feedType: .live, providerKind: .aena),
         
         AirportDefinition(airport: .san, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .las, feedType: .highConfidence, providerKind: .tsaWebsite),
@@ -141,9 +155,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .cdg, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .dxb, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .sin, feedType: .estimated, providerKind: .estimated),
-        AirportDefinition(airport: .mad, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .lax, feedType: .estimated, providerKind: .estimated),
-        AirportDefinition(airport: .bcn, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .hnd, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .syd, feedType: .estimated, providerKind: .estimated)
     ]
