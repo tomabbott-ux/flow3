@@ -20,7 +20,10 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         case .atl:
             return try await ATLStubWaitTimeProvider().fetchWaitTimes(for: airport)
-
+            
+        case .icn:
+            return try await ICNLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+            
         case .jfk:
             return try await JFKAzureAPIWaitTimeProvider().fetchWaitTimes(for: airport)
 

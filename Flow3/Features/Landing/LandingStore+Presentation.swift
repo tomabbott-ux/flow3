@@ -31,11 +31,12 @@ extension LandingStore {
              .yvr, .yyc, .den, .dfw, .hou, .mco, .phx,
              .phl, .san, .las, .bos, .sea, .mia, .sfo,
              .bna, .tpa, .dtw, .clt, .ewr, .bwi, .dca, .pdx,
-             .fra, .lhr:
+             .icn:
             return namedCheckpointRows(from: rows)
 
-        case .jfk, .lga, .cph, .yyz, .ams, .cdg, .dxb, .sin, .mad,
-             .lax, .ord, .fco, .bcn, .hnd, .icn, .syd, .msp:
+        case .jfk, .lhr, .lga, .cph, .yyz,
+             .ams, .cdg, .dxb, .sin, .fra, .mad,
+             .lax, .ord, .fco, .bcn, .hnd, .syd, .msp:
             return terminalDisplayRows(from: rows)
         }
     }
@@ -44,7 +45,7 @@ extension LandingStore {
 
         let grouped = Dictionary(grouping: rows) { row in
             let checkpoint = row.checkpointName ?? "Security"
-            let area = row.areaName ?? terminalSubtitle(for: row)
+            let area = row.areaName ?? "Terminal"
             return "\(checkpoint)|\(area)"
         }
 
@@ -185,13 +186,6 @@ extension LandingStore {
                 )
             }
             .sorted { $0.title < $1.title }
-    }
-
-    private func terminalSubtitle(for row: WaitTimeEstimate) -> String {
-        if let terminal = row.terminal {
-            return "Terminal \(terminal)"
-        }
-        return "Terminal"
     }
 
     private func cleanedTerminalSubtitle(title: String, subtitle: String) -> String {

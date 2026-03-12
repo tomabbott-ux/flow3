@@ -89,6 +89,7 @@
 		F8BD8FDD2F62AE13000EE425 /* HELLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FDC2F62AE13000EE425 /* HELLiveWaitTimeProvider.swift */; };
 		F8BD8FDF2F62AE2C000EE425 /* SwedaviaLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FDE2F62AE2C000EE425 /* SwedaviaLiveWaitTimeProvider.swift */; };
 		F8BD8FE12F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE02F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift */; };
+		F8BD8FE32F631C53000EE425 /* ICNLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -194,6 +195,7 @@
 		F8BD8FDC2F62AE13000EE425 /* HELLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HELLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FDE2F62AE2C000EE425 /* SwedaviaLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwedaviaLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FE02F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSLLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICNLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -386,6 +388,7 @@
 				F8BD8FDC2F62AE13000EE425 /* HELLiveWaitTimeProvider.swift */,
 				F8BD8FDE2F62AE2C000EE425 /* SwedaviaLiveWaitTimeProvider.swift */,
 				F8BD8FE02F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift */,
+				F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -585,6 +588,7 @@
 				F8BD8FD92F62ADD0000EE425 /* DOHLiveWaitTimeProvider.swift in Sources */,
 				F828EF352F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift in Sources */,
 				F80599CB2F5ACAA300146BF1 /* AirportWaitTimeRouter.swift in Sources */,
+				F8BD8FE32F631C53000EE425 /* ICNLiveWaitTimeProvider.swift in Sources */,
 				F862F1A32F583923001666F2 /* Flow3App.swift in Sources */,
 				F828EF372F59CE1300EC53EC /* ATLCheckpointCard.swift in Sources */,
 				F8BD8FDB2F62ADF2000EE425 /* ZRHLiveWaitTimeProvider.swift in Sources */,

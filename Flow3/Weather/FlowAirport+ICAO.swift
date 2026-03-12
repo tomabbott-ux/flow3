@@ -3,7 +3,6 @@ import Foundation
 extension FlowAirport {
 
     var icaoCode: String {
-
         switch self {
 
         case .atl: return "KATL"
@@ -11,6 +10,13 @@ extension FlowAirport {
         case .lhr: return "EGLL"
         case .ist: return "LTFM"
         case .lga: return "KLGA"
+
+        case .ham: return "EDDH"
+        case .cph: return "EKCH"
+        case .dus: return "EDDL"
+        case .edi: return "EGPH"
+        case .str: return "EDDS"
+        case .bru: return "EBBR"
 
         case .phl: return "KPHL"
         case .mco: return "KMCO"
@@ -22,6 +28,9 @@ extension FlowAirport {
         case .clt: return "KCLT"
         case .ewr: return "KEWR"
         case .msp: return "KMSP"
+        case .bwi: return "KBWI"
+        case .dca: return "KDCA"
+        case .pdx: return "KPDX"
 
         case .yyz: return "CYYZ"
         case .yvr: return "CYVR"
@@ -48,31 +57,18 @@ extension FlowAirport {
         case .san: return "KSAN"
         case .mia: return "KMIA"
 
-        default:
-            return airportFallbackICAO
-        }
-    }
-
-    private var airportFallbackICAO: String {
-
-        switch self {
-
-        case .ham: return "EDDH"
-        case .cph: return "EKCH"
-        case .dus: return "EDDL"
-        case .edi: return "EGPH"
-        case .str: return "EDDS"
-        case .bru: return "EBBR"
-
         case .bcn: return "LEBL"
         case .fco: return "LIRF"
-
         case .hnd: return "RJTT"
         case .icn: return "RKSI"
         case .syd: return "YSSY"
 
-        default:
-            return "KATL"
+        case .doh: return "OTHH"
+        case .arn: return "ESSA"
+        case .got: return "ESGG"
+        case .osl: return "ENGM"
+        case .zrh: return "LSZH"
+        case .hel: return "EFHK"
         }
     }
 }

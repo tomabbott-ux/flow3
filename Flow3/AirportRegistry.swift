@@ -27,7 +27,8 @@ enum AirportProviderKind: String, Codable, Hashable {
     case osl
     case zrh
     case hel
-
+    case icn
+    
     case yyz
     case yvr
     case yyc
@@ -123,7 +124,8 @@ struct AirportRegistry {
         AirportDefinition(airport: .bwi, feedType: .live, providerKind: .bwi),
         AirportDefinition(airport: .dca, feedType: .live, providerKind: .dca),
         AirportDefinition(airport: .pdx, feedType: .live, providerKind: .pdx),
-
+        AirportDefinition(airport: .icn, feedType: .live, providerKind: .icn),
+        
         AirportDefinition(airport: .san, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .las, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .bos, feedType: .highConfidence, providerKind: .tsaWebsite),
@@ -143,7 +145,6 @@ struct AirportRegistry {
         AirportDefinition(airport: .lax, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .bcn, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .hnd, feedType: .estimated, providerKind: .estimated),
-        AirportDefinition(airport: .icn, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .syd, feedType: .estimated, providerKind: .estimated)
     ]
 
