@@ -20,6 +20,13 @@ enum AirportProviderKind: String, Codable, Hashable {
     case str
     case bru
     case fco
+    case fra
+    case doh
+    case arn
+    case got
+    case osl
+    case zrh
+    case hel
 
     case yyz
     case yvr
@@ -103,12 +110,20 @@ struct AirportRegistry {
         AirportDefinition(airport: .ord, feedType: .live, providerKind: .ord),
         AirportDefinition(airport: .ams, feedType: .live, providerKind: .ams),
         AirportDefinition(airport: .fco, feedType: .live, providerKind: .fco),
+        AirportDefinition(airport: .fra, feedType: .live, providerKind: .fra),
+        AirportDefinition(airport: .doh, feedType: .live, providerKind: .doh),
+        AirportDefinition(airport: .arn, feedType: .live, providerKind: .arn),
+        AirportDefinition(airport: .got, feedType: .live, providerKind: .got),
+        AirportDefinition(airport: .osl, feedType: .live, providerKind: .osl),
+        AirportDefinition(airport: .zrh, feedType: .live, providerKind: .zrh),
+        AirportDefinition(airport: .hel, feedType: .live, providerKind: .hel),
+
         AirportDefinition(airport: .clt, feedType: .live, providerKind: .clt),
         AirportDefinition(airport: .ewr, feedType: .live, providerKind: .ewr),
         AirportDefinition(airport: .bwi, feedType: .live, providerKind: .bwi),
         AirportDefinition(airport: .dca, feedType: .live, providerKind: .dca),
         AirportDefinition(airport: .pdx, feedType: .live, providerKind: .pdx),
-        
+
         AirportDefinition(airport: .san, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .las, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .bos, feedType: .highConfidence, providerKind: .tsaWebsite),
@@ -118,12 +133,12 @@ struct AirportRegistry {
         AirportDefinition(airport: .bna, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .tpa, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .dtw, feedType: .highConfidence, providerKind: .tsaWebsite),
+
         AirportDefinition(airport: .msp, feedType: .comingSoon, providerKind: .none),
 
         AirportDefinition(airport: .cdg, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .dxb, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .sin, feedType: .estimated, providerKind: .estimated),
-        AirportDefinition(airport: .fra, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .mad, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .lax, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .bcn, feedType: .estimated, providerKind: .estimated),

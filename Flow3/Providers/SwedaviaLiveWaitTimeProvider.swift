@@ -1,11 +1,11 @@
 import Foundation
 
-final class ARNLiveWaitTimeProvider: WaitTimeProviding {
+struct SwedaviaLiveWaitTimeProvider: WaitTimeProviding {
 
     enum ProviderError: Error {
         case invalidURL
-        case badHTTPStatus(Int)
         case invalidResponse
+        case badHTTPStatus(Int)
     }
 
     private let session: URLSession
@@ -15,16 +15,19 @@ final class ARNLiveWaitTimeProvider: WaitTimeProviding {
     }
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
-        guard airport == .arn else { return [] }
+        guard airport == .arn || airport == .got else { return [] }
 
-        guard let url = URL(string: "https://www.swedavia.com/services/queuetimes/v2/airport/en/ARN/true") else {
+        let code = airport.rawValue.uppercased()
+
+        guard let url = URL(string: "https://www.swedavia.com/services/queuetimes/v2/airport/en/\(code)/true") else {
             throw ProviderError.invalidURL
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json, text/plain, */*", forHTTPHeaderField: "Accept")
-        request.setValue("https://www.swedavia.com/arlanda/", forHTTPHeaderField: "Referer")
+        request.setValue("en-GB,en;q=0.9", forHTTPHeaderField: "Accept-Language")
+        request.setValue("https://www.swedavia.com/", forHTTPHeaderField: "Referer")
         request.setValue(
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15",
             forHTTPHeaderField: "User-Agent"
@@ -40,56 +43,114 @@ final class ARNLiveWaitTimeProvider: WaitTimeProviding {
             throw ProviderError.badHTTPStatus(http.statusCode)
         }
 
-        let payload = try JSONDecoder().decode(ARNQueueResponse.self, from: data)
-        let now = Date()
+        let payload = try JSONDecoder().decode(SwedaviaQueueResponse.self, from: data)
 
-        let results = payload.queueTimesList.map { item in
-            let terminalNumber = Int(item.terminalId.first ?? "")
+        guard payload.queueTimesDisabled == false else {
+            return []
+        }
 
-            let checkpointTitle: String = {
-                if !item.displayNameEnglish.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    return "Terminal \(item.displayNameEnglish)"
-                }
+        let observedAt = Date()
 
-                if !item.locationName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    return item.locationName
-                }
+        return payload.queueTimesList.map { item in
+            let terminalNumber = item.terminalId.first.flatMap { Int($0) }
 
-                if let terminalNumber {
-                    return "Terminal \(terminalNumber)"
-                }
-
-                return "Security"
-            }()
-
-            let minutes = max(0, Int(round(Double(item.currentProjectedQueueTime) / 60.0)))
+            let checkpointTitle = makeCheckpointTitle(for: airport, item: item)
+            let subtitle = makeSubtitle(for: airport, item: item, terminalNumber: terminalNumber)
+            let minutes = max(0, Int(ceil(Double(item.currentProjectedQueueTime) / 60.0)))
 
             return WaitTimeEstimate(
-                airport: .arn,
+                airport: airport,
                 terminal: terminalNumber,
-                queueType: item.isFastTrack ? .precheck : .general,
+                queueType: .general,
                 minutes: minutes,
-                observedAt: now,
+                observedAt: observedAt,
                 checkpointName: checkpointTitle,
-                areaName: item.name,
+                areaName: subtitle,
                 sourceType: .live,
-                isClosed: item.isStationClosed || item.isDisabled
+                isClosed: item.isDisabled || item.isStationClosed
             )
         }
+        .sorted { lhs, rhs in
+            let leftTerminal = lhs.terminal ?? 0
+            let rightTerminal = rhs.terminal ?? 0
 
-        return results.sorted {
-            ($0.checkpointName ?? "") < ($1.checkpointName ?? "")
+            if leftTerminal == rightTerminal {
+                return (lhs.checkpointName ?? "") < (rhs.checkpointName ?? "")
+            }
+
+            return leftTerminal < rightTerminal
         }
+    }
+
+    private func makeCheckpointTitle(for airport: FlowAirport, item: SwedaviaQueueItem) -> String {
+        let displayEnglish = item.displayNameEnglish.trimmingCharacters(in: .whitespacesAndNewlines)
+        let display = item.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let short = item.shortName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let location = item.locationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let terminal = item.terminalId.first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        if airport == .arn {
+            if !displayEnglish.isEmpty {
+                return "Terminal \(displayEnglish) Security"
+            }
+
+            if !display.isEmpty {
+                return "Terminal \(display) Security"
+            }
+
+            if !short.isEmpty, !terminal.isEmpty {
+                return "Terminal \(terminal)\(short) Security"
+            }
+
+            if !terminal.isEmpty {
+                return "Terminal \(terminal) Security"
+            }
+        }
+
+        if airport == .got {
+            if !displayEnglish.isEmpty { return displayEnglish }
+            if !display.isEmpty { return display }
+            if !location.isEmpty, location.lowercased() != "security check" { return location }
+            return name
+        }
+
+        if !displayEnglish.isEmpty { return displayEnglish }
+        if !display.isEmpty { return display }
+        if !short.isEmpty { return short }
+        return name
+    }
+
+    private func makeSubtitle(for airport: FlowAirport, item: SwedaviaQueueItem, terminalNumber: Int?) -> String {
+        let location = item.locationName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if airport == .arn {
+            return "Terminal"
+        }
+
+        if airport == .got {
+            return "Terminal"
+        }
+
+        if !location.isEmpty {
+            return location
+        }
+
+        if let terminalNumber {
+            return "Terminal \(terminalNumber)"
+        }
+
+        return "Terminal"
     }
 }
 
-private struct ARNQueueResponse: Decodable {
+private struct SwedaviaQueueResponse: Decodable {
     let queueTimesDisabled: Bool
     let queueTimesReplacementMessage: String
-    let queueTimesList: [ARNQueueItem]
+    let queueTimesList: [SwedaviaQueueItem]
 }
 
-private struct ARNQueueItem: Decodable {
+private struct SwedaviaQueueItem: Decodable {
     let id: Int
     let longId: String
     let terminalId: [String]

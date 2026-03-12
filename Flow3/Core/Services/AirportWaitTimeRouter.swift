@@ -9,7 +9,7 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
     private let bwiProvider = BWILiveWaitTimeProvider()
     private let dcaProvider = DCALiveWaitTimeProvider()
     private let pdxProvider = PDXLiveWaitTimeProvider()
-    
+
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
 
         guard let definition = AirportRegistry.definition(for: airport) else {
@@ -25,7 +25,7 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
             return try await JFKAzureAPIWaitTimeProvider().fetchWaitTimes(for: airport)
 
         case .lhr:
-            return try await LHRStubWaitTimeProvider().fetchWaitTimes(for: airport)
+            return try await LHRLiveWaitTimeProvider().fetchWaitTimes(for: airport)
 
         case .ist:
             return try await ISTLiveWaitTimeProvider().fetchWaitTimes(for: airport)
@@ -53,6 +53,24 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         case .fco:
             return try await FCOLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .fra:
+            return try await FRALiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .doh:
+            return try await DOHLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .arn, .got:
+            return try await SwedaviaLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .osl:
+            return try await OSLLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .zrh:
+            return try await ZRHLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+
+        case .hel:
+            return try await HELLiveWaitTimeProvider().fetchWaitTimes(for: airport)
 
         case .yyz:
             return try await YYZLiveWaitTimeProvider().fetchWaitTimes(for: airport)
@@ -104,10 +122,10 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         case .dca:
             return try await dcaProvider.fetchWaitTimes(for: airport)
-            
+
         case .pdx:
             return try await pdxProvider.fetchWaitTimes(for: airport)
-            
+
         case .tsaWebsite:
             return try await tsaWebsiteProvider.fetchWaitTimes(for: airport)
 

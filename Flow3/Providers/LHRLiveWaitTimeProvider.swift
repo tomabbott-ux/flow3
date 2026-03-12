@@ -2,235 +2,155 @@ import Foundation
 
 struct LHRLiveWaitTimeProvider: WaitTimeProviding {
 
-    // ✅ Real Heathrow endpoint from your Network tab
-    private let endpoint = URL(string: "https://api-dp-prod.dp.heathrow.com/pihub/securitywaittime?checkpointFacilityType=securityStandard")!
+    enum ProviderError: Error {
+        case invalidURL
+        case invalidResponse
+        case badHTTPStatus(Int)
+    }
 
-    // ✅ Align refresh expectation with ATL/JFK (60s)
-    let refreshIntervalSeconds: TimeInterval = 60
+    private let session: URLSession
+
+    init(session: URLSession = .shared) {
+        self.session = session
+    }
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
         guard airport == .lhr else { return [] }
 
-        var request = URLRequest(url: endpoint)
+        guard let url = URL(
+            string: "https://api-dp-prod.dp.heathrow.com/pihub/securitywaittime?checkpointFacilityType=securityStandard"
+        ) else {
+            throw ProviderError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.timeoutInterval = 15
+        request.setValue("application/json, text/plain, */*", forHTTPHeaderField: "Accept")
+        request.setValue("en-GB,en;q=0.9", forHTTPHeaderField: "Accept-Language")
+        request.setValue("https://www.heathrow.com/", forHTTPHeaderField: "Referer")
+        request.setValue("https://www.heathrow.com", forHTTPHeaderField: "Origin")
+        request.setValue(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15",
+            forHTTPHeaderField: "User-Agent"
+        )
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
 
-        if let http = response as? HTTPURLResponse {
-            print("LHR API status: \(http.statusCode)")
-            print("LHR API bytes: \(data.count)")
+        guard let http = response as? HTTPURLResponse else {
+            throw ProviderError.invalidResponse
         }
 
-        let json = try JSONSerialization.jsonObject(with: data, options: [])
-
-        guard let arr = json as? [[String: Any]] else {
-            print("LHR top-level not array")
-            return []
+        guard (200...299).contains(http.statusCode) else {
+            throw ProviderError.badHTTPStatus(http.statusCode)
         }
 
-        let rows = parseRows(from: arr)
-        print("LHR parsed rows: \(rows.count)")
-        return rows
-            .map { $0.toEstimate() }
-    }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .formatted(Self.dateFormatter)
 
-    // MARK: - Row
+        let payload = try decoder.decode([LHRSecurityItem].self, from: data)
 
-    private struct Row {
-        let terminal: Int
-        let queueType: QueueType
-        let minutes: Int
-        let observedAt: Date
-        let checkpoint: String
+        let rows: [WaitTimeEstimate] = payload.compactMap { item in
+            guard item.queueType.code == "security" else { return nil }
+            guard item.checkpointFacility.checkpointFacilityType.code == "securityStandard" else { return nil }
 
-        func toEstimate() -> WaitTimeEstimate {
-            WaitTimeEstimate(
+            let terminalCode = item.checkpointFacility.terminalFacility.code
+            guard let terminal = Int(terminalCode) else { return nil }
+
+            let maxWait = item.queueMeasurements.first(where: { $0.name == "maximumWaitTime" })?.value
+            let minWait = item.queueMeasurements.first(where: { $0.name == "minimumWaitTime" })?.value
+
+            let minutes: Int
+            if let maxWait, maxWait >= 0 {
+                minutes = maxWait
+            } else if let minWait, minWait >= 0 {
+                minutes = minWait
+            } else {
+                minutes = 0
+            }
+
+            let checkpointName: String
+            if terminal == 5 {
+                switch item.checkpointFacility.area?.uppercased() {
+                case "N":
+                    checkpointName = "North"
+                case "S":
+                    checkpointName = "South"
+                default:
+                    checkpointName = "Security"
+                }
+            } else {
+                checkpointName = "Security"
+            }
+
+            return WaitTimeEstimate(
                 airport: .lhr,
                 terminal: terminal,
-                queueType: queueType,
+                queueType: .general,
                 minutes: minutes,
-                observedAt: observedAt
+                observedAt: item.lastUpdated,
+                checkpointName: checkpointName,
+                areaName: nil,
+                sourceType: .live,
+                isClosed: item.isDataStale
             )
         }
-    }
 
-    // MARK: - Parsing
+        return rows.sorted {
+            let leftTerminal = $0.terminal ?? 0
+            let rightTerminal = $1.terminal ?? 0
 
-    private func parseRows(from arr: [[String: Any]]) -> [Row] {
-        var out: [Row] = []
-        for item in arr {
-            if let row = parseOne(item) {
-                out.append(row)
-            }
-        }
-
-        // Deduplicate (Heathrow sometimes repeats)
-        // Key: terminal + queueType
-        var seen = Set<String>()
-        var deduped: [Row] = []
-        for r in out {
-            let key = "\(r.terminal)|\(r.queueType)"
-            if !seen.contains(key) {
-                seen.insert(key)
-                deduped.append(r)
-            }
-        }
-
-        return deduped
-    }
-
-    private func parseOne(_ item: [String: Any]) -> Row? {
-        // checkpointFacility -> terminalFacility.code and area (N/S)
-        guard
-            let checkpointFacility = item["checkpointFacility"] as? [String: Any],
-            let terminalFacility = checkpointFacility["terminalFacility"] as? [String: Any],
-            let terminalCode = terminalFacility["code"] as? String,
-            let terminal = Int(terminalCode)
-        else {
-            return nil
-        }
-
-        let area = checkpointFacility["area"] as? String // "N" / "S" or nil
-        let queueType = inferQueueType(terminal: terminal, area: area)
-
-        let observedAt = parseISO8601(item["lastUpdated"] as? String) ?? Date()
-
-        // Minutes can be:
-        // - waitTimeRangeMinutes "<5"
-        // - waitTimeMessage "Less than 5 minutes"
-        // - queueMeasurements min/max with min = -1 max = 5
-        let minutes = parseMinutes(item)
-
-        // Safety: ignore nonsense (negative)
-        if minutes < 0 { return nil }
-
-        // checkpoint label (UI shows "Security" everywhere)
-        let checkpoint = "Security"
-
-        return Row(
-            terminal: terminal,
-            queueType: queueType,
-            minutes: minutes,
-            observedAt: observedAt,
-            checkpoint: checkpoint
-        )
-    }
-
-    private func inferQueueType(terminal: Int, area: String?) -> QueueType {
-        // Your mapping:
-        // T5 North -> .general
-        // T5 South -> .precheck
-        if terminal == 5 {
-            if let a = area?.uppercased(), a == "S" {
-                return .precheck
-            } else {
-                return .general
-            }
-        }
-        return .general
-    }
-
-    private func parseMinutes(_ item: [String: Any]) -> Int {
-        // 1) Try explicit range string first
-        if let range = item["waitTimeRangeMinutes"] as? String {
-            if let m = minutesFromRangeString(range) {
-                return m
-            }
-        }
-
-        // 2) Try message text
-        if let msg = item["waitTimeMessage"] as? String {
-            if let m = minutesFromMessage(msg) {
-                return m
-            }
-        }
-
-        // 3) Try queueMeasurements min/max
-        if let qm = item["queueMeasurements"] as? [[String: Any]] {
-            let minV = measurementValue(named: "minimumWaitTime", in: qm)
-            let maxV = measurementValue(named: "maximumWaitTime", in: qm)
-
-            // Heathrow uses min=-1 max=5 for "<5"
-            if (minV == -1 && maxV == 5) {
-                return 4
+            if leftTerminal == rightTerminal {
+                return ($0.checkpointName ?? "") < ($1.checkpointName ?? "")
             }
 
-            // If both exist and sane, use midpoint-ish
-            if let minV, let maxV, minV >= 0, maxV >= 0 {
-                if maxV == minV { return maxV }
-                let mid = (minV + maxV) / 2
-                return max(mid, 0)
-            }
-
-            // If only max exists and is sane, use max
-            if let maxV, maxV >= 0 {
-                return maxV
-            }
+            return leftTerminal < rightTerminal
         }
-
-        // Fallback: unknown -> treat as 0? Better to show "--" in UI,
-        // but Estimate needs an Int. Return 0 so your pill doesn’t break.
-        return 0
     }
 
-    private func measurementValue(named name: String, in arr: [[String: Any]]) -> Int? {
-        for obj in arr {
-            guard let n = obj["name"] as? String, n == name else { continue }
-            if let v = obj["value"] as? Int { return v }
-            if let v = obj["value"] as? Double { return Int(v) }
-        }
-        return nil
-    }
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "Europe/London")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        return formatter
+    }()
+}
 
-    private func minutesFromRangeString(_ s: String) -> Int? {
-        let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
+private struct LHRSecurityItem: Decodable {
+    let lastUpdated: Date
+    let isDataStale: Bool
+    let queueType: LHRQueueType
+    let checkpointFacility: LHRCheckpointFacility
+    let queueMeasurements: [LHRQueueMeasurement]
+    let waitTimeRangeMinutes: String
+    let waitTimeMessage: String
+    let additionalMessages: [String]
+}
 
-        // "<5" => use 4
-        if trimmed.hasPrefix("<") {
-            return 4
-        }
+private struct LHRQueueType: Decodable {
+    let code: String
+}
 
-        // "5-10" => use lower bound (stable)
-        let parts = trimmed.split(separator: "-").map { String($0) }
-        if parts.count == 2, let a = Int(parts[0].trimmingCharacters(in: .whitespaces)),
-           let b = Int(parts[1].trimmingCharacters(in: .whitespaces)) {
-            return max(0, min(a, b))
-        }
+private struct LHRCheckpointFacility: Decodable {
+    let checkpointFacilityType: LHRCheckpointFacilityType
+    let terminalFacility: LHRTerminalFacility
+    let area: String?
+}
 
-        // "10" => direct
-        if let v = Int(trimmed) {
-            return max(0, v)
-        }
+private struct LHRCheckpointFacilityType: Decodable {
+    let code: String
+}
 
-        return nil
-    }
+private struct LHRTerminalFacility: Decodable {
+    let code: String
+}
 
-    private func minutesFromMessage(_ s: String) -> Int? {
-        let lower = s.lowercased()
+private struct LHRQueueMeasurement: Decodable {
+    let name: String
+    let value: Int
+    let unitOfMeasurement: LHRUnitOfMeasurement
+}
 
-        if lower.contains("less than 5") { return 4 }
-
-        // Pull first integer if present
-        let digits = lower.filter { $0.isNumber || $0 == " " }
-        let comps = digits.split(separator: " ").compactMap { Int($0) }
-        if let first = comps.first {
-            return max(0, first)
-        }
-
-        return nil
-    }
-
-    private func parseISO8601(_ s: String?) -> Date? {
-        guard let s else { return nil }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = f.date(from: s) { return d }
-
-        // Try without fractional seconds
-        let f2 = ISO8601DateFormatter()
-        f2.formatOptions = [.withInternetDateTime]
-        return f2.date(from: s)
-    }
+private struct LHRUnitOfMeasurement: Decodable {
+    let name: String
 }

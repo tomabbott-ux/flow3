@@ -13,6 +13,12 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
     case edi = "EDI"
     case str = "STR"
     case bru = "BRU"
+    case arn = "ARN"
+    case got = "GOT"
+    case osl = "OSL"
+    case doh = "DOH"
+    case zrh = "ZRH"
+    case hel = "HEL"
 
     case phl = "PHL"
     case mco = "MCO"
@@ -27,7 +33,7 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
     case bwi = "BWI"
     case dca = "DCA"
     case pdx = "PDX"
-    
+
     case yyz = "YYZ"
     case yvr = "YVR"
     case yyc = "YYC"
@@ -75,6 +81,12 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .edi: return "Edinburgh"
         case .str: return "Stuttgart"
         case .bru: return "Brussels"
+        case .arn: return "Stockholm Arlanda"
+        case .got: return "Gothenburg Landvetter"
+        case .osl: return "Oslo"
+        case .doh: return "Doha Hamad"
+        case .zrh: return "Zurich"
+        case .hel: return "Helsinki"
 
         case .phl: return "Philadelphia"
         case .mco: return "Orlando"
@@ -89,7 +101,7 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .bwi: return "Baltimore Washington"
         case .dca: return "Washington Reagan"
         case .pdx: return "Portland"
-            
+
         case .yyz: return "Toronto Pearson"
         case .yvr: return "Vancouver"
         case .yyc: return "Calgary"
@@ -137,6 +149,12 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .edi: return "Edinburgh (EDI)"
         case .str: return "Stuttgart (STR)"
         case .bru: return "Brussels (BRU)"
+        case .arn: return "Stockholm Arlanda (ARN)"
+        case .got: return "Gothenburg Landvetter (GOT)"
+        case .osl: return "Oslo (OSL)"
+        case .doh: return "Doha Hamad (DOH)"
+        case .zrh: return "Zurich (ZRH)"
+        case .hel: return "Helsinki (HEL)"
 
         case .phl: return "Philadelphia (PHL)"
         case .mco: return "Orlando (MCO)"
@@ -151,7 +169,7 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .bwi: return "Baltimore Washington (BWI)"
         case .dca: return "Washington Reagan (DCA)"
         case .pdx: return "Portland (PDX)"
-        
+
         case .yyz: return "Toronto (YYZ)"
         case .yvr: return "Vancouver (YVR)"
         case .yyc: return "Calgary (YYC)"
@@ -205,7 +223,7 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
 
         case .lax, .sfo, .las, .sea, .san, .yvr, .pdx:
             return TimeZone(identifier: "America/Los_Angeles")!
-            
+
         case .ist:
             return TimeZone(identifier: "Europe/Istanbul")!
 
@@ -229,6 +247,21 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
 
         case .cph:
             return TimeZone(identifier: "Europe/Copenhagen")!
+
+        case .arn, .got:
+            return TimeZone(identifier: "Europe/Stockholm")!
+
+        case .osl:
+            return TimeZone(identifier: "Europe/Oslo")!
+
+        case .doh:
+            return TimeZone(identifier: "Asia/Qatar")!
+
+        case .zrh:
+            return TimeZone(identifier: "Europe/Zurich")!
+
+        case .hel:
+            return TimeZone(identifier: "Europe/Helsinki")!
 
         case .dxb:
             return TimeZone(identifier: "Asia/Dubai")!
