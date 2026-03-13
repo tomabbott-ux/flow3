@@ -15,13 +15,15 @@ struct AirportSelectorView: View {
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 12) {
                     headerSection
                     searchSection
 
                     if !recentDefinitions.isEmpty {
                         AirportSectionHeader(title: "RECENT")
-                        LazyVStack(spacing: 12) {
+                            .padding(.top, 6)
+
+                        VStack(spacing: 12) {
                             ForEach(recentDefinitions) { definition in
                                 airportRow(definition)
                             }
@@ -30,17 +32,21 @@ struct AirportSelectorView: View {
 
                     if !pinnedFavouriteDefinitions.isEmpty {
                         AirportSectionHeader(title: "FAVOURITES")
-                        LazyVStack(spacing: 12) {
+                            .padding(.top, 6)
+
+                        VStack(spacing: 12) {
                             ForEach(pinnedFavouriteDefinitions) { definition in
                                 airportRow(definition)
                             }
                         }
                     }
 
-                    if !nonFavouriteDefinitions.isEmpty {
+                    if !allAirportDefinitions.isEmpty {
                         AirportSectionHeader(title: "AIRPORTS")
-                        LazyVStack(spacing: 12) {
-                            ForEach(nonFavouriteDefinitions) { definition in
+                            .padding(.top, 6)
+
+                        VStack(spacing: 12) {
+                            ForEach(allAirportDefinitions) { definition in
                                 airportRow(definition)
                             }
                         }
@@ -274,31 +280,42 @@ private extension AirportSelectorView {
         }
     }
 
+    var canonicalRecents: [FlowAirport] {
+        var seen: Set<FlowAirport> = []
+        var ordered: [FlowAirport] = []
+
+        for airport in recents.reversed() {
+            if !seen.contains(airport) {
+                seen.insert(airport)
+                ordered.append(airport)
+            }
+        }
+
+        return Array(ordered.prefix(4))
+    }
+
     var recentDefinitions: [AirportDefinition] {
-        let recentsSet = Set(recents)
+        let recentSet = Set(canonicalRecents)
 
         return filteredDefinitions
-            .filter { recentsSet.contains($0.airport) && !favourites.contains($0.airport) }
+            .filter { recentSet.contains($0.airport) }
             .sorted { lhs, rhs in
-                let lhsIndex = recents.firstIndex(of: lhs.airport) ?? .max
-                let rhsIndex = recents.firstIndex(of: rhs.airport) ?? .max
+                let lhsIndex = canonicalRecents.firstIndex(of: lhs.airport) ?? .max
+                let rhsIndex = canonicalRecents.firstIndex(of: rhs.airport) ?? .max
                 return lhsIndex < rhsIndex
             }
     }
 
     var pinnedFavouriteDefinitions: [AirportDefinition] {
         filteredDefinitions
-            .filter { favourites.contains($0.airport) }
+            .filter { favourites.contains($0.airport) && !canonicalRecents.contains($0.airport) }
             .sorted {
                 $0.airport.displayName.localizedCaseInsensitiveCompare($1.airport.displayName) == .orderedAscending
             }
     }
 
-    var nonFavouriteDefinitions: [AirportDefinition] {
-        let recentsSet = Set(recents)
-
-        return filteredDefinitions
-            .filter { !favourites.contains($0.airport) && !recentsSet.contains($0.airport) }
+    var allAirportDefinitions: [AirportDefinition] {
+        filteredDefinitions
             .sorted { lhs, rhs in
                 let lhsPriority = priority(lhs.feedType)
                 let rhsPriority = priority(rhs.feedType)
@@ -436,7 +453,6 @@ private struct AirportSectionHeader: View {
                 .fill(Color.white.opacity(0.12))
                 .frame(height: 1)
         }
-        .padding(.top, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
