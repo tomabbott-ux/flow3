@@ -10,7 +10,7 @@ extension FlowAirport {
              .yvr, .yyc, .den, .dfw, .hou, .mco, .phx,
              .phl, .san, .las, .bos, .sea, .mia, .sfo,
              .bna, .tpa, .dtw, .clt, .ewr, .bwi, .dca, .icn, .pdx,
-             .mad,.pmi, .agp, .alc, .svq, .bio, .ibz, .vlc, .tfs, .lpa, .bcn:
+             .mad,.pmi, .agp, .alc, .ber, .svq, .bio, .ibz, .vlc, .tfs, .lpa, .bcn:
             return true
 
         case .jfk, .lhr, .lga, .cph, .yyz,

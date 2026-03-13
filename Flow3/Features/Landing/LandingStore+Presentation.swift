@@ -31,7 +31,7 @@ extension LandingStore {
              .yvr, .yyc, .den, .dfw, .hou, .mco, .phx,
              .phl, .san, .las, .bos, .sea, .mia, .sfo,
              .bna, .tpa, .dtw, .clt, .ewr, .bwi, .dca, .pdx,
-             .icn, .mad, .bcn,
+             .icn, .mad, .ber, .bcn,
              .pmi, .agp, .alc, .svq, .bio, .ibz, .vlc, .tfs, .lpa:
             return namedCheckpointRows(from: rows)
 

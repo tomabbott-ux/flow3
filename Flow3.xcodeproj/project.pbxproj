@@ -91,6 +91,7 @@
 		F8BD8FE12F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE02F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift */; };
 		F8BD8FE32F631C53000EE425 /* ICNLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */; };
 		F8BD8FE52F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE42F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift */; };
+		F8DBD88C2F64858B00246968 /* BERLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD88B2F64858B00246968 /* BERLiveWaitTimeProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -198,6 +199,7 @@
 		F8BD8FE02F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSLLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICNLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FE42F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AenaLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F8DBD88B2F64858B00246968 /* BERLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BERLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -393,6 +395,7 @@
 				F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */,
 				F8BD8FE42F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift */,
 				F8A4ABB42F644E2E003DDA0C /* FcoWaitTimeProvider.swift */,
+				F8DBD88B2F64858B00246968 /* BERLiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -568,6 +571,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F8DBD88C2F64858B00246968 /* BERLiveWaitTimeProvider.swift in Sources */,
 				F88051792F60D140005CF24F /* FlowAirport+ICAO.swift in Sources */,
 				F862F1DD2F583A5B001666F2 /* WeatherService.swift in Sources */,
 				F8BD8FE52F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift in Sources */,

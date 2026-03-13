@@ -17,7 +17,8 @@ extension FlowAirport {
         case .edi: return "EGPH"
         case .str: return "EDDS"
         case .bru: return "EBBR"
-
+        case .ber: return "EDDB"
+            
         case .phl: return "KPHL"
         case .mco: return "KMCO"
         case .slc: return "KSLC"
