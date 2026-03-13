@@ -28,24 +28,38 @@ struct AenaLiveWaitTimeProvider: WaitTimeProviding {
                 ? control.lastWaitSeconds
                 : control.defaultWaitSeconds
 
-            let minutes = max(1, Int(ceil(Double(seconds) / 60.0)))
+            let minutes = displayMinutesForAena(from: seconds)
 
             let checkpointName: String
 
             if airport == .pmi {
                 checkpointName = pmiCheckpointName(for: control.id)
-            } else if let poiName = poi?.name,
-                      !poiName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                checkpointName = translatedCheckpointName(
-                    cleanCheckpointName(poiName, fallbackID: control.id)
+            } else if airport == .mad {
+                checkpointName = madridCheckpointName(
+                    controlID: control.id,
+                    poiName: poi?.name,
+                    building: building,
+                    poi: poi
                 )
             } else {
-                checkpointName = buildCheckpointName(from: control.id)
+                checkpointName = displayCheckpointName(
+                    for: airport,
+                    controlID: control.id,
+                    poiName: poi?.name,
+                    fallbackID: control.id
+                )
             }
 
             let areaName: String?
             if airport == .pmi {
                 areaName = "Passenger Terminal"
+            } else if airport == .mad {
+                areaName = madridAreaName(
+                    controlID: control.id,
+                    poiName: poi?.name,
+                    building: building,
+                    poi: poi
+                )
             } else {
                 areaName = buildAreaName(from: building, poi: poi)
             }
@@ -64,11 +78,23 @@ struct AenaLiveWaitTimeProvider: WaitTimeProviding {
         }
 
         return results.sorted {
+            let lhsArea = $0.areaName ?? ""
+            let rhsArea = $1.areaName ?? ""
+
             let lhsCheckpoint = $0.checkpointName ?? ""
             let rhsCheckpoint = $1.checkpointName ?? ""
 
+            if airport == .mad {
+                let lhsPriority = madridSortPriority(title: lhsCheckpoint, subtitle: lhsArea)
+                let rhsPriority = madridSortPriority(title: rhsCheckpoint, subtitle: rhsArea)
+
+                if lhsPriority != rhsPriority {
+                    return lhsPriority < rhsPriority
+                }
+            }
+
             if lhsCheckpoint == rhsCheckpoint {
-                return ($0.areaName ?? "") < ($1.areaName ?? "")
+                return lhsArea < rhsArea
             }
 
             return lhsCheckpoint < rhsCheckpoint
@@ -171,21 +197,10 @@ struct AenaLiveWaitTimeProvider: WaitTimeProviding {
 
             let idpoi = String(describing: rawPOI)
 
-            let name = firstNonEmptyString(
-                attrs["pat_nombre"]
-            )
-
-            let terminal = firstNonEmptyString(
-                attrs["pat_terminal"]
-            )
-
-            let zone = firstNonEmptyString(
-                attrs["pat_zonaubicacion"]
-            )
-
-            let buildingID = intFromAny(
-                properties["building"]
-            )
+            let name = firstNonEmptyString(attrs["pat_nombre"])
+            let terminal = firstNonEmptyString(attrs["pat_terminal"])
+            let zone = firstNonEmptyString(attrs["pat_zonaubicacion"])
+            let buildingID = intFromAny(properties["building"])
 
             lookup[idpoi] = AenaPOI(
                 idpoi: idpoi,
@@ -266,8 +281,95 @@ struct AenaLiveWaitTimeProvider: WaitTimeProviding {
 
     // MARK: - Mapping
 
-    private func buildCheckpointName(from id: String) -> String {
+    private func displayCheckpointName(
+        for airport: FlowAirport,
+        controlID: String,
+        poiName: String?,
+        fallbackID: String
+    ) -> String {
 
+        switch airport {
+        case .agp:
+            return agpCheckpointName(controlID: controlID, poiName: poiName, fallbackID: fallbackID)
+
+        case .alc:
+            return alcCheckpointName(controlID: controlID, poiName: poiName, fallbackID: fallbackID)
+
+        case .tfs:
+            return tfsCheckpointName(controlID: controlID, poiName: poiName, fallbackID: fallbackID)
+
+        case .lpa:
+            return lpaCheckpointName(controlID: controlID, poiName: poiName, fallbackID: fallbackID)
+
+        default:
+            if let poiName,
+               !poiName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return translatedCheckpointName(
+                    cleanCheckpointName(poiName, fallbackID: fallbackID)
+                )
+            }
+
+            return buildCheckpointName(from: fallbackID)
+        }
+    }
+
+    private func agpCheckpointName(controlID: String, poiName: String?, fallbackID: String) -> String {
+        let lower = (poiName ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        if controlID == "LEMG_S0002" {
+            return "Fast Track"
+        }
+
+        if lower.contains("10 double filters") || lower.contains("double filters") {
+            return "General Security"
+        }
+
+        if let poiName, !poiName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return translatedCheckpointName(cleanCheckpointName(poiName, fallbackID: fallbackID))
+        }
+
+        return buildCheckpointName(from: fallbackID)
+    }
+
+    private func alcCheckpointName(controlID: String, poiName: String?, fallbackID: String) -> String {
+        if controlID == "LEAL_S0001" {
+            return "General Security"
+        }
+
+        if let poiName, !poiName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return translatedCheckpointName(cleanCheckpointName(poiName, fallbackID: fallbackID))
+        }
+
+        return buildCheckpointName(from: fallbackID)
+    }
+
+    private func tfsCheckpointName(controlID: String, poiName: String?, fallbackID: String) -> String {
+        if controlID == "GCTS_S0001" {
+            return "General Security"
+        }
+
+        if let poiName, !poiName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return translatedCheckpointName(cleanCheckpointName(poiName, fallbackID: fallbackID))
+        }
+
+        return buildCheckpointName(from: fallbackID)
+    }
+
+    private func lpaCheckpointName(controlID: String, poiName: String?, fallbackID: String) -> String {
+        let lower = (poiName ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        if lower == "security" || controlID == "GCLP_S0001" {
+            return "General Security"
+        }
+
+        if let poiName, !poiName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return translatedCheckpointName(cleanCheckpointName(poiName, fallbackID: fallbackID))
+        }
+
+        return buildCheckpointName(from: fallbackID)
+    }
+
+    private func buildCheckpointName(from id: String) -> String {
         let suffix = id.replacingOccurrences(
             of: "^[A-Z]{4}_S0*",
             with: "",
@@ -300,19 +402,19 @@ struct AenaLiveWaitTimeProvider: WaitTimeProviding {
         let lower = name.lowercased()
 
         if lower.contains("filtro de conexiones") || lower.contains("connections security") {
-            return "Connections"
+            return "Connections Security"
         }
 
         if lower.contains("connecting flights") {
-            return "Connections"
+            return "Connecting Flights Security"
         }
 
-        if lower.contains("preferential") || lower.contains("family security") {
-            return "Family"
+        if lower.contains("preferential access for families") || lower.contains("family security") {
+            return "Family Security"
         }
 
         if lower.contains("non-schengen") {
-            return "Non-Schengen"
+            return "Non-Schengen Security"
         }
 
         if lower.contains("security filter") {
@@ -325,19 +427,157 @@ struct AenaLiveWaitTimeProvider: WaitTimeProviding {
     private func pmiCheckpointName(for controlID: String) -> String {
 
         switch controlID {
-
         case "LEPA_S0001":
             return "Security North"
-
         case "LEPA_S0002":
             return "Security South"
-
         case "LEPA_S0003":
             return "Fast Track"
-
         default:
             return "Security"
         }
+    }
+
+    private func madridCheckpointName(
+        controlID: String,
+        poiName: String?,
+        building: AenaBuilding?,
+        poi: AenaPOI?
+    ) -> String {
+
+        let rawName = poiName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let lower = rawName.lowercased()
+
+        if lower.contains("preferential") || lower.contains("famil") {
+            return "Access for Families"
+        }
+
+        if lower.contains("connecting flights") || lower.contains("filtro de conexiones") || lower.contains("connections") {
+            if inferredMadridTerminal(from: building, poi: poi) == "T4" {
+                return "Gates HJKMS"
+            }
+            return "Connections Security"
+        }
+
+        if lower.contains("non-schengen") {
+            return "Non-Schengen Security"
+        }
+
+        if lower.contains("gates a, b and c") || lower.contains("gates abc") {
+            return "Gates ABC"
+        }
+
+        if lower.contains("gates a, b, c") || lower.contains("gates abcd") || lower.contains("gates a, b, c and d") {
+            return "Gates ABCD"
+        }
+
+        if lower.contains("gates c, d, e and f") || lower.contains("gates cdef") {
+            return "Gates CDEF"
+        }
+
+        if lower.contains("gates h, j, k, m") || lower.contains("gates h, j, k, m and s") || lower.contains("gates hjkms") {
+            return "Gates HJKMS"
+        }
+
+        let terminal = inferredMadridTerminal(from: building, poi: poi)
+
+        switch (controlID, terminal) {
+        case (_, "T1"):
+            if controlID == "LEMD_S0005" {
+                return "Gates ABCD"
+            }
+            return "Gates ABC"
+
+        case (_, "T2"):
+            return "Gates CDEF"
+
+        case (_, "T3"):
+            return "Gates CDEF"
+
+        case (_, "T4"):
+            return "Gates HJKMS"
+
+        case (_, "T4S"):
+            return "Access for Families"
+
+        default:
+            break
+        }
+
+        let cleaned = translatedCheckpointName(cleanCheckpointName(rawName, fallbackID: controlID))
+        if !cleaned.isEmpty {
+            return cleaned
+        }
+
+        return buildCheckpointName(from: controlID)
+    }
+
+    private func madridAreaName(
+        controlID: String,
+        poiName: String?,
+        building: AenaBuilding?,
+        poi: AenaPOI?
+    ) -> String {
+
+        let terminal = inferredMadridTerminal(from: building, poi: poi)
+        let rawName = poiName?.lowercased() ?? ""
+
+        switch terminal {
+        case "T1":
+            if rawName.contains("gates abcd") || rawName.contains("a, b, c and d") || controlID == "LEMD_S0005" {
+                return "Terminal T1 · Floor 1"
+            }
+            return "Terminal T1 · Floor 1"
+
+        case "T2":
+            return "Terminal T2 · Floor 2"
+
+        case "T3":
+            return "Terminal T3 · Floor 1"
+
+        case "T4":
+            return "Terminal T4 · Floor 2"
+
+        case "T4S":
+            return "Terminal T4S"
+
+        default:
+            break
+        }
+
+        if let area = buildAreaName(from: building, poi: poi), !area.isEmpty {
+            return area
+        }
+
+        return "Terminal"
+    }
+
+    private func inferredMadridTerminal(from building: AenaBuilding?, poi: AenaPOI?) -> String? {
+
+        let buildingName = (building?.name ?? "") + " " + (building?.shortName ?? "")
+        let poiTerminal = poi?.terminal ?? ""
+        let combined = (buildingName + " " + poiTerminal).uppercased()
+
+        if combined.contains("T4S") { return "T4S" }
+        if combined.contains("T4") { return "T4" }
+        if combined.contains("T3") { return "T3" }
+        if combined.contains("T2") { return "T2" }
+        if combined.contains("T1") { return "T1" }
+
+        return nil
+    }
+
+    private func madridSortPriority(title: String, subtitle: String) -> Int {
+        let combined = (title + " " + subtitle).lowercased()
+
+        if combined.contains("terminal t1") && title == "Gates ABC" { return 0 }
+        if combined.contains("terminal t1") && title == "Gates ABCD" { return 1 }
+        if combined.contains("terminal t2") && title == "Gates CDEF" { return 2 }
+        if combined.contains("terminal t3") && title == "Gates CDEF" { return 3 }
+        if combined.contains("terminal t4") && title == "Gates HJKMS" { return 4 }
+        if title == "Access for Families" { return 5 }
+
+        return 999
     }
 
     private func buildAreaName(from building: AenaBuilding?, poi: AenaPOI?) -> String? {
@@ -364,6 +604,8 @@ struct AenaLiveWaitTimeProvider: WaitTimeProviding {
            !zone.isEmpty {
             let cleaned = zone
                 .replacingOccurrences(of: "_", with: " ")
+                .replacingOccurrences(of: "Zona_Restringida", with: "Restricted Area")
+                .replacingOccurrences(of: "Zona_Publica", with: "Public Area")
                 .replacingOccurrences(of: "Zona Restringida", with: "Restricted Area")
                 .replacingOccurrences(of: "Zona Publica", with: "Public Area")
 
@@ -376,7 +618,6 @@ struct AenaLiveWaitTimeProvider: WaitTimeProviding {
     }
 
     private func inferredTerminal(from building: AenaBuilding?) -> Int? {
-
         guard let text = (building?.name ?? building?.shortName)?.uppercased() else {
             return nil
         }
@@ -422,6 +663,11 @@ struct AenaLiveWaitTimeProvider: WaitTimeProviding {
         fallback.formatOptions = [.withInternetDateTime]
 
         return fallback.date(from: string)
+    }
+
+    private func displayMinutesForAena(from seconds: Int) -> Int {
+        let mins = Int(ceil(Double(seconds) / 60.0))
+        return mins <= 1 ? 3 : mins
     }
 
     private func firstNonEmptyString(_ values: Any?...) -> String? {

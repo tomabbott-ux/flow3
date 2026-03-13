@@ -29,7 +29,7 @@ enum AirportProviderKind: String, Codable, Hashable {
     case hel
     case icn
     case aena
-    
+
     case yyz
     case yvr
     case yyc
@@ -82,7 +82,7 @@ struct AirportDefinition: Identifiable, Hashable {
 
 struct AirportRegistry {
 
-    static let airports: [AirportDefinition] = [
+    private static let baseAirports: [AirportDefinition] = [
 
         AirportDefinition(airport: .atl, feedType: .live, providerKind: .atl),
         AirportDefinition(airport: .jfk, feedType: .live, providerKind: .jfk),
@@ -108,7 +108,6 @@ struct AirportRegistry {
         AirportDefinition(airport: .phx, feedType: .live, providerKind: .phx),
         AirportDefinition(airport: .phl, feedType: .live, providerKind: .phl),
         AirportDefinition(airport: .slc, feedType: .live, providerKind: .slc),
-
         AirportDefinition(airport: .ord, feedType: .live, providerKind: .ord),
         AirportDefinition(airport: .ams, feedType: .live, providerKind: .ams),
         AirportDefinition(airport: .fco, feedType: .live, providerKind: .fco),
@@ -120,26 +119,28 @@ struct AirportRegistry {
         AirportDefinition(airport: .zrh, feedType: .live, providerKind: .zrh),
         AirportDefinition(airport: .hel, feedType: .live, providerKind: .hel),
         AirportDefinition(airport: .icn, feedType: .live, providerKind: .icn),
+
+        // AENA live
         AirportDefinition(airport: .mad, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .bcn, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .pmi, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .agp, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .alc, feedType: .live, providerKind: .aena),
-        AirportDefinition(airport: .svq, feedType: .live, providerKind: .aena),
-        AirportDefinition(airport: .bio, feedType: .live, providerKind: .aena),
-        AirportDefinition(airport: .ibz, feedType: .live, providerKind: .aena),
-        AirportDefinition(airport: .vlc, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .tfs, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .lpa, feedType: .live, providerKind: .aena),
+
+        // AENA coming soon
+        AirportDefinition(airport: .svq, feedType: .comingSoon, providerKind: .none),
+        AirportDefinition(airport: .bio, feedType: .comingSoon, providerKind: .none),
+        AirportDefinition(airport: .ibz, feedType: .comingSoon, providerKind: .none),
+        AirportDefinition(airport: .vlc, feedType: .comingSoon, providerKind: .none),
+
         AirportDefinition(airport: .clt, feedType: .live, providerKind: .clt),
         AirportDefinition(airport: .ewr, feedType: .live, providerKind: .ewr),
         AirportDefinition(airport: .bwi, feedType: .live, providerKind: .bwi),
         AirportDefinition(airport: .dca, feedType: .live, providerKind: .dca),
         AirportDefinition(airport: .pdx, feedType: .live, providerKind: .pdx),
-        AirportDefinition(airport: .icn, feedType: .live, providerKind: .icn),
-        AirportDefinition(airport: .mad, feedType: .live, providerKind: .aena),
-        AirportDefinition(airport: .bcn, feedType: .live, providerKind: .aena),
-        
+
         AirportDefinition(airport: .san, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .las, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .bos, feedType: .highConfidence, providerKind: .tsaWebsite),
@@ -159,6 +160,20 @@ struct AirportRegistry {
         AirportDefinition(airport: .hnd, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .syd, feedType: .estimated, providerKind: .estimated)
     ]
+
+    static var airports: [AirportDefinition] {
+        var seen: Set<FlowAirport> = []
+        var unique: [AirportDefinition] = []
+
+        for definition in baseAirports {
+            if !seen.contains(definition.airport) {
+                seen.insert(definition.airport)
+                unique.append(definition)
+            }
+        }
+
+        return unique
+    }
 
     static func definition(for airport: FlowAirport) -> AirportDefinition? {
         airports.first(where: { $0.airport == airport })

@@ -41,12 +41,12 @@ struct AirportSelectorView: View {
                         }
                     }
 
-                    if !allAirportDefinitions.isEmpty {
+                    if !remainingAirportDefinitions.isEmpty {
                         AirportSectionHeader(title: "AIRPORTS")
                             .padding(.top, 6)
 
                         VStack(spacing: 12) {
-                            ForEach(allAirportDefinitions) { definition in
+                            ForEach(remainingAirportDefinitions) { definition in
                                 airportRow(definition)
                             }
                         }
@@ -260,14 +260,28 @@ private extension AirportSelectorView {
 
 private extension AirportSelectorView {
 
+    var uniqueDefinitions: [AirportDefinition] {
+        var seen: Set<FlowAirport> = []
+        var unique: [AirportDefinition] = []
+
+        for definition in AirportRegistry.airports {
+            if !seen.contains(definition.airport) {
+                seen.insert(definition.airport)
+                unique.append(definition)
+            }
+        }
+
+        return unique
+    }
+
     var filteredDefinitions: [AirportDefinition] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !query.isEmpty else {
-            return AirportRegistry.airports
+            return uniqueDefinitions
         }
 
-        return AirportRegistry.airports.filter { definition in
+        return uniqueDefinitions.filter { definition in
             let airport = definition.airport
 
             let haystack = [
@@ -307,15 +321,23 @@ private extension AirportSelectorView {
     }
 
     var pinnedFavouriteDefinitions: [AirportDefinition] {
-        filteredDefinitions
-            .filter { favourites.contains($0.airport) && !canonicalRecents.contains($0.airport) }
-            .sorted {
-                $0.airport.displayName.localizedCaseInsensitiveCompare($1.airport.displayName) == .orderedAscending
+        let recentSet = Set(canonicalRecents)
+
+        return filteredDefinitions
+            .filter { favourites.contains($0.airport) && !recentSet.contains($0.airport) }
+            .sorted { lhs, rhs in
+                lhs.airport.displayName.localizedCaseInsensitiveCompare(
+                    rhs.airport.displayName
+                ) == .orderedAscending
             }
     }
 
-    var allAirportDefinitions: [AirportDefinition] {
-        filteredDefinitions
+    var remainingAirportDefinitions: [AirportDefinition] {
+        let recentSet = Set(canonicalRecents)
+        let favouriteSet = favourites
+
+        return filteredDefinitions
+            .filter { !recentSet.contains($0.airport) && !favouriteSet.contains($0.airport) }
             .sorted { lhs, rhs in
                 let lhsPriority = priority(lhs.feedType)
                 let rhsPriority = priority(rhs.feedType)
@@ -324,7 +346,9 @@ private extension AirportSelectorView {
                     return lhsPriority < rhsPriority
                 }
 
-                return lhs.airport.displayName.localizedCaseInsensitiveCompare(rhs.airport.displayName) == .orderedAscending
+                return lhs.airport.displayName.localizedCaseInsensitiveCompare(
+                    rhs.airport.displayName
+                ) == .orderedAscending
             }
     }
 
