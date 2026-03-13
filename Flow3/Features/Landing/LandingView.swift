@@ -319,6 +319,8 @@ private extension LandingView {
 
                 Spacer()
 
+                refreshButton
+
                 statusBadge
             }
 
@@ -329,6 +331,28 @@ private extension LandingView {
                 .foregroundColor(.white.opacity(0.7))
         }
         .flowGlassCard()
+    }
+
+    var refreshButton: some View {
+        Button {
+            Task {
+                await store.refresh()
+            }
+        } label: {
+            Image(systemName: "arrow.clockwise")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 34, height: 34)
+                .background(
+                    Circle()
+                        .fill(Color.white.opacity(0.10))
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        )
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -578,9 +602,7 @@ private extension LandingView {
         let days = hours / 24
         return "\(days)d ago"
     }
-}
-
-// MARK: - Error
+}// MARK: - Error
 
 private extension LandingView {
 

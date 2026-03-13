@@ -24,6 +24,9 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
         case .icn:
             return try await ICNLiveWaitTimeProvider().fetchWaitTimes(for: airport)
             
+        case .fco:
+            return try await FcoWaitTimeProvider.fetchWaitTimes()
+            
         case .jfk:
             return try await JFKAzureAPIWaitTimeProvider().fetchWaitTimes(for: airport)
 
@@ -53,9 +56,6 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         case .bru:
             return try await BRULiveWaitTimeProvider().fetchWaitTimes(for: airport)
-
-        case .fco:
-            return try await FCOLiveWaitTimeProvider().fetchWaitTimes(for: airport)
 
         case .fra:
             return try await FRALiveWaitTimeProvider().fetchWaitTimes(for: airport)

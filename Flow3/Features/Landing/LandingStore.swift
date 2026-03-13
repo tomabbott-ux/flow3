@@ -95,7 +95,6 @@ final class LandingStore: ObservableObject {
             if updateVisibleState, airport == selectedAirport {
                 errorText = "Refresh failed: \(error.localizedDescription)"
             }
-            // Keep last good data on screen if refresh fails.
         }
     }
 
@@ -179,6 +178,7 @@ final class LandingStore: ObservableObject {
         var offset = 1
 
         while results.count < limit && (currentIndex - offset >= 0 || currentIndex + offset < all.count) {
+
             if currentIndex + offset < all.count {
                 results.append(all[currentIndex + offset])
             }
@@ -216,7 +216,6 @@ final class LandingStore: ObservableObject {
 
     // MARK: - Auto refresh (60s)
 
-    /// Starts auto-refresh. Safe to call multiple times (it restarts).
     func startAutoRefresh(every seconds: TimeInterval = 60) {
         autoRefreshInterval = seconds
         stopAutoRefresh()
@@ -228,6 +227,7 @@ final class LandingStore: ObservableObject {
 
             while !Task.isCancelled {
                 await self.refresh()
+
                 let ns = UInt64(self.autoRefreshInterval * 1_000_000_000)
                 try? await Task.sleep(nanoseconds: ns)
             }
@@ -239,7 +239,7 @@ final class LandingStore: ObservableObject {
         autoRefreshTask = nil
     }
 
-    // MARK: - Shared helpers used by views/extensions
+    // MARK: - Helpers
 
     func overallMinutes(_ queue: QueueType) -> Int? {
         let relevant = waitTimes

@@ -4,7 +4,6 @@ final class AviationWeatherMETARProvider: WeatherProviding {
 
     enum ProviderError: Error {
         case invalidURL
-        case badHTTPStatus(Int)
         case invalidResponse
         case noData
     }
@@ -19,149 +18,141 @@ final class AviationWeatherMETARProvider: WeatherProviding {
 
         let icao = airport.icaoCode
 
-        guard let url = URL(string: "https://aviationweather.gov/api/data/metar?ids=\(icao)&format=json") else {
+        guard let url = URL(
+            string: "https://aviationweather.gov/api/data/metar?ids=\(icao)&format=json&hours=1"
+        ) else {
             throw ProviderError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(
-            "FlowApp/1.0 (airport weather using METAR; contact: app)",
-            forHTTPHeaderField: "User-Agent"
-        )
+        let (data, response) = try await session.data(from: url)
 
-        let (data, response) = try await session.data(for: request)
-
-        guard let http = response as? HTTPURLResponse else {
+        guard let http = response as? HTTPURLResponse,
+              http.statusCode == 200 else {
             throw ProviderError.invalidResponse
         }
 
-        guard (200...299).contains(http.statusCode) else {
-            throw ProviderError.badHTTPStatus(http.statusCode)
-        }
-
         guard
-            let root = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
-            let first = root.first
+            let json = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+            let first = json.first
         else {
             throw ProviderError.noData
         }
 
-        let temperatureC = parseTemperature(from: first)
-        let summary = buildSummary(from: first)
-        let observedAt = parseObservedAt(from: first) ?? Date()
+        let tempDouble = first["temp"] as? Double
+        let tempC = Int(round(tempDouble ?? 0))
+
+        let summary = decodeWeatherSummary(from: first) ?? "Clear skies"
 
         return WeatherSnapshot(
             airport: airport,
-            temperatureC: temperatureC,
+            temperatureC: tempC,
             summary: summary,
-            observedAt: observedAt
+            observedAt: Date()
         )
     }
 
-    private func parseTemperature(from json: [String: Any]) -> Int {
-        if let temp = json["temp"] as? Double {
-            return Int(temp.rounded())
+    // MARK: - Weather decoding
+
+    private func decodeWeatherSummary(from metar: [String: Any]) -> String? {
+
+        let weather = nonEmptyString(metar["wxString"])?.uppercased()
+        let cover = nonEmptyString(metar["cover"])?.uppercased()
+        let rawOb = nonEmptyString(metar["rawOb"])?.uppercased()
+
+        if let rawOb, rawOb.contains("CAVOK") {
+            return "Clear skies"
         }
 
-        if let temp = json["temp"] as? Int {
-            return temp
-        }
+        if let weather {
+            switch weather {
 
-        if let tempString = json["temp"] as? String,
-           let temp = Double(tempString) {
-            return Int(temp.rounded())
-        }
+            case "CAVOK":
+                return "Clear skies"
 
-        return 0
-    }
+            case "VCSH":
+                return "Showers nearby"
 
-    private func parseObservedAt(from json: [String: Any]) -> Date? {
-        let candidates = [
-            json["obsTime"] as? String,
-            json["reportTime"] as? String
-        ].compactMap { $0 }
+            case "SHRA":
+                return "Rain showers"
 
-        for candidate in candidates {
-            if let date = isoFormatterWithFractional.date(from: candidate) {
-                return date
+            case "RA":
+                return "Rain"
+
+            case "-RA":
+                return "Light rain"
+
+            case "+RA":
+                return "Heavy rain"
+
+            case "TS":
+                return "Thunderstorms"
+
+            case "TSRA":
+                return "Thunderstorms with rain"
+
+            case "VCTS":
+                return "Thunderstorms nearby"
+
+            case "BR":
+                return "Mist"
+
+            case "FG":
+                return "Fog"
+
+            case "HZ":
+                return "Haze"
+
+            case "SN":
+                return "Snow"
+
+            case "SHSN":
+                return "Snow showers"
+
+            case "DZ":
+                return "Drizzle"
+
+            case "-DZ":
+                return "Light drizzle"
+
+            case "+DZ":
+                return "Heavy drizzle"
+
+            default:
+                break
             }
-            if let date = isoFormatter.date(from: candidate) {
-                return date
-            }
         }
-
-        return nil
-    }
-
-    private func buildSummary(from json: [String: Any]) -> String {
-        let weatherText = nonEmptyString(json["wxString"])
-        let flightCategory = nonEmptyString(json["fltCat"])
-        let cloudText = parseClouds(from: json)
-        let windText = parseWind(from: json)
-
-        let parts = [weatherText, cloudText, windText, flightCategory]
-            .compactMap { value -> String? in
-                guard let value, !value.isEmpty else { return nil }
-                return value
-            }
-
-        if parts.isEmpty {
-            return "METAR"
-        }
-
-        return parts.joined(separator: " • ")
-    }
-
-    private func parseClouds(from json: [String: Any]) -> String? {
-        guard let clouds = json["clouds"] as? [[String: Any]], let first = clouds.first else {
-            return nil
-        }
-
-        let cover = nonEmptyString(first["cover"])?.uppercased()
 
         switch cover {
-        case "CLR", "SKC": return "Clear"
-        case "FEW": return "Few clouds"
-        case "SCT": return "Scattered clouds"
-        case "BKN": return "Broken clouds"
-        case "OVC": return "Overcast"
+
+        case "CLR", "SKC":
+            return "Clear skies"
+
+        case "FEW":
+            return "Few clouds"
+
+        case "SCT":
+            return "Scattered clouds"
+
+        case "BKN":
+            return "Broken clouds"
+
+        case "OVC":
+            return "Overcast"
+
         case .none:
             return nil
+
         default:
             return cover
         }
     }
 
-    private func parseWind(from json: [String: Any]) -> String? {
-        let speed: Int? = {
-            if let value = json["wspd"] as? Int { return value }
-            if let value = json["wspd"] as? Double { return Int(value.rounded()) }
-            if let value = json["wspd"] as? String, let parsed = Int(value) { return parsed }
-            return nil
-        }()
-
-        guard let speed else { return nil }
-
-        return speed == 0 ? "Calm" : "Wind \(speed)kt"
-    }
+    // MARK: - Helpers
 
     private func nonEmptyString(_ value: Any?) -> String? {
         guard let string = value as? String else { return nil }
+
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
-
-    private let isoFormatterWithFractional: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    private let isoFormatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
 }

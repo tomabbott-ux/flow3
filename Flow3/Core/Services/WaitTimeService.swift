@@ -9,5 +9,6 @@ final class WaitTimeService {
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
         try await provider.fetchWaitTimes(for: airport)
+        
     }
 }

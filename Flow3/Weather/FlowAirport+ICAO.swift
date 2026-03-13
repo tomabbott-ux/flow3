@@ -66,7 +66,6 @@ extension FlowAirport {
         case .san: return "KSAN"
         case .mia: return "KMIA"
 
-        case .bcn: return "LEBL"
         case .fco: return "LIRF"
         case .hnd: return "RJTT"
         case .icn: return "RKSI"

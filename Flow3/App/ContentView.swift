@@ -2,12 +2,13 @@ import SwiftUI
 
 struct ContentView: View {
 
-    @StateObject private var store = LandingStore(
+    @StateObject private var store =
+    LandingStore(
         waitTimeService: WaitTimeService(
             provider: AirportWaitTimeRouter()
         ),
         weatherService: WeatherService(
-            provider: LiveMETARWeatherProvider()
+            provider: AviationWeatherMETARProvider()
         )
     )
     
