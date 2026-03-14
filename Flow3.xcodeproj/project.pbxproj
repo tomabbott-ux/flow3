@@ -837,6 +837,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSLocationUsageDescription = "Flow uses your location to calculate travel time to the airport so it can tell you when to leave for your flight.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Flow uses your location to calculate driving time to the airport and recommend when to leave for your flight.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -868,6 +869,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSLocationUsageDescription = "Flow uses your location to calculate travel time to the airport so it can tell you when to leave for your flight.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Flow uses your location to calculate driving time to the airport and recommend when to leave for your flight.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
