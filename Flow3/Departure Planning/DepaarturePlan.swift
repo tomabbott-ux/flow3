@@ -1,8 +1,12 @@
-//
-//  DepaarturePlan.swift
-//  Flow3
-//
-//  Created by Tom Abbott on 14/03/2026.
-//
-
 import Foundation
+
+struct DeparturePlan {
+    let departureTime: Date
+    let gateTargetTime: Date
+    let recommendedLeaveTime: Date
+
+    let travelMinutes: Int
+    let securityMinutes: Int
+    let airportBufferMinutes: Int
+    let bagBufferMinutes: Int
+}

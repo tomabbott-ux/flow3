@@ -6,6 +6,7 @@ struct LandingView: View {
     @State private var selectedRowID: String? = nil
     @State private var now = Date()
     @State private var isShowingAirportSelector = false
+    @State private var isShowingDeparturePlanner = false
 
     private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     private let updatedTicker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -55,6 +56,10 @@ struct LandingView: View {
                     weatherRow
                     securityHero
 
+                    if store.selectedAirport == .lhr {
+                        departurePlannerButton
+                    }
+
                     GenericAirportBreakdownCard(
                         store: store,
                         selectedRowID: $selectedRowID
@@ -76,6 +81,9 @@ struct LandingView: View {
                     isShowingAirportSelector = false
                 }
             )
+        }
+        .sheet(isPresented: $isShowingDeparturePlanner) {
+            DeparturePlannerSheet(store: store)
         }
         .task {
             await refreshNow()
@@ -306,6 +314,7 @@ private extension LandingView {
         return "cloud.sun.fill"
     }
 }
+
 // MARK: - Security Hero
 
 private extension LandingView {
@@ -602,7 +611,53 @@ private extension LandingView {
         let days = hours / 24
         return "\(days)d ago"
     }
-}// MARK: - Error
+}
+
+// MARK: - Departure Planner
+
+private extension LandingView {
+
+    var departurePlannerButton: some View {
+        Button {
+            isShowingDeparturePlanner = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "car.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.95))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Plan my departure")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text("Travel time + security wait")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.68))
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.58))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Error
 
 private extension LandingView {
 

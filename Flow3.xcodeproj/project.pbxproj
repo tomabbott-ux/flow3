@@ -92,6 +92,10 @@
 		F8BD8FE32F631C53000EE425 /* ICNLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */; };
 		F8BD8FE52F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE42F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift */; };
 		F8DBD88C2F64858B00246968 /* BERLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD88B2F64858B00246968 /* BERLiveWaitTimeProvider.swift */; };
+		F8DBD88F2F65639600246968 /* DepaarturePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD88E2F65639600246968 /* DepaarturePlan.swift */; };
+		F8DBD8912F6563A600246968 /* TravelTime Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8902F6563A600246968 /* TravelTime Service.swift */; };
+		F8DBD8932F6563C200246968 /* DeparturePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8922F6563C200246968 /* DeparturePlanner.swift */; };
+		F8DBD8952F6563DF00246968 /* DeparturePlannerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8942F6563DF00246968 /* DeparturePlannerSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -200,6 +204,10 @@
 		F8BD8FE22F631C53000EE425 /* ICNLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICNLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FE42F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AenaLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8DBD88B2F64858B00246968 /* BERLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BERLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F8DBD88E2F65639600246968 /* DepaarturePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepaarturePlan.swift; sourceTree = "<group>"; };
+		F8DBD8902F6563A600246968 /* TravelTime Service.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TravelTime Service.swift"; sourceTree = "<group>"; };
+		F8DBD8922F6563C200246968 /* DeparturePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturePlanner.swift; sourceTree = "<group>"; };
+		F8DBD8942F6563DF00246968 /* DeparturePlannerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturePlannerSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -269,6 +277,7 @@
 		F862F1A12F583923001666F2 /* Flow3 */ = {
 			isa = PBXGroup;
 			children = (
+				F8DBD88D2F65637300246968 /* Departure Planning */,
 				F88051772F60D11D005CF24F /* Weather */,
 				F822A8D92F5CF7E4009F6107 /* Average */,
 				F80599F62F5B95B900146BF1 /* Estimated Provider */,
@@ -441,6 +450,17 @@
 			path = Weather;
 			sourceTree = "<group>";
 		};
+		F8DBD88D2F65637300246968 /* Departure Planning */ = {
+			isa = PBXGroup;
+			children = (
+				F8DBD88E2F65639600246968 /* DepaarturePlan.swift */,
+				F8DBD8902F6563A600246968 /* TravelTime Service.swift */,
+				F8DBD8922F6563C200246968 /* DeparturePlanner.swift */,
+				F8DBD8942F6563DF00246968 /* DeparturePlannerSheet.swift */,
+			);
+			path = "Departure Planning";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -574,6 +594,7 @@
 				F8DBD88C2F64858B00246968 /* BERLiveWaitTimeProvider.swift in Sources */,
 				F88051792F60D140005CF24F /* FlowAirport+ICAO.swift in Sources */,
 				F862F1DD2F583A5B001666F2 /* WeatherService.swift in Sources */,
+				F8DBD8952F6563DF00246968 /* DeparturePlannerSheet.swift in Sources */,
 				F8BD8FE52F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift in Sources */,
 				F862F1EA2F583B20001666F2 /* LandingView.swift in Sources */,
 				F862F1ED2F583B45001666F2 /* ContentView.swift in Sources */,
@@ -587,6 +608,7 @@
 				F822A8DC2F5CF81B009F6107 /* SANAverageWaitTimeProvider.swift in Sources */,
 				F80599CF2F5ACFE200146BF1 /* AMSWaitTimeProvider.swift in Sources */,
 				F862F1E82F583B0C001666F2 /* LandingStore.swift in Sources */,
+				F8DBD8932F6563C200246968 /* DeparturePlanner.swift in Sources */,
 				F880516B2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift in Sources */,
 				F822A8F02F5DDC04009F6107 /* BRULiveWaitTimeProvider.swift in Sources */,
 				F862F1D12F583995001666F2 /* FlowTypes.swift in Sources */,
@@ -606,6 +628,7 @@
 				F880516D2F602286005CF24F /* CLTLiveWaitTimeProvider.swift in Sources */,
 				F80599EF2F5B679F00146BF1 /* HOULiveWaitTimeProvider.swift in Sources */,
 				F80599C92F5AC8F200146BF1 /* AirportRegistry.swift in Sources */,
+				F8DBD8912F6563A600246968 /* TravelTime Service.swift in Sources */,
 				F8BD8FDF2F62AE2C000EE425 /* SwedaviaLiveWaitTimeProvider.swift in Sources */,
 				F828EF3D2F5A03FC00EC53EC /* LandingStore+LHR.swift in Sources */,
 				F828EF312F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift in Sources */,
@@ -628,6 +651,7 @@
 				F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */,
 				F80599D32F5AD36B00146BF1 /* LandingStore+Presentation.swift in Sources */,
 				F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */,
+				F8DBD88F2F65639600246968 /* DepaarturePlan.swift in Sources */,
 				F880517F2F60E64F005CF24F /* FavouriteAirports.swift in Sources */,
 				F822A8D62F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift in Sources */,
 				F8A4ABB52F644E2E003DDA0C /* FcoWaitTimeProvider.swift in Sources */,
@@ -812,6 +836,7 @@
 				DEVELOPMENT_TEAM = QQ6KGT3TQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationUsageDescription = "Flow uses your location to calculate travel time to the airport so it can tell you when to leave for your flight.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -842,6 +867,7 @@
 				DEVELOPMENT_TEAM = QQ6KGT3TQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationUsageDescription = "Flow uses your location to calculate travel time to the airport so it can tell you when to leave for your flight.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
