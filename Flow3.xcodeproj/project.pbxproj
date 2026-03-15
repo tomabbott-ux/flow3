@@ -102,6 +102,8 @@
 		F8DBD89E2F662EE900246968 /* SavedFlightStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD89D2F662EE900246968 /* SavedFlightStore.swift */; };
 		F8DBD8A02F662F1000246968 /* DepartureMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD89F2F662F1000246968 /* DepartureMonitor.swift */; };
 		F8DBD8A22F663F4D00246968 /* TrackedFlightPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A12F663F4D00246968 /* TrackedFlightPill.swift */; };
+		F8DBD8A42F669D9700246968 /* TrackedFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A32F669D9700246968 /* TrackedFlight.swift */; };
+		F8DBD8A62F66A07D00246968 /* KeyboardHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -220,6 +222,8 @@
 		F8DBD89D2F662EE900246968 /* SavedFlightStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFlightStore.swift; sourceTree = "<group>"; };
 		F8DBD89F2F662F1000246968 /* DepartureMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartureMonitor.swift; sourceTree = "<group>"; };
 		F8DBD8A12F663F4D00246968 /* TrackedFlightPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedFlightPill.swift; sourceTree = "<group>"; };
+		F8DBD8A32F669D9700246968 /* TrackedFlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedFlight.swift; sourceTree = "<group>"; };
+		F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelpers.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -309,6 +313,7 @@
 				F880516A2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift */,
 				F880517E2F60E64F005CF24F /* FavouriteAirports.swift */,
 				F88051802F60E732005CF24F /* RecentAirports.swift */,
+				F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */,
 			);
 			path = Flow3;
 			sourceTree = "<group>";
@@ -483,6 +488,7 @@
 				F8DBD89D2F662EE900246968 /* SavedFlightStore.swift */,
 				F8DBD89F2F662F1000246968 /* DepartureMonitor.swift */,
 				F8DBD8A12F663F4D00246968 /* TrackedFlightPill.swift */,
+				F8DBD8A32F669D9700246968 /* TrackedFlight.swift */,
 			);
 			path = "Flight Look Up";
 			sourceTree = "<group>";
@@ -674,6 +680,7 @@
 				F80599D92F5AE51900146BF1 /* JFKAzureAPIWaitTimeProvider.swift in Sources */,
 				F80599FA2F5B960600146BF1 /* EstimatedWaitTimeProvider.swift in Sources */,
 				F822A8EC2F5DD203009F6107 /* EDILiveWaitTimeProvider.swift in Sources */,
+				F8DBD8A42F669D9700246968 /* TrackedFlight.swift in Sources */,
 				F822A8CE2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift in Sources */,
 				F88051752F606BFA005CF24F /* PDXLiveWaitTimeProvider.swift in Sources */,
 				F80599DD2F5AECB200146BF1 /* LivePulseDot.swift in Sources */,
@@ -696,6 +703,7 @@
 				F80599D72F5AD4A200146BF1 /* Color+Hex.swift in Sources */,
 				F80599C72F5AC48E00146BF1 /* WelcomeView.swift in Sources */,
 				F862F1F42F5844CE001666F2 /* StubWeatherProvider.swift in Sources */,
+				F8DBD8A62F66A07D00246968 /* KeyboardHelpers.swift in Sources */,
 				F8DBD89A2F6625F600246968 /* FlightLookupService.swift in Sources */,
 				F88051712F605C64005CF24F /* BWILiveWaitTimeProvider.swift in Sources */,
 				F80599F82F5B95DB00146BF1 /* EstimatedAirportProfiles.swift in Sources */,

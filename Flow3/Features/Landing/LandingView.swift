@@ -6,7 +6,7 @@ struct LandingView: View {
     @State private var selectedRowID: String? = nil
     @State private var now = Date()
     @State private var isShowingAirportSelector = false
-    @State private var isShowingDeparturePlanner = false
+    @State var isShowingDeparturePlanner = false
 
     private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     private let updatedTicker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -54,10 +54,15 @@ struct LandingView: View {
                     airportSelectorPill
                     headerSection
                     weatherRow
+
+                    if store.selectedAirport == .lhr, store.trackedFlight != nil {
+                        TrackedFlightPill(store: store)
+                    }
+
                     securityHero
 
                     if store.selectedAirport == .lhr {
-                        departurePlannerSection
+                        departurePlannerButton
                     }
 
                     GenericAirportBreakdownCard(

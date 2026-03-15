@@ -1,8 +1,14 @@
-//
-//  KeyboardHelpers.swift
-//  Flow3
-//
-//  Created by Tom Abbott on 15/03/2026.
-//
+import SwiftUI
+import UIKit
 
-import Foundation
+extension View {
+
+    func hideKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+}

@@ -19,8 +19,15 @@ final class LandingStore: ObservableObject {
     @Published var weather: WeatherSnapshot?
     @Published var lastUpdated: Date?
     @Published var errorText: String?
-
+    @Published var trackedFlight: TrackedFlight?
+    
     @Published private(set) var waitTimes: [WaitTimeEstimate] = []
+
+    // MARK: - Tracked Flight
+
+    @Published var savedTrackedFlight: SavedFlightPlan?
+
+    private let savedFlightStore = SavedFlightStore.shared
 
     // MARK: - Services
 
@@ -66,6 +73,7 @@ final class LandingStore: ObservableObject {
     func refresh() async {
         let airport = selectedAirport
         await refreshAirport(airport, updateVisibleState: true)
+        reloadTrackedFlight()
         startPrefetchAroundSelectedAirport()
     }
 
@@ -123,6 +131,7 @@ final class LandingStore: ObservableObject {
 
     private func handleSelectedAirportChanged() async {
         applyCachedSnapshotIfAvailable(for: selectedAirport)
+        reloadTrackedFlight()
         startPrefetchAroundSelectedAirport()
     }
 
@@ -140,6 +149,24 @@ final class LandingStore: ObservableObject {
         }
     }
 
+    // MARK: - Tracked Flight Persistence
+
+    func trackFlight(_ flight: TrackedFlight) {
+
+        trackedFlight = flight
+        SavedFlightStore.shared.save(flight)
+    }
+
+    func clearTrackedFlight() {
+
+        trackedFlight = nil
+        SavedFlightStore.shared.clear()
+    }
+
+    func reloadTrackedFlight() {
+
+        trackedFlight = SavedFlightStore.shared.load()
+    }
     // MARK: - Prefetch
 
     private func startPrefetchAroundSelectedAirport() {

@@ -1,9 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct DeparturePlannerSheet: View {
 
     @ObservedObject var store: LandingStore
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var isFlightFieldFocused: Bool
 
     @State private var departureTime: Date = Calendar.current.date(
         byAdding: .hour,
@@ -25,7 +27,6 @@ struct DeparturePlannerSheet: View {
 
     private let travelTimeService = TravelTimeService()
     private let flightLookupService = FlightLookupService()
-    private let savedFlightStore = SavedFlightStore.shared
 
     var body: some View {
         NavigationStack {
@@ -64,13 +65,19 @@ struct DeparturePlannerSheet: View {
                         Text(errorText)
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.red.opacity(0.95))
-                            .padding(.top, 2)
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
                 .padding(.bottom, 30)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    isFlightFieldFocused = false
+                    hideKeyboard()
+                }
+            )
             .background(
                 LinearGradient(
                     gradient: Gradient(colors: [
@@ -88,7 +95,19 @@ struct DeparturePlannerSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
+                        isFlightFieldFocused = false
+                        hideKeyboard()
                         dismiss()
+                    }
+                    .foregroundColor(.white)
+                }
+
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+
+                    Button("Done") {
+                        isFlightFieldFocused = false
+                        hideKeyboard()
                     }
                     .foregroundColor(.white)
                 }
@@ -96,9 +115,14 @@ struct DeparturePlannerSheet: View {
             .onChange(of: useFlightNumber) { _ in
                 errorText = nil
                 plan = nil
+                flightLookupResult = nil
+                isFlightFieldFocused = false
+                hideKeyboard()
             }
         }
     }
+
+    // MARK: - Logic
 
     private var canTrackFlight: Bool {
         store.selectedAirport == .lhr &&
@@ -107,8 +131,11 @@ struct DeparturePlannerSheet: View {
         plan != nil
     }
 
+    // MARK: - Intro
+
     private var plannerIntroCard: some View {
         VStack(alignment: .leading, spacing: 8) {
+
             Text("Heathrow departure planner")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
@@ -120,8 +147,11 @@ struct DeparturePlannerSheet: View {
         .flowGlassCard()
     }
 
+    // MARK: - Mode Picker
+
     private var plannerModePicker: some View {
         HStack(spacing: 8) {
+
             modeButton(title: "Manual", selected: !useFlightNumber) {
                 useFlightNumber = false
             }
@@ -160,36 +190,37 @@ struct DeparturePlannerSheet: View {
         }
         .buttonStyle(.plain)
     }
+
+    // MARK: - Manual Inputs
+
     private var inputsCard: some View {
         VStack(alignment: .leading, spacing: 16) {
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Airport")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.72))
+            Text("Airport")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.72))
 
-                Text("LHR · London Heathrow")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
-            }
+            Text("LHR · London Heathrow")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.white)
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Departure")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.72))
+            Text("Departure")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.72))
 
-                DatePicker(
-                    "",
-                    selection: $departureTime,
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .labelsHidden()
-                .datePickerStyle(.compact)
-                .colorScheme(.dark)
-            }
+            DatePicker(
+                "",
+                selection: $departureTime,
+                displayedComponents: [.date, .hourAndMinute]
+            )
+            .labelsHidden()
+            .datePickerStyle(.compact)
+            .colorScheme(.dark)
         }
         .flowGlassCard()
     }
+
+    // MARK: - Flight Lookup
 
     private var flightLookupCard: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -212,6 +243,12 @@ struct DeparturePlannerSheet: View {
                 TextField("e.g. BA216", text: $flightNumber)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled(true)
+                    .submitLabel(.done)
+                    .focused($isFlightFieldFocused)
+                    .onSubmit {
+                        isFlightFieldFocused = false
+                        hideKeyboard()
+                    }
                     .foregroundColor(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
@@ -241,6 +278,9 @@ struct DeparturePlannerSheet: View {
             }
 
             Button {
+                isFlightFieldFocused = false
+                hideKeyboard()
+
                 Task {
                     await lookupFlight()
                 }
@@ -275,6 +315,8 @@ struct DeparturePlannerSheet: View {
         .flowGlassCard()
     }
 
+    // MARK: - Flight Found
+
     private func flightFoundCard(_ flight: FlightLookupResult) -> some View {
         VStack(alignment: .leading, spacing: 12) {
 
@@ -295,20 +337,25 @@ struct DeparturePlannerSheet: View {
         .flowGlassCard()
     }
 
+    // MARK: - Bags
+
     private var bagToggleCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Toggle(isOn: $checkedBags) {
-                Text("Checked bags")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-            }
-            .tint(Color(hex: "7B6CFF"))
+        Toggle(isOn: $checkedBags) {
+            Text("Checked bags")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
         }
+        .tint(Color(hex: "7B6CFF"))
         .flowGlassCard()
     }
 
+    // MARK: - Calculate
+
     private var actionButton: some View {
         Button {
+            isFlightFieldFocused = false
+            hideKeyboard()
+
             Task {
                 await calculate()
             }
@@ -345,6 +392,8 @@ struct DeparturePlannerSheet: View {
         )
     }
 
+    // MARK: - Result
+
     private func resultCard(_ plan: DeparturePlan) -> some View {
         VStack(alignment: .leading, spacing: 16) {
 
@@ -377,6 +426,8 @@ struct DeparturePlannerSheet: View {
         .flowGlassCard()
     }
 
+    // MARK: - Track Flight
+
     private var trackFlightButton: some View {
         Button {
             trackThisFlight()
@@ -402,6 +453,34 @@ struct DeparturePlannerSheet: View {
         }
         .buttonStyle(.plain)
     }
+
+    private func trackThisFlight() {
+        errorText = nil
+
+        guard let flight = flightLookupResult, let plan else {
+            errorText = "Look up a flight and calculate leave time first."
+            return
+        }
+
+        let tracked = TrackedFlight(
+            flightNumber: flight.flightNumber,
+            route: "\(flight.originIATA) → \(flight.destinationIATA)",
+            airline: flight.airline,
+            terminal: flight.terminal ?? "",
+            departureTime: flight.departureTime,
+            leaveTime: plan.recommendedLeaveTime,
+            gateTargetTime: plan.gateTargetTime,
+            travelMinutes: plan.travelMinutes,
+            securityMinutes: plan.securityMinutes,
+            airportBufferMinutes: plan.airportBufferMinutes,
+            bagBufferMinutes: plan.bagBufferMinutes
+        )
+
+        store.trackFlight(tracked)
+        dismiss()
+    }
+    
+    // MARK: - Helpers
 
     private func resultRow(_ title: String, _ value: String) -> some View {
         HStack {
@@ -447,40 +526,6 @@ struct DeparturePlannerSheet: View {
         return formatter.string(from: date)
     }
 
-    private func trackThisFlight() {
-        errorText = nil
-
-        guard
-            let flight = flightLookupResult,
-            let plan
-        else {
-            errorText = "Look up a flight and calculate leave time first."
-            return
-        }
-
-        let saved = SavedFlightPlan(
-            flightNumber: flight.flightNumber,
-            airline: flight.airline,
-            originIATA: flight.originIATA,
-            destinationIATA: flight.destinationIATA,
-            terminal: flight.terminal,
-            departureTime: flight.departureTime,
-            checkedBags: checkedBags,
-            leaveTime: plan.recommendedLeaveTime,
-            gateTargetTime: plan.gateTargetTime,
-            travelMinutes: plan.travelMinutes,
-            securityMinutes: plan.securityMinutes,
-            terminalBufferMinutes: plan.airportBufferMinutes,
-            bagBufferMinutes: plan.bagBufferMinutes,
-            lastUpdated: Date(),
-            lastMonitorMessages: [],
-            leaveTimeTrend: .unchanged
-        )
-
-        savedFlightStore.saveLHRTrackedFlight(saved)
-        dismiss()
-    }
-
     private func lookupFlight() async {
         errorText = nil
         plan = nil
@@ -490,7 +535,9 @@ struct DeparturePlannerSheet: View {
 
         do {
             let result = try await flightLookupService.lookupFlight(
-                flightNumber: flightNumber.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(),
+                flightNumber: flightNumber
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .uppercased(),
                 date: flightDate
             )
 
@@ -521,3 +568,4 @@ struct DeparturePlannerSheet: View {
         }
     }
 }
+

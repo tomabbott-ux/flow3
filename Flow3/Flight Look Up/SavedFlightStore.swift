@@ -4,25 +4,24 @@ final class SavedFlightStore {
 
     static let shared = SavedFlightStore()
 
-    private let defaults = UserDefaults.standard
-    private let lhrTrackedFlightKey = "flow.savedFlight.lhr"
+    private let key = "flow_tracked_flight"
 
-    private init() {}
+    func save(_ flight: TrackedFlight) {
 
-    func loadLHRTrackedFlight() -> SavedFlightPlan? {
-        guard let data = defaults.data(forKey: lhrTrackedFlightKey) else {
-            return nil
+        if let data = try? JSONEncoder().encode(flight) {
+            UserDefaults.standard.set(data, forKey: key)
         }
-
-        return try? JSONDecoder().decode(SavedFlightPlan.self, from: data)
     }
 
-    func saveLHRTrackedFlight(_ flight: SavedFlightPlan) {
-        guard let data = try? JSONEncoder().encode(flight) else { return }
-        defaults.set(data, forKey: lhrTrackedFlightKey)
+    func load() -> TrackedFlight? {
+
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+
+        return try? JSONDecoder().decode(TrackedFlight.self, from: data)
     }
 
-    func clearLHRTrackedFlight() {
-        defaults.removeObject(forKey: lhrTrackedFlightKey)
+    func clear() {
+
+        UserDefaults.standard.removeObject(forKey: key)
     }
 }
