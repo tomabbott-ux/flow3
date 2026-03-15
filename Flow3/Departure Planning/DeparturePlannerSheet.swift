@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct DeparturePlannerSheet: View {
 
@@ -122,8 +121,6 @@ struct DeparturePlannerSheet: View {
         }
     }
 
-    // MARK: - Logic
-
     private var canTrackFlight: Bool {
         store.selectedAirport == .lhr &&
         useFlightNumber &&
@@ -131,11 +128,8 @@ struct DeparturePlannerSheet: View {
         plan != nil
     }
 
-    // MARK: - Intro
-
     private var plannerIntroCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-
             Text("Heathrow departure planner")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
@@ -146,8 +140,6 @@ struct DeparturePlannerSheet: View {
         }
         .flowGlassCard()
     }
-
-    // MARK: - Mode Picker
 
     private var plannerModePicker: some View {
         HStack(spacing: 8) {
@@ -191,8 +183,6 @@ struct DeparturePlannerSheet: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Manual Inputs
-
     private var inputsCard: some View {
         VStack(alignment: .leading, spacing: 16) {
 
@@ -219,8 +209,6 @@ struct DeparturePlannerSheet: View {
         }
         .flowGlassCard()
     }
-
-    // MARK: - Flight Lookup
 
     private var flightLookupCard: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -315,8 +303,6 @@ struct DeparturePlannerSheet: View {
         .flowGlassCard()
     }
 
-    // MARK: - Flight Found
-
     private func flightFoundCard(_ flight: FlightLookupResult) -> some View {
         VStack(alignment: .leading, spacing: 12) {
 
@@ -337,8 +323,6 @@ struct DeparturePlannerSheet: View {
         .flowGlassCard()
     }
 
-    // MARK: - Bags
-
     private var bagToggleCard: some View {
         Toggle(isOn: $checkedBags) {
             Text("Checked bags")
@@ -348,8 +332,6 @@ struct DeparturePlannerSheet: View {
         .tint(Color(hex: "7B6CFF"))
         .flowGlassCard()
     }
-
-    // MARK: - Calculate
 
     private var actionButton: some View {
         Button {
@@ -392,8 +374,6 @@ struct DeparturePlannerSheet: View {
         )
     }
 
-    // MARK: - Result
-
     private func resultCard(_ plan: DeparturePlan) -> some View {
         VStack(alignment: .leading, spacing: 16) {
 
@@ -414,19 +394,25 @@ struct DeparturePlannerSheet: View {
                 .overlay(Color.white.opacity(0.10))
 
             VStack(spacing: 10) {
-                resultRow("Travel", "\(plan.travelMinutes)m")
-                resultRow("Security", "\(plan.securityMinutes)m")
-                resultRow("Terminal", "\(plan.airportBufferMinutes)m")
+                resultRow("Journey time", "\(plan.travelMinutes)m")
+                resultRow("Security wait", "\(plan.securityMinutes)m")
+                resultRow("Airport buffer", "\(plan.airportBufferMinutes)m")
 
                 if plan.bagBufferMinutes > 0 {
-                    resultRow("Bag drop", "\(plan.bagBufferMinutes)m")
+                    resultRow("Bag drop buffer", "\(plan.bagBufferMinutes)m")
                 }
+
+                let totalBeforeAirport =
+                    plan.travelMinutes +
+                    plan.securityMinutes +
+                    plan.airportBufferMinutes +
+                    plan.bagBufferMinutes
+
+                resultRow("Total pre-airport time", "\(totalBeforeAirport)m")
             }
         }
         .flowGlassCard()
     }
-
-    // MARK: - Track Flight
 
     private var trackFlightButton: some View {
         Button {
@@ -473,14 +459,13 @@ struct DeparturePlannerSheet: View {
             travelMinutes: plan.travelMinutes,
             securityMinutes: plan.securityMinutes,
             airportBufferMinutes: plan.airportBufferMinutes,
-            bagBufferMinutes: plan.bagBufferMinutes
+            bagBufferMinutes: plan.bagBufferMinutes,
+            leaveTimeTrend: .unchanged
         )
 
         store.trackFlight(tracked)
         dismiss()
     }
-    
-    // MARK: - Helpers
 
     private func resultRow(_ title: String, _ value: String) -> some View {
         HStack {
@@ -568,4 +553,3 @@ struct DeparturePlannerSheet: View {
         }
     }
 }
-

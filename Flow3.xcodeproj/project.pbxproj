@@ -104,6 +104,7 @@
 		F8DBD8A22F663F4D00246968 /* TrackedFlightPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A12F663F4D00246968 /* TrackedFlightPill.swift */; };
 		F8DBD8A42F669D9700246968 /* TrackedFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A32F669D9700246968 /* TrackedFlight.swift */; };
 		F8DBD8A62F66A07D00246968 /* KeyboardHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */; };
+		F8DBD8A82F66B77C00246968 /* FlowNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -224,6 +225,7 @@
 		F8DBD8A12F663F4D00246968 /* TrackedFlightPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedFlightPill.swift; sourceTree = "<group>"; };
 		F8DBD8A32F669D9700246968 /* TrackedFlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedFlight.swift; sourceTree = "<group>"; };
 		F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelpers.swift; sourceTree = "<group>"; };
+		F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowNotificationManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -489,6 +491,7 @@
 				F8DBD89F2F662F1000246968 /* DepartureMonitor.swift */,
 				F8DBD8A12F663F4D00246968 /* TrackedFlightPill.swift */,
 				F8DBD8A32F669D9700246968 /* TrackedFlight.swift */,
+				F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */,
 			);
 			path = "Flight Look Up";
 			sourceTree = "<group>";
@@ -671,6 +674,7 @@
 				F80599F12F5B6AD700146BF1 /* MCOLiveWaitTimeProvider.swift in Sources */,
 				F880516F2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift in Sources */,
 				F80599EB2F5B3A3600146BF1 /* DENLiveWaitTimeProvider.swift in Sources */,
+				F8DBD8A82F66B77C00246968 /* FlowNotificationManager.swift in Sources */,
 				F88051812F60E732005CF24F /* RecentAirports.swift in Sources */,
 				F822A8E42F5D1206009F6107 /* LGALiveWaitTimeProvider.swift in Sources */,
 				F822A8E62F5DB9E4009F6107 /* HAMLiveWaitProvider.swift in Sources */,

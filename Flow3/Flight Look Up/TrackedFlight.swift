@@ -1,5 +1,11 @@
 import Foundation
 
+enum LeaveTimeTrend: String, Codable {
+    case unchanged
+    case earlier
+    case later
+}
+
 struct TrackedFlight: Codable, Identifiable {
 
     var id: String { flightNumber }
@@ -17,4 +23,6 @@ struct TrackedFlight: Codable, Identifiable {
     let securityMinutes: Int
     let airportBufferMinutes: Int
     let bagBufferMinutes: Int
+
+    let leaveTimeTrend: LeaveTimeTrend
 }
