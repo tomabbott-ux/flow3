@@ -1,10 +1,21 @@
 import Foundation
 
-struct DeparturePlanner {
+struct DeparturePlan {
 
-    static let gateBufferMinutes = 60
-    static let airportBufferMinutes = 15
-    static let checkedBagBufferMinutes = 25
+    let departureTime: Date
+    let gateTargetTime: Date
+    let recommendedLeaveTime: Date
+
+    let travelMinutes: Int
+    let securityMinutes: Int
+
+    let airportBufferMinutes: Int
+    let bagBufferMinutes: Int
+}
+
+enum DeparturePlanner {
+
+    // MARK: - Core calculation
 
     static func makePlan(
         departureTime: Date,
@@ -13,25 +24,20 @@ struct DeparturePlanner {
         checkedBags: Bool
     ) -> DeparturePlan {
 
-        let bagBuffer = checkedBags ? checkedBagBufferMinutes : 0
+        let airportBufferMinutes = terminalBufferMinutes()
+        let bagBufferMinutes = checkedBags ? bagDropBufferMinutes() : 0
 
-        let gateTargetTime = Calendar.current.date(
-            byAdding: .minute,
-            value: -gateBufferMinutes,
-            to: departureTime
-        ) ?? departureTime
+        let gateTargetTime = departureTime
+            .addingTimeInterval(-60 * 60) // arrive at gate 60 mins before
 
-        let totalMinutesToSubtract =
-            airportBufferMinutes
-            + bagBuffer
-            + securityMinutes
-            + travelMinutes
+        let totalMinutesBeforeGate =
+            travelMinutes +
+            securityMinutes +
+            airportBufferMinutes +
+            bagBufferMinutes
 
-        let recommendedLeaveTime = Calendar.current.date(
-            byAdding: .minute,
-            value: -totalMinutesToSubtract,
-            to: gateTargetTime
-        ) ?? gateTargetTime
+        let recommendedLeaveTime = gateTargetTime
+            .addingTimeInterval(TimeInterval(-totalMinutesBeforeGate * 60))
 
         return DeparturePlan(
             departureTime: departureTime,
@@ -40,7 +46,19 @@ struct DeparturePlanner {
             travelMinutes: travelMinutes,
             securityMinutes: securityMinutes,
             airportBufferMinutes: airportBufferMinutes,
-            bagBufferMinutes: bagBuffer
+            bagBufferMinutes: bagBufferMinutes
         )
+    }
+
+    // MARK: - Buffers
+
+    private static func terminalBufferMinutes() -> Int {
+        // walking time / airport buffer
+        return 15
+    }
+
+    private static func bagDropBufferMinutes() -> Int {
+        // time to drop checked luggage
+        return 20
     }
 }

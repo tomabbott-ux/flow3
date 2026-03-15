@@ -57,7 +57,7 @@ struct LandingView: View {
                     securityHero
 
                     if store.selectedAirport == .lhr {
-                        departurePlannerButton
+                        departurePlannerSection
                     }
 
                     GenericAirportBreakdownCard(
@@ -617,11 +617,19 @@ private extension LandingView {
 
 private extension LandingView {
 
+    var departurePlannerSection: some View {
+        VStack(spacing: 12) {
+            departurePlannerButton
+            TrackedFlightPill(store: store)
+        }
+    }
+
     var departurePlannerButton: some View {
         Button {
             isShowingDeparturePlanner = true
         } label: {
             HStack(spacing: 12) {
+
                 Image(systemName: "car.fill")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white.opacity(0.95))

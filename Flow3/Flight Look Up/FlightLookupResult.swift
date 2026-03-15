@@ -1,8 +1,10 @@
-//
-//  FlightLookupResult.swift
-//  Flow3
-//
-//  Created by Tom Abbott on 14/03/2026.
-//
-
 import Foundation
+
+struct FlightLookupResult {
+    let flightNumber: String
+    let airline: String
+    let originIATA: String
+    let destinationIATA: String
+    let terminal: String?
+    let departureTime: Date
+}
