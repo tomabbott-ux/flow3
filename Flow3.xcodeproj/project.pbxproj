@@ -105,6 +105,7 @@
 		F8DBD8A42F669D9700246968 /* TrackedFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A32F669D9700246968 /* TrackedFlight.swift */; };
 		F8DBD8A62F66A07D00246968 /* KeyboardHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */; };
 		F8DBD8A82F66B77C00246968 /* FlowNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */; };
+		F8DBD8AA2F672FCB00246968 /* LiveFlightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A92F672FCB00246968 /* LiveFlightService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -226,6 +227,7 @@
 		F8DBD8A32F669D9700246968 /* TrackedFlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedFlight.swift; sourceTree = "<group>"; };
 		F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelpers.swift; sourceTree = "<group>"; };
 		F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowNotificationManager.swift; sourceTree = "<group>"; };
+		F8DBD8A92F672FCB00246968 /* LiveFlightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFlightService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -492,6 +494,7 @@
 				F8DBD8A12F663F4D00246968 /* TrackedFlightPill.swift */,
 				F8DBD8A32F669D9700246968 /* TrackedFlight.swift */,
 				F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */,
+				F8DBD8A92F672FCB00246968 /* LiveFlightService.swift */,
 			);
 			path = "Flight Look Up";
 			sourceTree = "<group>";
@@ -655,6 +658,7 @@
 				F8BD8FD92F62ADD0000EE425 /* DOHLiveWaitTimeProvider.swift in Sources */,
 				F828EF352F59BCC400EC53EC /* ATLSecurityWaitTimesParser.swift in Sources */,
 				F80599CB2F5ACAA300146BF1 /* AirportWaitTimeRouter.swift in Sources */,
+				F8DBD8AA2F672FCB00246968 /* LiveFlightService.swift in Sources */,
 				F8BD8FE32F631C53000EE425 /* ICNLiveWaitTimeProvider.swift in Sources */,
 				F8DBD8982F6625D000246968 /* FlightLookupResult.swift in Sources */,
 				F862F1A32F583923001666F2 /* Flow3App.swift in Sources */,

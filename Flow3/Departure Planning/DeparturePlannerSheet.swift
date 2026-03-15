@@ -25,8 +25,8 @@ struct DeparturePlannerSheet: View {
     @State private var flightLookupResult: FlightLookupResult?
 
     private let travelTimeService = TravelTimeService()
-    private let flightLookupService = FlightLookupService()
-
+    private let flightLookupService = LiveFlightService()
+    
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
@@ -143,7 +143,6 @@ struct DeparturePlannerSheet: View {
 
     private var plannerModePicker: some View {
         HStack(spacing: 8) {
-
             modeButton(title: "Manual", selected: !useFlightNumber) {
                 useFlightNumber = false
             }
@@ -512,6 +511,7 @@ struct DeparturePlannerSheet: View {
     }
 
     private func lookupFlight() async {
+
         errorText = nil
         plan = nil
         flightLookupResult = nil
@@ -519,20 +519,24 @@ struct DeparturePlannerSheet: View {
         defer { isLookingUpFlight = false }
 
         do {
+
+            let trimmedFlightNumber = flightNumber
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .uppercased()
+
             let result = try await flightLookupService.lookupFlight(
-                flightNumber: flightNumber
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                    .uppercased(),
-                date: flightDate
+                flightNumber: trimmedFlightNumber,
+                date: flightDate,
+                airportIATA: "LHR"
             )
 
             flightLookupResult = result
             departureTime = result.departureTime
+
         } catch {
             errorText = error.localizedDescription
         }
     }
-
     private func calculate() async {
         errorText = nil
         isCalculating = true
