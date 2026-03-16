@@ -15,7 +15,8 @@ final class FlightLookupService {
 
     func lookupFlight(
         flightNumber: String,
-        date: Date
+        date: Date,
+        airportIATA: String
     ) async throws -> FlightLookupResult {
 
         let trimmed = flightNumber
@@ -73,6 +74,11 @@ final class FlightLookupService {
         ]
 
         guard let match = flights[trimmed] else {
+            throw FlightLookupServiceError.flightNotFound
+        }
+
+        // Only allow flights departing from selected airport
+        guard match.origin.uppercased() == airportIATA.uppercased() else {
             throw FlightLookupServiceError.flightNotFound
         }
 

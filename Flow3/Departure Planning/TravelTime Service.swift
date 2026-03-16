@@ -10,11 +10,11 @@ enum TravelTimeServiceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .permissionDenied:
-            return "Location permission is required to calculate travel time to Heathrow."
+            return "Location permission is required to calculate travel time."
         case .locationUnavailable:
             return "Could not get your current location."
         case .routeUnavailable:
-            return "Could not calculate a driving route to Heathrow."
+            return "Directions not available."
         }
     }
 }
@@ -24,29 +24,23 @@ final class TravelTimeService: NSObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     private var continuation: CheckedContinuation<CLLocationCoordinate2D, Error>?
 
-    private let heathrowCoordinate = CLLocationCoordinate2D(
-        latitude: 51.4700,
-        longitude: -0.4543
-    )
-
-    // London fallback for Simulator / local development
-    private let simulatorFallbackCoordinate = CLLocationCoordinate2D(
-        latitude: 51.5074,
-        longitude: -0.1278
-    )
-
     override init() {
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
     }
 
-    func drivingMinutesToHeathrow() async throws -> Int {
-        let userCoordinate = try await currentLocationCoordinate()
+    func drivingMinutes(to airport: FlowAirport) async throws -> Int {
+
+        let userCoordinate = try await currentLocationCoordinate(for: airport)
 
         let request = MKDirections.Request()
-        request.source = MKMapItem(placemark: MKPlacemark(coordinate: userCoordinate))
-        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: heathrowCoordinate))
+        request.source = MKMapItem(
+            placemark: MKPlacemark(coordinate: userCoordinate)
+        )
+        request.destination = MKMapItem(
+            placemark: MKPlacemark(coordinate: airport.coordinate)
+        )
         request.transportType = .automobile
 
         let response = try await MKDirections(request: request).calculate()
@@ -58,13 +52,12 @@ final class TravelTimeService: NSObject, CLLocationManagerDelegate {
         return Int(ceil(route.expectedTravelTime / 60.0))
     }
 
-    private func currentLocationCoordinate() async throws -> CLLocationCoordinate2D {
+    private func currentLocationCoordinate(for airport: FlowAirport) async throws -> CLLocationCoordinate2D {
 #if targetEnvironment(simulator)
-        // Simulator fallback so development is not blocked by flaky Core Location behaviour
         if let existing = locationManager.location?.coordinate {
             return existing
         } else {
-            return simulatorFallbackCoordinate
+            return simulatorFallbackCoordinate(for: airport)
         }
 #else
         let status = locationManager.authorizationStatus
@@ -138,5 +131,24 @@ final class TravelTimeService: NSObject, CLLocationManagerDelegate {
         guard let continuation else { return }
         self.continuation = nil
         continuation.resume(throwing: TravelTimeServiceError.locationUnavailable)
+    }
+
+    private func simulatorFallbackCoordinate(for airport: FlowAirport) -> CLLocationCoordinate2D {
+        switch airport {
+        case .atl:
+            return CLLocationCoordinate2D(
+                latitude: 33.7490,
+                longitude: -84.3880
+            ) // Atlanta city centre
+
+        case .lhr:
+            return CLLocationCoordinate2D(
+                latitude: 51.5074,
+                longitude: -0.1278
+            ) // London
+
+        default:
+            return airport.coordinate
+        }
     }
 }

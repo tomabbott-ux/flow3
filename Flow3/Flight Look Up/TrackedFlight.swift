@@ -25,4 +25,11 @@ struct TrackedFlight: Codable, Identifiable {
     let bagBufferMinutes: Int
 
     let leaveTimeTrend: LeaveTimeTrend
+
+    let securityRouteMode: SecurityRouteMode
+    let securityRouteID: String?
+    let securityRouteTitle: String
+    let securityRouteSubtitle: String
+    let securityRouteDetail: String
+    let securityRouteIsPreCheckOnly: Bool
 }

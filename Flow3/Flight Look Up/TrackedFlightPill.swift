@@ -6,8 +6,13 @@ struct TrackedFlightPill: View {
     @State private var expanded = false
     @State private var pulse = false
     @State private var isRefreshing = false
+    @State private var showingRoutePicker = false
 
     private let refreshTimer = Timer.publish(every: 120, on: .main, in: .common).autoconnect()
+
+    private var availableRoutes: [SecurityRouteOption] {
+        store.availableSecurityRoutes(for: store.selectedAirport)
+    }
 
     var body: some View {
         Group {
@@ -75,7 +80,7 @@ struct TrackedFlightPill: View {
                                 .foregroundColor(.white.opacity(0.75))
 
                                 Label(
-                                    "T\(flight.terminal)",
+                                    flight.terminal.isEmpty ? "—" : flight.terminal,
                                     systemImage: "building.2"
                                 )
                                 .font(.system(size: 14, weight: .medium))
@@ -91,10 +96,31 @@ struct TrackedFlightPill: View {
 
                         VStack(alignment: .leading, spacing: 14) {
                             infoRow("Airline", flight.airline)
-                            infoRow("Terminal", flight.terminal)
+                            infoRow("Terminal", flight.terminal.isEmpty ? "—" : flight.terminal)
                             infoRow("Departure", timeString(flight.departureTime))
                             infoRow("Leave at", timeString(flight.leaveTime))
                             infoRow("Gate target", timeString(flight.gateTargetTime))
+
+                            Divider()
+                                .overlay(Color.white.opacity(0.10))
+
+                            infoRow(
+                                "Security route",
+                                securityRouteValueText(for: flight)
+                            )
+
+                            Text(flight.securityRouteDetail)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.white.opacity(0.68))
+
+                            Button {
+                                showingRoutePicker = true
+                            } label: {
+                                Text("Change checkpoint")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                            .buttonStyle(.plain)
 
                             Divider()
                                 .overlay(Color.white.opacity(0.10))
@@ -180,8 +206,49 @@ struct TrackedFlightPill: View {
                         await store.refreshTrackedFlight()
                     }
                 }
+                .confirmationDialog(
+                    "Choose security checkpoint",
+                    isPresented: $showingRoutePicker,
+                    titleVisibility: .visible
+                ) {
+                    Button("Auto") {
+                        store.setTrackedFlightSecurityRoute(nil)
+                    }
+
+                    ForEach(availableRoutes) { route in
+                        Button(routePickerTitle(for: route)) {
+                            store.setTrackedFlightSecurityRoute(route.id)
+                        }
+                    }
+
+                    Button("Cancel", role: .cancel) { }
+                }
             }
         }
+    }
+
+    private func securityRouteValueText(for flight: TrackedFlight) -> String {
+        let base = flight.securityRouteSubtitle.isEmpty
+            ? flight.securityRouteTitle
+            : "\(flight.securityRouteTitle) · \(flight.securityRouteSubtitle)"
+
+        if flight.securityRouteMode == .manual {
+            return "\(base) · Chosen by you"
+        }
+
+        return base
+    }
+
+    private func routePickerTitle(for route: SecurityRouteOption) -> String {
+        let base = route.subtitle.isEmpty
+            ? "\(route.title) · \(route.minutes)m"
+            : "\(route.title) · \(route.subtitle) · \(route.minutes)m"
+
+        if route.isPreCheckOnly {
+            return "\(base) · PreCheck only"
+        }
+
+        return base
     }
 
     private func leaveTimeColor(for trend: LeaveTimeTrend) -> Color {

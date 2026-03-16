@@ -106,6 +106,9 @@
 		F8DBD8A62F66A07D00246968 /* KeyboardHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */; };
 		F8DBD8A82F66B77C00246968 /* FlowNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */; };
 		F8DBD8AA2F672FCB00246968 /* LiveFlightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8A92F672FCB00246968 /* LiveFlightService.swift */; };
+		F8DBD8AC2F67F84F00246968 /* FlowAirport+Coordinate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8AB2F67F84F00246968 /* FlowAirport+Coordinate.swift */; };
+		F8DBD8AE2F680A4D00246968 /* LandingStore+PlannerSecurity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8AD2F680A4D00246968 /* LandingStore+PlannerSecurity.swift */; };
+		F8DBD8B02F68135C00246968 /* PlannerSecurityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8AF2F68135C00246968 /* PlannerSecurityModels.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -228,6 +231,9 @@
 		F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelpers.swift; sourceTree = "<group>"; };
 		F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowNotificationManager.swift; sourceTree = "<group>"; };
 		F8DBD8A92F672FCB00246968 /* LiveFlightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveFlightService.swift; sourceTree = "<group>"; };
+		F8DBD8AB2F67F84F00246968 /* FlowAirport+Coordinate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FlowAirport+Coordinate.swift"; sourceTree = "<group>"; };
+		F8DBD8AD2F680A4D00246968 /* LandingStore+PlannerSecurity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+PlannerSecurity.swift"; sourceTree = "<group>"; };
+		F8DBD8AF2F68135C00246968 /* PlannerSecurityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannerSecurityModels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -318,6 +324,8 @@
 				F880517E2F60E64F005CF24F /* FavouriteAirports.swift */,
 				F88051802F60E732005CF24F /* RecentAirports.swift */,
 				F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */,
+				F8DBD8AD2F680A4D00246968 /* LandingStore+PlannerSecurity.swift */,
+				F8DBD8AF2F68135C00246968 /* PlannerSecurityModels.swift */,
 			);
 			path = Flow3;
 			sourceTree = "<group>";
@@ -495,6 +503,7 @@
 				F8DBD8A32F669D9700246968 /* TrackedFlight.swift */,
 				F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */,
 				F8DBD8A92F672FCB00246968 /* LiveFlightService.swift */,
+				F8DBD8AB2F67F84F00246968 /* FlowAirport+Coordinate.swift */,
 			);
 			path = "Flight Look Up";
 			sourceTree = "<group>";
@@ -631,6 +640,7 @@
 			files = (
 				F8DBD88C2F64858B00246968 /* BERLiveWaitTimeProvider.swift in Sources */,
 				F88051792F60D140005CF24F /* FlowAirport+ICAO.swift in Sources */,
+				F8DBD8AE2F680A4D00246968 /* LandingStore+PlannerSecurity.swift in Sources */,
 				F862F1DD2F583A5B001666F2 /* WeatherService.swift in Sources */,
 				F8DBD8A22F663F4D00246968 /* TrackedFlightPill.swift in Sources */,
 				F8DBD8952F6563DF00246968 /* DeparturePlannerSheet.swift in Sources */,
@@ -707,6 +717,7 @@
 				F8BD8FDD2F62AE13000EE425 /* HELLiveWaitTimeProvider.swift in Sources */,
 				F80599F52F5B815600146BF1 /* PHLLiveWaitTimeProvider.swift in Sources */,
 				F822A8EA2F5DD1D5009F6107 /* DUSLiveWaitTimeProvider.swift in Sources */,
+				F8DBD8B02F68135C00246968 /* PlannerSecurityModels.swift in Sources */,
 				F822A8D82F5CE9CE009F6107 /* TSAGenericWaitTimeProvider.swift in Sources */,
 				F80599D72F5AD4A200146BF1 /* Color+Hex.swift in Sources */,
 				F80599C72F5AC48E00146BF1 /* WelcomeView.swift in Sources */,
@@ -722,6 +733,7 @@
 				F862F1D52F5839C9001666F2 /* WeatherModels.swift in Sources */,
 				F822A8EE2F5DDBC1009F6107 /* STRLiveWaitTimeProvider.swift in Sources */,
 				F88051732F6061A9005CF24F /* DCALiveWaitTimeProvider.swift in Sources */,
+				F8DBD8AC2F67F84F00246968 /* FlowAirport+Coordinate.swift in Sources */,
 				F822A8E82F5DD199009F6107 /* CPHLiveWaitTimeProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

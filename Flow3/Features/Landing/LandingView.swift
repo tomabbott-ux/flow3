@@ -55,13 +55,13 @@ struct LandingView: View {
                     headerSection
                     weatherRow
 
-                    if store.selectedAirport == .lhr, store.trackedFlight != nil {
+                    if store.trackedFlight != nil {
                         TrackedFlightPill(store: store)
                     }
 
                     securityHero
 
-                    if store.selectedAirport == .lhr {
+                    if store.selectedAirport == .lhr || store.selectedAirport == .atl {
                         departurePlannerButton
                     }
 
@@ -621,13 +621,6 @@ private extension LandingView {
 // MARK: - Departure Planner
 
 private extension LandingView {
-
-    var departurePlannerSection: some View {
-        VStack(spacing: 12) {
-            departurePlannerButton
-            TrackedFlightPill(store: store)
-        }
-    }
 
     var departurePlannerButton: some View {
         Button {
