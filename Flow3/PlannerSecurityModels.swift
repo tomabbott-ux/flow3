@@ -5,6 +5,13 @@ enum SecurityRouteMode: String, Codable {
     case manual
 }
 
+enum SecurityRouteSelectionSource: String, Codable {
+    case terminalMatched
+    case airportSpecific
+    case fastestFallback
+    case manual
+}
+
 struct SecurityRouteOption: Identifiable, Codable, Hashable {
     let id: String
     let title: String
@@ -17,4 +24,5 @@ struct SecurityRouteOption: Identifiable, Codable, Hashable {
 struct PlannerSecuritySelection {
     let mode: SecurityRouteMode
     let option: SecurityRouteOption
+    let source: SecurityRouteSelectionSource
 }

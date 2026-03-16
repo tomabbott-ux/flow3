@@ -289,6 +289,16 @@ final class LandingStore: ObservableObject {
         waitTimes
     }
     
+    private func isFlightFinishedStatus(_ status: String?) -> Bool {
+        guard let status else { return false }
+
+        let normalized = status
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
+        return normalized == "departed" || normalized == "arrived"
+    }
+    
     // MARK: - Tracked Flight
     
     func trackFlight(_ flight: TrackedFlight) {
@@ -334,6 +344,13 @@ final class LandingStore: ObservableObject {
                 date: current.departureTime,
                 airportIATA: selectedAirport.rawValue
             )
+            
+            if isFlightFinishedStatus(refreshedFlight.status) {
+                await FlowNotificationManager.shared.requestPermission()
+                FlowNotificationManager.shared.notifyFlightDeparted(current)
+                clearTrackedFlight()
+                return
+            }
             
             let travelMinutes = try await travelTimeService.drivingMinutes(
                 to: selectedAirport
@@ -400,7 +417,6 @@ final class LandingStore: ObservableObject {
             await FlowNotificationManager.shared.requestPermission()
             
             FlowNotificationManager.shared.scheduleTrackedFlightReminders(for: updated)
-            
             FlowNotificationManager.shared.notifyTrackedFlightChanged(
                 oldFlight: oldFlight,
                 newFlight: updated

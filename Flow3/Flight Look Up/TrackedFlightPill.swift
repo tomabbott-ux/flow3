@@ -3,6 +3,7 @@ import SwiftUI
 struct TrackedFlightPill: View {
 
     @ObservedObject var store: LandingStore
+
     @State private var expanded = false
     @State private var pulse = false
     @State private var isRefreshing = false
@@ -50,7 +51,7 @@ struct TrackedFlightPill: View {
                                     .foregroundColor(.white.opacity(0.7))
                             }
 
-                            Text("\(flight.flightNumber) · \(flight.route)")
+                            Text("\(flight.flightNumber) • \(flight.route)")
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundColor(.white)
 
@@ -69,10 +70,22 @@ struct TrackedFlightPill: View {
                                     .font(.system(size: 42, weight: .heavy))
                                     .foregroundColor(leaveTimeColor(for: flight.leaveTimeTrend))
                                     .monospacedDigit()
+
+                                TimelineView(.periodic(from: .now, by: 1)) { context in
+                                    if flight.leaveTime > context.date {
+                                        Text("Leaving in \(countdownString(until: flight.leaveTime, now: context.date))")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(.white.opacity(0.78))
+                                            .monospacedDigit()
+                                    } else {
+                                        Text("Leave now")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(.red.opacity(0.95))
+                                    }
+                                }
                             }
 
                             HStack(spacing: 16) {
-
                                 Image(systemName: "airplane")
                                     .font(.system(size: 16, weight: .semibold))
 
@@ -85,10 +98,13 @@ struct TrackedFlightPill: View {
                                 Text("T\(flight.terminal)")
                                     .font(.system(size: 15, weight: .semibold))
 
-                                Image(systemName: "suitcase")                                   .font(.system(size: 16))
+                                Image(systemName: "suitcase")
+                                    .font(.system(size: 16))
 
                                 Text(flight.securityRouteTitle)
                                     .font(.system(size: 15, weight: .semibold))
+
+                                Spacer()
                             }
                             .foregroundColor(.white.opacity(0.85))
                         }
@@ -101,7 +117,7 @@ struct TrackedFlightPill: View {
 
                         VStack(alignment: .leading, spacing: 14) {
                             infoRow("Airline", flight.airline)
-                            infoRow("Terminal", flight.terminal)
+                            infoRow("Terminal", flight.terminal.isEmpty ? "—" : flight.terminal)
 
                             if let gate = flight.gate,
                                !gate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -241,10 +257,10 @@ struct TrackedFlightPill: View {
     private func securityRouteValueText(for flight: TrackedFlight) -> String {
         let base = flight.securityRouteSubtitle.isEmpty
             ? flight.securityRouteTitle
-            : "\(flight.securityRouteTitle) · \(flight.securityRouteSubtitle)"
+            : "\(flight.securityRouteTitle) • \(flight.securityRouteSubtitle)"
 
         if flight.securityRouteMode == .manual {
-            return "\(base) · Chosen by you"
+            return "\(base) • Chosen by you"
         }
 
         return base
@@ -252,11 +268,11 @@ struct TrackedFlightPill: View {
 
     private func routePickerTitle(for route: SecurityRouteOption) -> String {
         let base = route.subtitle.isEmpty
-            ? "\(route.title) · \(route.minutes)m"
-            : "\(route.title) · \(route.subtitle) · \(route.minutes)m"
+            ? "\(route.title) • \(route.minutes)m"
+            : "\(route.title) • \(route.subtitle) • \(route.minutes)m"
 
         if route.isPreCheckOnly {
-            return "\(base) · PreCheck only"
+            return "\(base) • PreCheck only"
         }
 
         return base
@@ -292,5 +308,14 @@ struct TrackedFlightPill: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: date)
+    }
+
+    private func countdownString(until date: Date, now: Date) -> String {
+        let totalSeconds = max(0, Int(date.timeIntervalSince(now)))
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
 }

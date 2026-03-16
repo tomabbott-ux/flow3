@@ -36,18 +36,15 @@ struct DeparturePlannerSheet: View {
                 VStack(alignment: .leading, spacing: 18) {
 
                     plannerIntroCard
+                    plannerModePicker
 
-                    if supportsFlightLookupMode {
-                        plannerModePicker
-                    }
-
-                    if useFlightNumber && supportsFlightLookupMode {
+                    if useFlightNumber {
                         flightLookupCard
                     } else {
                         inputsCard
                     }
 
-                    if let flight = flightLookupResult, useFlightNumber, supportsFlightLookupMode {
+                    if let flight = flightLookupResult, useFlightNumber {
                         flightFoundCard(flight)
                     }
 
@@ -130,12 +127,7 @@ struct DeparturePlannerSheet: View {
         }
     }
 
-    private var supportsFlightLookupMode: Bool {
-        store.selectedAirport == .lhr || store.selectedAirport == .atl
-    }
-
     private var canTrackFlight: Bool {
-        supportsFlightLookupMode &&
         useFlightNumber &&
         flightLookupResult != nil &&
         plan != nil
@@ -345,6 +337,10 @@ struct DeparturePlannerSheet: View {
                 infoRow("Terminal", terminal)
             }
 
+            if let gate = flight.gate, !gate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                infoRow("Gate", gate)
+            }
+
             infoRow("Departure", flightDateTimeString(flight.departureTime))
         }
         .flowGlassCard()
@@ -432,7 +428,7 @@ struct DeparturePlannerSheet: View {
         .disabled(
             isCalculating ||
             isLookingUpFlight ||
-            (useFlightNumber && supportsFlightLookupMode && flightLookupResult == nil)
+            (useFlightNumber && flightLookupResult == nil)
         )
     }
 
@@ -541,7 +537,7 @@ struct DeparturePlannerSheet: View {
         store.trackFlight(tracked)
         dismiss()
     }
-    
+
     private func resetPlannerForSelectedAirport() {
         errorText = nil
         plan = nil
@@ -556,9 +552,9 @@ struct DeparturePlannerSheet: View {
             to: Date()
         ) ?? Date()
         flightDate = Date()
-        useFlightNumber = supportsFlightLookupMode
+        useFlightNumber = true
     }
-    
+
     private func resultRow(_ title: String, _ value: String) -> some View {
         HStack {
             Text(title)

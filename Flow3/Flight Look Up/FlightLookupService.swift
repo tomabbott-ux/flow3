@@ -34,6 +34,11 @@ final class FlightLookupService {
 
         let (data, _) = try await URLSession.shared.data(for: request)
 
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("AeroDataBox JSON:")
+            print(jsonString)
+        }
+
         guard
             let flights = try JSONSerialization.jsonObject(with: data) as? [[String: Any]]
         else {
@@ -90,6 +95,12 @@ final class FlightLookupService {
 
         let terminal = departure["terminal"] as? String
         let gate = departure["gate"] as? String
+        let status = flight["status"] as? String
+
+        print("Departure payload:", departure)
+        print("Parsed terminal:", terminal ?? "nil")
+        print("Parsed gate:", gate ?? "nil")
+        print("Parsed status:", status ?? "nil")
 
         let scheduledLocal =
         ((departure["scheduledTime"] as? [String: Any])?["local"] as? String) ?? ""
@@ -122,6 +133,7 @@ final class FlightLookupService {
             destinationIATA: arrivalAirport,
             terminal: terminal,
             gate: gate,
+            status: status,
             departureTime: shownDepartureDate
         )
     }

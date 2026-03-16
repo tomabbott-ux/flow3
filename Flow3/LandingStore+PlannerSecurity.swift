@@ -43,7 +43,8 @@ extension LandingStore {
            let manual = options.first(where: { $0.id == preferredRouteID }) {
             return PlannerSecuritySelection(
                 mode: .manual,
-                option: manual
+                option: manual,
+                source: .manual
             )
         }
 
@@ -52,25 +53,37 @@ extension LandingStore {
             options: options,
             flightTerminal: flightTerminal
         ) {
-            return PlannerSecuritySelection(
-                mode: .automatic,
-                option: matched
-            )
+            return matched
         }
 
         if let fastestNonPreCheck = options
             .filter({ !$0.isPreCheckOnly })
             .min(by: { $0.minutes < $1.minutes }) {
+
+            let fallbackOption = SecurityRouteOption(
+                id: fastestNonPreCheck.id,
+                title: "Fastest available",
+                subtitle: fastestNonPreCheck.subtitle,
+                detail: fallbackDetail(
+                    airport: airport,
+                    flightTerminal: flightTerminal,
+                    originalOption: fastestNonPreCheck
+                ),
+                minutes: fastestNonPreCheck.minutes,
+                isPreCheckOnly: fastestNonPreCheck.isPreCheckOnly
+            )
+
             return PlannerSecuritySelection(
                 mode: .automatic,
-                option: fastestNonPreCheck
+                option: fallbackOption,
+                source: .fastestFallback
             )
         }
 
         let fallback = options.min(by: { $0.minutes < $1.minutes }) ??
             SecurityRouteOption(
                 id: "\(airport.rawValue)-AUTO",
-                title: "Fastest route",
+                title: "Fastest available",
                 subtitle: "",
                 detail: "Flow automatically selected the fastest checkpoint",
                 minutes: 0,
@@ -79,7 +92,8 @@ extension LandingStore {
 
         return PlannerSecuritySelection(
             mode: .automatic,
-            option: fallback
+            option: fallback,
+            source: .fastestFallback
         )
     }
 
@@ -121,7 +135,7 @@ extension LandingStore {
             securityRouteSubtitle: selection.option.subtitle,
             securityRouteDetail: selection.mode == .manual
                 ? "\(selection.option.detail) · Chosen by you"
-                : "Flow automatically selected the best checkpoint",
+                : selection.option.detail,
             securityRouteIsPreCheckOnly: selection.option.isPreCheckOnly
         )
 
@@ -139,13 +153,12 @@ extension LandingStore {
         airport: FlowAirport,
         options: [SecurityRouteOption],
         flightTerminal: String?
-    ) -> SecurityRouteOption? {
+    ) -> PlannerSecuritySelection? {
 
         let normalizedTerminal = normalizePlannerTerminal(flightTerminal)
 
         guard let normalizedTerminal else { return nil }
 
-        // ATL has non-numeric Domestic / International routing
         if airport == .atl {
             if isATLInternationalTerminal(normalizedTerminal),
                let international = options
@@ -154,7 +167,12 @@ extension LandingStore {
                     routeMatchesInternational($0)
                 })
                 .min(by: { $0.minutes < $1.minutes }) {
-                return international
+
+                return PlannerSecuritySelection(
+                    mode: .automatic,
+                    option: international,
+                    source: .airportSpecific
+                )
             }
 
             if let domestic = options
@@ -163,11 +181,15 @@ extension LandingStore {
                     routeMatchesDomestic($0)
                 })
                 .min(by: { $0.minutes < $1.minutes }) {
-                return domestic
+
+                return PlannerSecuritySelection(
+                    mode: .automatic,
+                    option: domestic,
+                    source: .airportSpecific
+                )
             }
         }
 
-        // Generic terminal-aware routing for all airports
         let candidateTokens = plannerTerminalTokens(from: normalizedTerminal)
 
         if let matched = options
@@ -176,31 +198,58 @@ extension LandingStore {
                 route($0, matchesAnyTerminalToken: candidateTokens)
             })
             .min(by: { $0.minutes < $1.minutes }) {
-            return matched
+            return PlannerSecuritySelection(
+                mode: .automatic,
+                option: matched,
+                source: .terminalMatched
+            )
         }
 
-        // Secondary relaxed match for odd naming patterns
         if let relaxed = options
             .filter({
                 !$0.isPreCheckOnly &&
                 relaxedRouteMatch($0, terminal: normalizedTerminal)
             })
             .min(by: { $0.minutes < $1.minutes }) {
-            return relaxed
+            return PlannerSecuritySelection(
+                mode: .automatic,
+                option: relaxed,
+                source: .terminalMatched
+            )
         }
 
-        // Absolute last terminal-aware fallback, even if PreCheck only
         if let precheckFallback = options
             .filter({
                 route($0, matchesAnyTerminalToken: candidateTokens)
             })
             .min(by: { $0.minutes < $1.minutes }) {
-            return precheckFallback
+            return PlannerSecuritySelection(
+                mode: .automatic,
+                option: precheckFallback,
+                source: .terminalMatched
+            )
         }
 
         return nil
     }
 
+    private func fallbackDetail(
+        airport: FlowAirport,
+        flightTerminal: String?,
+        originalOption: SecurityRouteOption
+    ) -> String {
+
+        let routeDescription = originalOption.subtitle.isEmpty
+            ? originalOption.title
+            : "\(originalOption.title) · \(originalOption.subtitle)"
+
+        guard let terminal = normalizePlannerTerminal(flightTerminal) else {
+            return "Flow selected the quickest checkpoint based on current wait times"
+        }
+
+        return "Terminal \(terminal) checkpoint data unavailable. Use \(routeDescription)"
+    }
+    
     private func routeGroupingKey(for row: WaitTimeEstimate) -> String {
         let checkpoint = row.checkpointName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let area = row.areaName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

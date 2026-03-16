@@ -115,6 +115,7 @@
 		F8DBD8D12F682F2D00246968 /* FlowLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8D02F682F2D00246968 /* FlowLiveActivityAttributes.swift */; };
 		F8DBD8D32F682F4E00246968 /* FlowLiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8D22F682F4E00246968 /* FlowLiveActivityManager.swift */; };
 		F8DBD8D82F68321700246968 /* FlowLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8D02F682F2D00246968 /* FlowLiveActivityAttributes.swift */; };
+		F8DBD8DA2F687BD700246968 /* CountdownHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8D92F687BD700246968 /* CountdownHelper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -266,6 +267,7 @@
 		F8DBD8BA2F682E4400246968 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		F8DBD8D02F682F2D00246968 /* FlowLiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLiveActivityAttributes.swift; sourceTree = "<group>"; };
 		F8DBD8D22F682F4E00246968 /* FlowLiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLiveActivityManager.swift; sourceTree = "<group>"; };
+		F8DBD8D92F687BD700246968 /* CountdownHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownHelper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -392,6 +394,7 @@
 				F8DBD8A52F66A07D00246968 /* KeyboardHelpers.swift */,
 				F8DBD8AD2F680A4D00246968 /* LandingStore+PlannerSecurity.swift */,
 				F8DBD8AF2F68135C00246968 /* PlannerSecurityModels.swift */,
+				F8DBD8D92F687BD700246968 /* CountdownHelper.swift */,
 			);
 			path = Flow3;
 			sourceTree = "<group>";
@@ -758,6 +761,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F8DBD88C2F64858B00246968 /* BERLiveWaitTimeProvider.swift in Sources */,
+				F8DBD8DA2F687BD700246968 /* CountdownHelper.swift in Sources */,
 				F88051792F60D140005CF24F /* FlowAirport+ICAO.swift in Sources */,
 				F8DBD8AE2F680A4D00246968 /* LandingStore+PlannerSecurity.swift in Sources */,
 				F862F1DD2F583A5B001666F2 /* WeatherService.swift in Sources */,

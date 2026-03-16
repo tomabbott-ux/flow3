@@ -7,5 +7,6 @@ struct FlightLookupResult {
     let destinationIATA: String
     let terminal: String?
     let gate: String?
+    let status: String?
     let departureTime: Date
 }

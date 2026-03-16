@@ -61,9 +61,7 @@ struct LandingView: View {
 
                     securityHero
 
-                    if store.selectedAirport == .lhr || store.selectedAirport == .atl {
-                        departurePlannerButton
-                    }
+                    departurePlannerButton
 
                     GenericAirportBreakdownCard(
                         store: store,
