@@ -1,101 +1,152 @@
 import Foundation
 
-enum FlightLookupServiceError: LocalizedError {
-    case flightNotFound
-
-    var errorDescription: String? {
-        switch self {
-        case .flightNotFound:
-            return "Unable to find that flight."
-        }
-    }
-}
-
 final class FlightLookupService {
+
+    private let apiKey = "326a347895msh7460adc2983b80cp19f5e1jsn6e51a9fd6172"
 
     func lookupFlight(
         flightNumber: String,
         date: Date,
-        airportIATA: String
+        airportIATA: String = "LHR"
     ) async throws -> FlightLookupResult {
 
-        let trimmed = flightNumber
+        let requestDateFormatter = DateFormatter()
+        requestDateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        requestDateFormatter.dateFormat = "yyyy-MM-dd"
+        let dateString = requestDateFormatter.string(from: date)
+
+        let normalizedFlightNumber = flightNumber
             .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: " ", with: "")
             .uppercased()
 
-        let calendar = Calendar.current
+        let urlString =
+        "https://aerodatabox.p.rapidapi.com/flights/number/\(normalizedFlightNumber)/\(dateString)"
 
-        struct MockFlight {
-            let airline: String
-            let origin: String
-            let destination: String
-            let terminal: String
-            let hour: Int
-            let minute: Int
+        guard let url = URL(string: urlString) else {
+            throw URLError(.badURL)
         }
 
-        let flights: [String: MockFlight] = [
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue(apiKey, forHTTPHeaderField: "X-RapidAPI-Key")
+        request.addValue("aerodatabox.p.rapidapi.com", forHTTPHeaderField: "X-RapidAPI-Host")
 
-            "BA216": MockFlight(
-                airline: "British Airways",
-                origin: "LHR",
-                destination: "ATL",
-                terminal: "5",
-                hour: 15,
-                minute: 15
-            ),
+        let (data, _) = try await URLSession.shared.data(for: request)
 
-            "BA117": MockFlight(
-                airline: "British Airways",
-                origin: "LHR",
-                destination: "JFK",
-                terminal: "5",
-                hour: 14,
-                minute: 30
-            ),
-
-            "VS3": MockFlight(
-                airline: "Virgin Atlantic",
-                origin: "LHR",
-                destination: "JFK",
-                terminal: "3",
-                hour: 11,
-                minute: 30
-            ),
-
-            "AA51": MockFlight(
-                airline: "American Airlines",
-                origin: "LHR",
-                destination: "DFW",
-                terminal: "3",
-                hour: 10,
-                minute: 25
+        guard
+            let flights = try JSONSerialization.jsonObject(with: data) as? [[String: Any]]
+        else {
+            throw NSError(
+                domain: "InvalidJSON",
+                code: 500,
+                userInfo: [NSLocalizedDescriptionKey: "Unexpected response from AeroDataBox."]
             )
-        ]
-
-        guard let match = flights[trimmed] else {
-            throw FlightLookupServiceError.flightNotFound
         }
 
-        // Only allow flights departing from selected airport
-        guard match.origin.uppercased() == airportIATA.uppercased() else {
-            throw FlightLookupServiceError.flightNotFound
+        let calendar = Calendar(identifier: .gregorian)
+
+        let matchingFlight = flights.first { flight in
+            guard
+                let departure = flight["departure"] as? [String: Any],
+                let airport = departure["airport"] as? [String: Any],
+                let iata = airport["iata"] as? String,
+                iata.uppercased() == airportIATA.uppercased()
+            else {
+                return false
+            }
+
+            guard
+                let scheduledLocal =
+                    ((departure["scheduledTime"] as? [String: Any])?["local"] as? String),
+                let scheduledDate = parseAeroDate(scheduledLocal)
+            else {
+                return false
+            }
+
+            return calendar.isDate(scheduledDate, inSameDayAs: date)
         }
 
-        let departure = calendar.date(
-            bySettingHour: match.hour,
-            minute: match.minute,
-            second: 0,
-            of: date
-        ) ?? date
+        guard let flight = matchingFlight else {
+            throw NSError(
+                domain: "FlightNotFound",
+                code: 404,
+                userInfo: [NSLocalizedDescriptionKey:
+                    "No matching \(airportIATA.uppercased()) departure found."]
+            )
+        }
+
+        let airline =
+        ((flight["airline"] as? [String: Any])?["name"] as? String) ?? "Unknown"
+
+        let departure = flight["departure"] as? [String: Any] ?? [:]
+        let arrival = flight["arrival"] as? [String: Any] ?? [:]
+
+        let departureAirport =
+        ((departure["airport"] as? [String: Any])?["iata"] as? String) ?? "UNK"
+
+        let arrivalAirport =
+        ((arrival["airport"] as? [String: Any])?["iata"] as? String) ?? "UNK"
+
+        let terminal = departure["terminal"] as? String
+        let gate = departure["gate"] as? String
+
+        let scheduledLocal =
+        ((departure["scheduledTime"] as? [String: Any])?["local"] as? String) ?? ""
+
+        let revisedLocal =
+        ((departure["revisedTime"] as? [String: Any])?["local"] as? String)
+
+        guard let scheduledDate = parseAeroDate(scheduledLocal) else {
+            throw NSError(
+                domain: "DateError",
+                code: 500,
+                userInfo: [NSLocalizedDescriptionKey:
+                    "Could not read scheduled departure time."]
+            )
+        }
+
+        let revisedDate = revisedLocal.flatMap { parseAeroDate($0) }
+
+        let shownDepartureDate: Date
+        if let revisedDate, revisedDate > scheduledDate {
+            shownDepartureDate = revisedDate
+        } else {
+            shownDepartureDate = scheduledDate
+        }
 
         return FlightLookupResult(
-            flightNumber: trimmed,
-            airline: match.airline,
-            originIATA: match.origin,
-            destinationIATA: match.destination,
-            terminal: match.terminal,
-            departureTime: departure
+            flightNumber: normalizedFlightNumber,
+            airline: airline,
+            originIATA: departureAirport,
+            destinationIATA: arrivalAirport,
+            terminal: terminal,
+            gate: gate,
+            departureTime: shownDepartureDate
         )
+    }
+
+    private func parseAeroDate(_ value: String) -> Date? {
+
+        guard !value.isEmpty else { return nil }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+
+        let formats = [
+            "yyyy-MM-dd HH:mmXXXXX",
+            "yyyy-MM-dd HH:mmZ",
+            "yyyy-MM-dd'T'HH:mm:ssXXXXX",
+            "yyyy-MM-dd'T'HH:mmXXXXX"
+        ]
+
+        for format in formats {
+            formatter.dateFormat = format
+            if let date = formatter.date(from: value) {
+                return date
+            }
+        }
+
+        return nil
     }
 }

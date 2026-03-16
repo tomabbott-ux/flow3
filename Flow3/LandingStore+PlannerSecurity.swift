@@ -47,113 +47,20 @@ extension LandingStore {
             )
         }
 
-        switch airport {
-
-        case .atl:
-            return atlPlannerSecuritySelection(
-                options: options,
-                flightTerminal: flightTerminal
-            )
-
-        default:
-            if let best = options
-                .filter({ !$0.isPreCheckOnly })
-                .min(by: { $0.minutes < $1.minutes }) {
-                return PlannerSecuritySelection(
-                    mode: .automatic,
-                    option: best
-                )
-            }
-
-            let fallback = options.min(by: { $0.minutes < $1.minutes }) ??
-                SecurityRouteOption(
-                    id: "\(airport.rawValue)-AUTO",
-                    title: "Fastest route",
-                    subtitle: "",
-                    detail: "Flow automatically selected the fastest checkpoint",
-                    minutes: 0,
-                    isPreCheckOnly: false
-                )
-
+        if let matched = automaticTerminalMatchedSelection(
+            airport: airport,
+            options: options,
+            flightTerminal: flightTerminal
+        ) {
             return PlannerSecuritySelection(
                 mode: .automatic,
-                option: fallback
-            )
-        }
-    }
-
-    func setTrackedFlightSecurityRoute(_ routeID: String?) {
-        guard let current = trackedFlight else { return }
-
-        let updated = TrackedFlight(
-            flightNumber: current.flightNumber,
-            route: current.route,
-            airline: current.airline,
-            terminal: current.terminal,
-            departureTime: current.departureTime,
-            leaveTime: current.leaveTime,
-            gateTargetTime: current.gateTargetTime,
-            travelMinutes: current.travelMinutes,
-            securityMinutes: current.securityMinutes,
-            airportBufferMinutes: current.airportBufferMinutes,
-            bagBufferMinutes: current.bagBufferMinutes,
-            leaveTimeTrend: current.leaveTimeTrend,
-            securityRouteMode: routeID == nil ? .automatic : .manual,
-            securityRouteID: routeID,
-            securityRouteTitle: current.securityRouteTitle,
-            securityRouteSubtitle: current.securityRouteSubtitle,
-            securityRouteDetail: routeID == nil
-                ? "Flow automatically selects the best checkpoint"
-                : current.securityRouteDetail,
-            securityRouteIsPreCheckOnly: current.securityRouteIsPreCheckOnly
-        )
-
-        trackedFlight = updated
-        SavedFlightStore.shared.save(updated)
-
-        Task {
-            await refreshTrackedFlight()
-        }
-    }
-
-    private func atlPlannerSecuritySelection(
-        options: [SecurityRouteOption],
-        flightTerminal: String?
-    ) -> PlannerSecuritySelection {
-
-        let normalizedTerminal = normalizePlannerTerminal(flightTerminal)
-
-        if isATLInternationalTerminal(normalizedTerminal),
-           let international = options
-            .filter({
-                !$0.isPreCheckOnly &&
-                $0.subtitle.localizedCaseInsensitiveContains("International")
-            })
-            .min(by: { $0.minutes < $1.minutes }) {
-
-            return PlannerSecuritySelection(
-                mode: .automatic,
-                option: international
-            )
-        }
-
-        if let domestic = options
-            .filter({
-                !$0.isPreCheckOnly &&
-                $0.subtitle.localizedCaseInsensitiveContains("Domestic")
-            })
-            .min(by: { $0.minutes < $1.minutes }) {
-
-            return PlannerSecuritySelection(
-                mode: .automatic,
-                option: domestic
+                option: matched
             )
         }
 
         if let fastestNonPreCheck = options
             .filter({ !$0.isPreCheckOnly })
             .min(by: { $0.minutes < $1.minutes }) {
-
             return PlannerSecuritySelection(
                 mode: .automatic,
                 option: fastestNonPreCheck
@@ -162,7 +69,7 @@ extension LandingStore {
 
         let fallback = options.min(by: { $0.minutes < $1.minutes }) ??
             SecurityRouteOption(
-                id: "ATL-AUTO",
+                id: "\(airport.rawValue)-AUTO",
                 title: "Fastest route",
                 subtitle: "",
                 detail: "Flow automatically selected the fastest checkpoint",
@@ -174,6 +81,124 @@ extension LandingStore {
             mode: .automatic,
             option: fallback
         )
+    }
+
+    func setTrackedFlightSecurityRoute(_ routeID: String?) {
+        guard let current = trackedFlight else { return }
+
+        let selection = plannerSecuritySelection(
+            for: selectedAirport,
+            flightTerminal: current.terminal,
+            preferredRouteID: routeID
+        )
+
+        let checkedBags = current.bagBufferMinutes > 0
+
+        let plan = DeparturePlanner.makePlan(
+            departureTime: current.departureTime,
+            travelMinutes: current.travelMinutes,
+            securityMinutes: max(0, selection.option.minutes),
+            checkedBags: checkedBags
+        )
+
+        let updated = TrackedFlight(
+            flightNumber: current.flightNumber,
+            route: current.route,
+            airline: current.airline,
+            terminal: current.terminal,
+            gate: current.gate,
+            departureTime: current.departureTime,
+            leaveTime: plan.recommendedLeaveTime,
+            gateTargetTime: plan.gateTargetTime,
+            travelMinutes: current.travelMinutes,
+            securityMinutes: selection.option.minutes,
+            airportBufferMinutes: plan.airportBufferMinutes,
+            bagBufferMinutes: plan.bagBufferMinutes,
+            leaveTimeTrend: current.leaveTimeTrend,
+            securityRouteMode: selection.mode,
+            securityRouteID: selection.mode == .manual ? selection.option.id : nil,
+            securityRouteTitle: selection.option.title,
+            securityRouteSubtitle: selection.option.subtitle,
+            securityRouteDetail: selection.mode == .manual
+                ? "\(selection.option.detail) · Chosen by you"
+                : "Flow automatically selected the best checkpoint",
+            securityRouteIsPreCheckOnly: selection.option.isPreCheckOnly
+        )
+
+        trackedFlight = updated
+        SavedFlightStore.shared.save(updated)
+
+        Task {
+            await FlowNotificationManager.shared.requestPermission()
+            FlowNotificationManager.shared.scheduleTrackedFlightReminders(for: updated)
+            await FlowLiveActivityManager.shared.update(for: updated)
+        }
+    }
+
+    private func automaticTerminalMatchedSelection(
+        airport: FlowAirport,
+        options: [SecurityRouteOption],
+        flightTerminal: String?
+    ) -> SecurityRouteOption? {
+
+        let normalizedTerminal = normalizePlannerTerminal(flightTerminal)
+
+        guard let normalizedTerminal else { return nil }
+
+        // ATL has non-numeric Domestic / International routing
+        if airport == .atl {
+            if isATLInternationalTerminal(normalizedTerminal),
+               let international = options
+                .filter({
+                    !$0.isPreCheckOnly &&
+                    routeMatchesInternational($0)
+                })
+                .min(by: { $0.minutes < $1.minutes }) {
+                return international
+            }
+
+            if let domestic = options
+                .filter({
+                    !$0.isPreCheckOnly &&
+                    routeMatchesDomestic($0)
+                })
+                .min(by: { $0.minutes < $1.minutes }) {
+                return domestic
+            }
+        }
+
+        // Generic terminal-aware routing for all airports
+        let candidateTokens = plannerTerminalTokens(from: normalizedTerminal)
+
+        if let matched = options
+            .filter({
+                !$0.isPreCheckOnly &&
+                route($0, matchesAnyTerminalToken: candidateTokens)
+            })
+            .min(by: { $0.minutes < $1.minutes }) {
+            return matched
+        }
+
+        // Secondary relaxed match for odd naming patterns
+        if let relaxed = options
+            .filter({
+                !$0.isPreCheckOnly &&
+                relaxedRouteMatch($0, terminal: normalizedTerminal)
+            })
+            .min(by: { $0.minutes < $1.minutes }) {
+            return relaxed
+        }
+
+        // Absolute last terminal-aware fallback, even if PreCheck only
+        if let precheckFallback = options
+            .filter({
+                route($0, matchesAnyTerminalToken: candidateTokens)
+            })
+            .min(by: { $0.minutes < $1.minutes }) {
+            return precheckFallback
+        }
+
+        return nil
     }
 
     private func routeGroupingKey(for row: WaitTimeEstimate) -> String {
@@ -260,6 +285,89 @@ extension LandingStore {
             .uppercased()
 
         return cleaned.isEmpty ? nil : cleaned
+    }
+
+    private func plannerTerminalTokens(from terminal: String) -> [String] {
+        var tokens: [String] = [terminal]
+
+        let digits = terminal.filter(\.isNumber)
+        if !digits.isEmpty {
+            tokens.append(digits)
+            tokens.append("T\(digits)")
+            tokens.append("TERMINAL \(digits)")
+        }
+
+        if terminal.hasPrefix("T") {
+            let withoutT = String(terminal.dropFirst())
+            if !withoutT.isEmpty {
+                tokens.append(withoutT)
+                tokens.append("TERMINAL \(withoutT)")
+            }
+        }
+
+        if terminal.hasPrefix("TERMINAL ") {
+            let withoutWord = terminal.replacingOccurrences(of: "TERMINAL ", with: "")
+            if !withoutWord.isEmpty {
+                tokens.append(withoutWord)
+                tokens.append("T\(withoutWord)")
+            }
+        }
+
+        return Array(Set(tokens))
+    }
+
+    private func route(
+        _ option: SecurityRouteOption,
+        matchesAnyTerminalToken tokens: [String]
+    ) -> Bool {
+        let haystack = routeSearchText(for: option)
+
+        for token in tokens {
+            if haystack.contains(token) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private func relaxedRouteMatch(
+        _ option: SecurityRouteOption,
+        terminal: String
+    ) -> Bool {
+        let haystack = routeSearchText(for: option)
+
+        if haystack.contains("TERMINAL") && haystack.contains(terminal) {
+            return true
+        }
+
+        let digits = terminal.filter(\.isNumber)
+        if !digits.isEmpty {
+            if haystack.contains("TERMINAL \(digits)") { return true }
+            if haystack.contains("T\(digits)") { return true }
+        }
+
+        return false
+    }
+
+    private func routeSearchText(for option: SecurityRouteOption) -> String {
+        [
+            option.title,
+            option.subtitle,
+            option.detail
+        ]
+        .joined(separator: " ")
+        .uppercased()
+    }
+
+    private func routeMatchesDomestic(_ option: SecurityRouteOption) -> Bool {
+        let haystack = routeSearchText(for: option)
+        return haystack.contains("DOMESTIC")
+    }
+
+    private func routeMatchesInternational(_ option: SecurityRouteOption) -> Bool {
+        let haystack = routeSearchText(for: option)
+        return haystack.contains("INTERNATIONAL") || haystack.contains("INTL")
     }
 
     private func isATLInternationalTerminal(_ terminal: String?) -> Bool {

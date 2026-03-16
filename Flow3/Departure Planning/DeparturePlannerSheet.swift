@@ -1,65 +1,68 @@
 import SwiftUI
 
 struct DeparturePlannerSheet: View {
-    
+
     @ObservedObject var store: LandingStore
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isFlightFieldFocused: Bool
-    
+
     @State private var departureTime: Date = Calendar.current.date(
         byAdding: .hour,
         value: 3,
         to: Date()
     ) ?? Date()
-    
+
     @State private var checkedBags = false
     @State private var isCalculating = false
     @State private var isLookingUpFlight = false
-    
+
     @State private var errorText: String?
     @State private var plan: DeparturePlan?
-    
-    @State private var useFlightNumber = false
+
+    @State private var useFlightNumber = true
     @State private var flightNumber = ""
     @State private var flightDate = Date()
     @State private var flightLookupResult: FlightLookupResult?
-    
+
+    @State private var useManualTravelTime = false
+    @State private var manualTravelMinutes = 20
+
     private let travelTimeService = TravelTimeService()
     private let flightLookupService = LiveFlightService()
-    
+
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
-                    
+
                     plannerIntroCard
-                    
+
                     if supportsFlightLookupMode {
                         plannerModePicker
                     }
-                    
+
                     if useFlightNumber && supportsFlightLookupMode {
                         flightLookupCard
                     } else {
                         inputsCard
                     }
-                    
+
                     if let flight = flightLookupResult, useFlightNumber, supportsFlightLookupMode {
                         flightFoundCard(flight)
                     }
-                    
+
                     bagToggleCard
-                    
+                    travelTimeCard
                     actionButton
-                    
+
                     if let plan {
                         resultCard(plan)
                     }
-                    
+
                     if canTrackFlight {
                         trackFlightButton
                     }
-                    
+
                     if let errorText, !errorText.isEmpty {
                         Text(errorText)
                             .font(.system(size: 13, weight: .medium))
@@ -100,10 +103,10 @@ struct DeparturePlannerSheet: View {
                     }
                     .foregroundColor(.white)
                 }
-                
+
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    
+
                     Button("Done") {
                         isFlightFieldFocused = false
                         hideKeyboard()
@@ -126,49 +129,49 @@ struct DeparturePlannerSheet: View {
             }
         }
     }
-    
+
     private var supportsFlightLookupMode: Bool {
         store.selectedAirport == .lhr || store.selectedAirport == .atl
     }
-    
+
     private var canTrackFlight: Bool {
         supportsFlightLookupMode &&
         useFlightNumber &&
         flightLookupResult != nil &&
         plan != nil
     }
-    
+
     private var airportTitle: String {
         "\(store.selectedAirport.rawValue) departure planner"
     }
-    
+
     private var airportDescription: String {
         "Flow calculates when to leave based on live \(store.selectedAirport.displayName) security wait times and travel time from your location."
     }
-    
+
     private var airportDisplayLine: String {
         "\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)"
     }
-    
+
     private var plannerIntroCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(airportTitle)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
-            
+
             Text(airportDescription)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.78))
         }
         .flowGlassCard()
     }
-    
+
     private var plannerModePicker: some View {
         HStack(spacing: 8) {
             modeButton(title: "Manual", selected: !useFlightNumber) {
                 useFlightNumber = false
             }
-            
+
             modeButton(title: "Flight Number", selected: useFlightNumber) {
                 useFlightNumber = true
             }
@@ -184,7 +187,7 @@ struct DeparturePlannerSheet: View {
                 )
         )
     }
-    
+
     private func modeButton(
         title: String,
         selected: Bool,
@@ -203,22 +206,22 @@ struct DeparturePlannerSheet: View {
         }
         .buttonStyle(.plain)
     }
-    
+
     private var inputsCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            
+
             Text("Airport")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.white.opacity(0.72))
-            
+
             Text(airportDisplayLine)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(.white)
-            
+
             Text("Departure")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.white.opacity(0.72))
-            
+
             DatePicker(
                 "",
                 selection: $departureTime,
@@ -230,25 +233,25 @@ struct DeparturePlannerSheet: View {
         }
         .flowGlassCard()
     }
-    
+
     private var flightLookupCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            
+
             VStack(alignment: .leading, spacing: 8) {
                 Text("Airport")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white.opacity(0.72))
-                
+
                 Text(airportDisplayLine)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.white)
             }
-            
+
             VStack(alignment: .leading, spacing: 8) {
                 Text("Flight number")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white.opacity(0.72))
-                
+
                 TextField("e.g. BA216", text: $flightNumber)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled(true)
@@ -270,12 +273,12 @@ struct DeparturePlannerSheet: View {
                             )
                     )
             }
-            
+
             VStack(alignment: .leading, spacing: 8) {
                 Text("Flight date")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white.opacity(0.72))
-                
+
                 DatePicker(
                     "",
                     selection: $flightDate,
@@ -285,18 +288,18 @@ struct DeparturePlannerSheet: View {
                 .datePickerStyle(.compact)
                 .colorScheme(.dark)
             }
-            
+
             Button {
                 isFlightFieldFocused = false
                 hideKeyboard()
-                
+
                 Task {
                     await lookupFlight()
                 }
             } label: {
                 HStack {
                     Spacer()
-                    
+
                     if isLookingUpFlight {
                         ProgressView()
                             .tint(.white)
@@ -305,7 +308,7 @@ struct DeparturePlannerSheet: View {
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                     }
-                    
+
                     Spacer()
                 }
                 .padding(.vertical, 14)
@@ -326,27 +329,27 @@ struct DeparturePlannerSheet: View {
         }
         .flowGlassCard()
     }
-    
+
     private func flightFoundCard(_ flight: FlightLookupResult) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            
+
             Text("Flight found")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
-            
+
             infoRow("Flight", flight.flightNumber)
             infoRow("Route", "\(flight.originIATA) → \(flight.destinationIATA)")
             infoRow("Airline", flight.airline)
-            
+
             if let terminal = flight.terminal {
                 infoRow("Terminal", terminal)
             }
-            
+
             infoRow("Departure", flightDateTimeString(flight.departureTime))
         }
         .flowGlassCard()
     }
-    
+
     private var bagToggleCard: some View {
         Toggle(isOn: $checkedBags) {
             Text("Checked bags")
@@ -356,19 +359,54 @@ struct DeparturePlannerSheet: View {
         .tint(Color(hex: "7B6CFF"))
         .flowGlassCard()
     }
-    
+
+    private var travelTimeCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+
+            Toggle(isOn: $useManualTravelTime) {
+                Text("Enter travel time manually")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            .tint(Color(hex: "7B6CFF"))
+
+            if useManualTravelTime {
+                Stepper(value: $manualTravelMinutes, in: 5...180, step: 5) {
+                    HStack {
+                        Text("Travel time")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.72))
+
+                        Spacer()
+
+                        Text("\(manualTravelMinutes) min")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .monospacedDigit()
+                    }
+                }
+                .tint(.white)
+            } else {
+                Text("Flow will use live travel time from your location.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.68))
+            }
+        }
+        .flowGlassCard()
+    }
+
     private var actionButton: some View {
         Button {
             isFlightFieldFocused = false
             hideKeyboard()
-            
+
             Task {
                 await calculate()
             }
         } label: {
             HStack {
                 Spacer()
-                
+
                 if isCalculating {
                     ProgressView()
                         .tint(.white)
@@ -377,7 +415,7 @@ struct DeparturePlannerSheet: View {
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
                 }
-                
+
                 Spacer()
             }
             .padding(.vertical, 14)
@@ -397,58 +435,58 @@ struct DeparturePlannerSheet: View {
             (useFlightNumber && supportsFlightLookupMode && flightLookupResult == nil)
         )
     }
-    
+
     private func resultCard(_ plan: DeparturePlan) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            
+
             Text("Leave at")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.white.opacity(0.76))
-            
+
             Text(timeString(plan.recommendedLeaveTime))
                 .font(.system(size: 52, weight: .heavy))
                 .foregroundColor(.white)
                 .monospacedDigit()
-            
+
             Text("to reach gate by \(timeString(plan.gateTargetTime))")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.white.opacity(0.78))
-            
+
             Divider()
                 .overlay(Color.white.opacity(0.10))
-            
+
             VStack(spacing: 10) {
                 resultRow("Journey time", "\(plan.travelMinutes)m")
                 resultRow("Security wait", "\(plan.securityMinutes)m")
                 resultRow("Airport buffer", "\(plan.airportBufferMinutes)m")
-                
+
                 if plan.bagBufferMinutes > 0 {
                     resultRow("Bag drop buffer", "\(plan.bagBufferMinutes)m")
                 }
-                
+
                 let totalBeforeAirport =
-                plan.travelMinutes +
-                plan.securityMinutes +
-                plan.airportBufferMinutes +
-                plan.bagBufferMinutes
-                
+                    plan.travelMinutes +
+                    plan.securityMinutes +
+                    plan.airportBufferMinutes +
+                    plan.bagBufferMinutes
+
                 resultRow("Total pre-airport time", "\(totalBeforeAirport)m")
             }
         }
         .flowGlassCard()
     }
-    
+
     private var trackFlightButton: some View {
         Button {
             trackThisFlight()
         } label: {
             HStack {
                 Spacer()
-                
+
                 Text("Track This Flight")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
-                
+
                 Spacer()
             }
             .padding(.vertical, 14)
@@ -463,26 +501,27 @@ struct DeparturePlannerSheet: View {
         }
         .buttonStyle(.plain)
     }
-    
+
     private func trackThisFlight() {
         errorText = nil
-        
+
         guard let flight = flightLookupResult, let plan else {
             errorText = "Look up a flight and calculate leave time first."
             return
         }
-        
+
         let securitySelection = store.plannerSecuritySelection(
             for: store.selectedAirport,
             flightTerminal: flight.terminal,
             preferredRouteID: nil
         )
-        
+
         let tracked = TrackedFlight(
             flightNumber: flight.flightNumber,
             route: "\(flight.originIATA) → \(flight.destinationIATA)",
             airline: flight.airline,
             terminal: flight.terminal ?? "",
+            gate: flight.gate,
             departureTime: flight.departureTime,
             leaveTime: plan.recommendedLeaveTime,
             gateTargetTime: plan.gateTargetTime,
@@ -498,7 +537,7 @@ struct DeparturePlannerSheet: View {
             securityRouteDetail: securitySelection.option.detail,
             securityRouteIsPreCheckOnly: securitySelection.option.isPreCheckOnly
         )
-        
+
         store.trackFlight(tracked)
         dismiss()
     }
@@ -509,13 +548,15 @@ struct DeparturePlannerSheet: View {
         flightLookupResult = nil
         flightNumber = ""
         checkedBags = false
+        useManualTravelTime = false
+        manualTravelMinutes = 20
         departureTime = Calendar.current.date(
             byAdding: .hour,
             value: 3,
             to: Date()
         ) ?? Date()
         flightDate = Date()
-        useFlightNumber = false
+        useFlightNumber = supportsFlightLookupMode
     }
     
     private func resultRow(_ title: String, _ value: String) -> some View {
@@ -523,97 +564,103 @@ struct DeparturePlannerSheet: View {
             Text(title)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.72))
-            
+
             Spacer()
-            
+
             Text(value)
                 .font(.system(size: 14, weight: .bold))
                 .foregroundColor(.white)
                 .monospacedDigit()
         }
     }
-    
+
     private func infoRow(_ title: String, _ value: String) -> some View {
         HStack {
             Text(title)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.72))
-            
+
             Spacer()
-            
+
             Text(value)
                 .font(.system(size: 14, weight: .bold))
                 .foregroundColor(.white)
                 .multilineTextAlignment(.trailing)
         }
     }
-    
+
     private func timeString(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeZone = store.selectedAirport.timeZone
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: date)
     }
-    
+
     private func flightDateTimeString(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeZone = store.selectedAirport.timeZone
         formatter.dateFormat = "dd MMM yyyy · HH:mm"
         return formatter.string(from: date)
     }
-    
+
     private func lookupFlight() async {
-        
+
         errorText = nil
         plan = nil
         flightLookupResult = nil
         isLookingUpFlight = true
         defer { isLookingUpFlight = false }
-        
+
         do {
-            
+
             let trimmedFlightNumber = flightNumber
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .uppercased()
-            
+
             let result = try await flightLookupService.lookupFlight(
                 flightNumber: trimmedFlightNumber,
                 date: flightDate,
                 airportIATA: store.selectedAirport.rawValue
             )
-            
+
             flightLookupResult = result
             departureTime = result.departureTime
-            
+
         } catch {
             errorText = error.localizedDescription
         }
     }
-    
+
     private func calculate() async {
         errorText = nil
         isCalculating = true
         defer { isCalculating = false }
-        
+
         do {
-            
-            let travelMinutes = try await travelTimeService.drivingMinutes(
-                to: store.selectedAirport
-            )
-            
+
+            let travelMinutes: Int
+
+            if useManualTravelTime {
+                travelMinutes = manualTravelMinutes
+            } else {
+                travelMinutes = try await travelTimeService.drivingMinutes(
+                    to: store.selectedAirport
+                )
+            }
+
             let securitySelection = store.plannerSecuritySelection(
                 for: store.selectedAirport,
                 flightTerminal: flightLookupResult?.terminal,
                 preferredRouteID: nil
             )
-            
+
             plan = DeparturePlanner.makePlan(
                 departureTime: departureTime,
                 travelMinutes: travelMinutes,
                 securityMinutes: max(0, securitySelection.option.minutes),
                 checkedBags: checkedBags
             )
-            
+
         } catch {
             errorText = error.localizedDescription
         }

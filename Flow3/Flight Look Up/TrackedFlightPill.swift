@@ -72,20 +72,25 @@ struct TrackedFlightPill: View {
                             }
 
                             HStack(spacing: 16) {
-                                Label(
-                                    timeString(flight.departureTime),
-                                    systemImage: "airplane.departure"
-                                )
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.75))
 
-                                Label(
-                                    flight.terminal.isEmpty ? "—" : flight.terminal,
-                                    systemImage: "building.2"
-                                )
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.75))
+                                Image(systemName: "airplane")
+                                    .font(.system(size: 16, weight: .semibold))
+
+                                Text(timeString(flight.departureTime))
+                                    .font(.system(size: 15, weight: .semibold))
+
+                                Image(systemName: "building.2")
+                                    .font(.system(size: 16))
+
+                                Text("T\(flight.terminal)")
+                                    .font(.system(size: 15, weight: .semibold))
+
+                                Image(systemName: "suitcase")                                   .font(.system(size: 16))
+
+                                Text(flight.securityRouteTitle)
+                                    .font(.system(size: 15, weight: .semibold))
                             }
+                            .foregroundColor(.white.opacity(0.85))
                         }
                     }
                     .buttonStyle(.plain)
@@ -96,7 +101,13 @@ struct TrackedFlightPill: View {
 
                         VStack(alignment: .leading, spacing: 14) {
                             infoRow("Airline", flight.airline)
-                            infoRow("Terminal", flight.terminal.isEmpty ? "—" : flight.terminal)
+                            infoRow("Terminal", flight.terminal)
+
+                            if let gate = flight.gate,
+                               !gate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                infoRow("Gate", gate)
+                            }
+
                             infoRow("Departure", timeString(flight.departureTime))
                             infoRow("Leave at", timeString(flight.leaveTime))
                             infoRow("Gate target", timeString(flight.gateTargetTime))

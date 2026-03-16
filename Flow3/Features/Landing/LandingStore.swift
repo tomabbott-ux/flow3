@@ -297,8 +297,14 @@ final class LandingStore: ObservableObject {
         SavedFlightStore.shared.save(flight)
         
         Task {
+            
             await FlowNotificationManager.shared.requestPermission()
-            FlowNotificationManager.shared.scheduleTrackedFlightReminders(for: flight)
+            
+            FlowNotificationManager.shared.scheduleTrackedFlightReminders(
+                for: flight
+            )
+            
+            await FlowLiveActivityManager.shared.start(for: flight)
         }
     }
     
@@ -309,7 +315,13 @@ final class LandingStore: ObservableObject {
         SavedFlightStore.shared.clear()
         
         FlowNotificationManager.shared.clearTrackedFlightNotifications()
+        
+        Task {
+            await FlowLiveActivityManager.shared.end()
+        }
     }
+    
+    // MARK: - Refresh tracked flight
     
     func refreshTrackedFlight() async {
         
@@ -361,6 +373,7 @@ final class LandingStore: ObservableObject {
                 route: "\(refreshedFlight.originIATA) → \(refreshedFlight.destinationIATA)",
                 airline: refreshedFlight.airline,
                 terminal: refreshedFlight.terminal ?? "",
+                gate: refreshedFlight.gate,
                 departureTime: refreshedFlight.departureTime,
                 leaveTime: plan.recommendedLeaveTime,
                 gateTargetTime: plan.gateTargetTime,
@@ -370,7 +383,7 @@ final class LandingStore: ObservableObject {
                 bagBufferMinutes: plan.bagBufferMinutes,
                 leaveTimeTrend: trend,
                 securityRouteMode: securitySelection.mode,
-                securityRouteID: securitySelection.option.id,
+                securityRouteID: securitySelection.mode == .manual ? securitySelection.option.id : nil,
                 securityRouteTitle: securitySelection.option.title,
                 securityRouteSubtitle: securitySelection.option.subtitle,
                 securityRouteDetail: securitySelection.mode == .manual
@@ -379,7 +392,7 @@ final class LandingStore: ObservableObject {
                 securityRouteIsPreCheckOnly: securitySelection.option.isPreCheckOnly
             )
             
-            let oldLeaveTime = current.leaveTime
+            let oldFlight = current
             
             trackedFlight = updated
             SavedFlightStore.shared.save(updated)
@@ -388,14 +401,12 @@ final class LandingStore: ObservableObject {
             
             FlowNotificationManager.shared.scheduleTrackedFlightReminders(for: updated)
             
-            if oldLeaveTime != updated.leaveTime {
-                
-                FlowNotificationManager.shared.notifyLeaveTimeChanged(
-                    flight: updated,
-                    oldLeaveTime: oldLeaveTime,
-                    newLeaveTime: updated.leaveTime
-                )
-            }
+            FlowNotificationManager.shared.notifyTrackedFlightChanged(
+                oldFlight: oldFlight,
+                newFlight: updated
+            )
+            
+            await FlowLiveActivityManager.shared.update(for: updated)
             
         } catch {
             

@@ -14,6 +14,7 @@ struct TrackedFlight: Codable, Identifiable {
     let route: String
     let airline: String
     let terminal: String
+    let gate: String?
 
     let departureTime: Date
     let leaveTime: Date

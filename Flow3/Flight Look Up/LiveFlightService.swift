@@ -93,7 +93,11 @@ final class LiveFlightService {
         ((arrival["airport"] as? [String: Any])?["iata"] as? String) ?? "UNK"
 
         let terminal = departure["terminal"] as? String
-
+        let gate = departure["gate"] as? String
+        print("Departure payload:", departure)
+        print("Parsed terminal:", terminal ?? "nil")
+        print("Parsed gate:", gate ?? "nil")
+        
         let scheduledLocal =
         ((departure["scheduledTime"] as? [String: Any])?["local"] as? String) ?? ""
 
@@ -123,6 +127,7 @@ final class LiveFlightService {
             originIATA: departureAirport,
             destinationIATA: arrivalAirport,
             terminal: terminal,
+            gate: gate,
             departureTime: shownDepartureDate
         )
     }
