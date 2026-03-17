@@ -28,9 +28,9 @@ extension LandingStore {
 
         case .atl, .ist, .slc, .iah, .ham, .dus, .edi, .str, .bru,
              .arn, .got, .osl, .doh, .zrh, .hel,
-             .yvr, .yyc, .den, .dfw, .hou, .mco, .phx,
+             .yvr, .yyc, .den, .dfw, .hou, .mco, .pit, .phx,
              .phl, .san, .las, .bos, .sea, .mia, .sfo,
-             .bna, .tpa, .dtw, .clt, .ewr, .bwi, .dca, .pdx,
+             .bna, .tpa, .dtw, .clt, .ewr, .bwi, .cle, .dca, .pdx,
              .icn, .mad, .ber, .bcn,
              .pmi, .agp, .alc, .svq, .bio, .ibz, .vlc, .tfs, .lpa:
             return namedCheckpointRows(from: rows)

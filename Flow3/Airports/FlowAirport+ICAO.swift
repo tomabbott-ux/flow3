@@ -32,7 +32,9 @@ extension FlowAirport {
         case .bwi: return "KBWI"
         case .dca: return "KDCA"
         case .pdx: return "KPDX"
-
+        case .cle: return "KCLE"
+        case .pit: return "KPIT"
+            
         case .yyz: return "CYYZ"
         case .yvr: return "CYVR"
         case .yyc: return "CYYC"

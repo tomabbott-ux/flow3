@@ -47,6 +47,8 @@ enum AirportProviderKind: String, Codable, Hashable {
     case ams
 
     case clt
+    case pit
+    case cle
     case ewr
     case bwi
     case dca
@@ -101,13 +103,14 @@ struct AirportRegistry {
         AirportDefinition(airport: .yyz, feedType: .live, providerKind: .yyz),
         AirportDefinition(airport: .yvr, feedType: .live, providerKind: .yvr),
         AirportDefinition(airport: .yyc, feedType: .live, providerKind: .yyc),
-
+        AirportDefinition(airport: .cle, feedType: .live, providerKind: .cle),
         AirportDefinition(airport: .den, feedType: .live, providerKind: .den),
         AirportDefinition(airport: .dfw, feedType: .live, providerKind: .dfw),
         AirportDefinition(airport: .hou, feedType: .live, providerKind: .hou),
         AirportDefinition(airport: .iah, feedType: .live, providerKind: .iah),
         AirportDefinition(airport: .mco, feedType: .live, providerKind: .mco),
         AirportDefinition(airport: .phx, feedType: .live, providerKind: .phx),
+        AirportDefinition(airport: .pit, feedType: .live, providerKind: .pit),
         AirportDefinition(airport: .phl, feedType: .live, providerKind: .phl),
         AirportDefinition(airport: .slc, feedType: .live, providerKind: .slc),
         AirportDefinition(airport: .ord, feedType: .live, providerKind: .ord),
