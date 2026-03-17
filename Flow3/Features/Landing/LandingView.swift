@@ -16,10 +16,42 @@ struct LandingView: View {
         store.displayRowsForSelectedAirport()
     }
 
-    private var selectedRow: AirportDisplayRow? {
-        if let selectedRowID {
-            return displayRows.first(where: { $0.id == selectedRowID }) ?? displayRows.first
+    private var preferredTrackedFlightRowID: String? {
+        guard let trackedFlight = store.trackedFlight else { return nil }
+        guard store.selectedAirport == trackedAirportIfKnown else { return nil }
+
+        let title = trackedFlight.securityRouteTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let subtitle = trackedFlight.securityRouteSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !title.isEmpty else { return nil }
+
+        if subtitle.isEmpty {
+            return displayRows.first(where: {
+                $0.title.caseInsensitiveCompare(title) == .orderedSame
+            })?.id
         }
+
+        return displayRows.first(where: {
+            $0.title.caseInsensitiveCompare(title) == .orderedSame &&
+            $0.subtitle.caseInsensitiveCompare(subtitle) == .orderedSame
+        })?.id
+    }
+
+    private var trackedAirportIfKnown: FlowAirport? {
+        store.trackedFlight == nil ? nil : store.selectedAirport
+    }
+
+    private var selectedRow: AirportDisplayRow? {
+        if let preferredTrackedFlightRowID,
+           let trackedRow = displayRows.first(where: { $0.id == preferredTrackedFlightRowID }) {
+            return trackedRow
+        }
+
+        if let selectedRowID,
+           let row = displayRows.first(where: { $0.id == selectedRowID }) {
+            return row
+        }
+
         return displayRows.first
     }
 
@@ -106,6 +138,12 @@ struct LandingView: View {
                 await refreshNow()
             }
         }
+        .onChange(of: store.trackedFlight?.securityRouteTitle) { _ in
+            syncSelectedRowWithTrackedFlight()
+        }
+        .onChange(of: store.trackedFlight?.securityRouteSubtitle) { _ in
+            syncSelectedRowWithTrackedFlight()
+        }
     }
 
     private func refreshNow() async {
@@ -114,11 +152,23 @@ struct LandingView: View {
 
         let latestRows = store.displayRowsForSelectedAirport()
 
+        if let preferredTrackedFlightRowID,
+           latestRows.contains(where: { $0.id == preferredTrackedFlightRowID }) {
+            selectedRowID = preferredTrackedFlightRowID
+            return
+        }
+
         if let selectedRowID,
            latestRows.contains(where: { $0.id == selectedRowID }) {
             self.selectedRowID = selectedRowID
         } else {
             self.selectedRowID = latestRows.first?.id
+        }
+    }
+
+    private func syncSelectedRowWithTrackedFlight() {
+        if let preferredTrackedFlightRowID {
+            selectedRowID = preferredTrackedFlightRowID
         }
     }
 }
@@ -282,27 +332,21 @@ private extension LandingView {
         let s = (store.weather?.summary ?? "").lowercased()
 
         if s.contains("thunder") || s.contains("storm") { return "cloud.bolt.rain.fill" }
-
         if s.contains("snow") || s.contains("sleet") || s.contains("ice") || s.contains("hail") {
             return "cloud.snow.fill"
         }
-
         if s.contains("rain") || s.contains("shower") || s.contains("drizzle") {
             return "cloud.rain.fill"
         }
-
         if s.contains("fog") || s.contains("mist") || s.contains("haze") {
             return "cloud.fog.fill"
         }
-
         if s.contains("overcast") || s.contains("broken clouds") {
             return "smoke.fill"
         }
-
         if s.contains("scattered") || s.contains("few clouds") || s.contains("cloud") {
             return "cloud.sun.fill"
         }
-
         if s.contains("clear") || s.contains("sunny") {
             return "sun.max.fill"
         }

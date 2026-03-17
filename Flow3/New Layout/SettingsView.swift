@@ -1,6 +1,22 @@
 import SwiftUI
 
 struct SettingsView: View {
+
+    @AppStorage("flow_default_airport") private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
+    @AppStorage("flow_use_24h_time") private var use24HourTime: Bool = true
+    @AppStorage("flow_use_celsius") private var useCelsius: Bool = true
+    @AppStorage("flow_auto_select_fastest_checkpoint") private var autoSelectFastestCheckpoint: Bool = true
+    @AppStorage("flow_prefer_precheck") private var preferPreCheck: Bool = false
+
+    @AppStorage("flow_notify_30") private var notify30Minutes: Bool = true
+    @AppStorage("flow_notify_15") private var notify15Minutes: Bool = true
+    @AppStorage("flow_notify_leave_now") private var notifyLeaveNow: Bool = true
+    @AppStorage("flow_notify_gate") private var notifyGateTarget: Bool = true
+
+    @State private var selectedPlan: String = "Pro"
+
+    private let supportedAirports: [FlowAirport] = AirportRegistry.airports.map(\.airport)
+
     var body: some View {
         ZStack {
             LinearGradient(
@@ -14,17 +30,298 @@ struct SettingsView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                Text("Settings")
-                    .font(.system(size: 34, weight: .heavy))
-                    .foregroundColor(.white)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
 
-                Text("Travel preferences like arrival buffer, lounge time, and baggage settings will live here.")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.white.opacity(0.75))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    headerSection
+
+                    displayCard
+                    planningCard
+                    notificationsCard
+                    subscriptionCard
+                    aboutCard
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+                .padding(.bottom, 30)
             }
         }
+    }
+}
+
+// MARK: - Header
+
+private extension SettingsView {
+
+    var headerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Settings")
+                .font(.system(size: 34, weight: .heavy))
+                .foregroundColor(.white)
+
+            Text("Preferences and app controls for your Flow experience.")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(.white.opacity(0.75))
+        }
+    }
+}
+
+// MARK: - Display
+
+private extension SettingsView {
+
+    var displayCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            sectionTitle("Display")
+
+            VStack(alignment: .leading, spacing: 8) {
+                settingLabel("Default airport")
+
+                Picker("", selection: $defaultAirportRawValue) {
+                    ForEach(supportedAirports, id: \.rawValue) { airport in
+                        Text("\(airport.rawValue) · \(airport.displayName)")
+                            .tag(airport.rawValue)
+                    }
+                }
+                .pickerStyle(.menu)
+                .tint(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                settingLabel("Time format")
+
+                Picker("", selection: $use24HourTime) {
+                    Text("24-hour").tag(true)
+                    Text("12-hour").tag(false)
+                }
+                .pickerStyle(.segmented)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                settingLabel("Temperature")
+
+                Picker("", selection: $useCelsius) {
+                    Text("°C").tag(true)
+                    Text("°F").tag(false)
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+        .flowSettingsCard()
+    }
+}
+
+// MARK: - Planning
+
+private extension SettingsView {
+
+    var planningCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            sectionTitle("Planning")
+
+            Toggle(isOn: $autoSelectFastestCheckpoint) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Auto-select fastest checkpoint")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text("Flow picks the quickest available checkpoint automatically.")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.68))
+                }
+            }
+            .tint(Color(hex: "9B6CFF"))
+
+            Toggle(isOn: $preferPreCheck) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Prefer PreCheck")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text("Prefer PreCheck routes where available.")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.68))
+                }
+            }
+            .tint(Color(hex: "9B6CFF"))
+        }
+        .flowSettingsCard()
+    }
+}
+
+// MARK: - Notifications
+
+private extension SettingsView {
+
+    var notificationsCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            sectionTitle("Notifications")
+
+            Toggle("Leave in 30 minutes", isOn: $notify30Minutes)
+                .flowSettingsToggleStyle()
+
+            Toggle("Leave in 15 minutes", isOn: $notify15Minutes)
+                .flowSettingsToggleStyle()
+
+            Toggle("Leave now", isOn: $notifyLeaveNow)
+                .flowSettingsToggleStyle()
+
+            Toggle("Gate target reminder", isOn: $notifyGateTarget)
+                .flowSettingsToggleStyle()
+        }
+        .flowSettingsCard()
+    }
+}
+
+// MARK: - Subscription
+
+private extension SettingsView {
+
+    var subscriptionCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            sectionTitle("Subscription")
+
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Current plan")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.68))
+
+                    Text(selectedPlan)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+
+                Spacer()
+
+                Text(selectedPlan.uppercased())
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Color(hex: "9B6CFF"))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.10))
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                            )
+                    )
+            }
+
+            Button {
+                // Future upgrade / manage subscription action
+            } label: {
+                HStack {
+                    Text("Manage subscription")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.55))
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(Color.white.opacity(0.08))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .flowSettingsCard()
+    }
+}
+
+// MARK: - About
+
+private extension SettingsView {
+
+    var aboutCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            sectionTitle("About")
+
+            infoRow(title: "App version", value: appVersionString)
+            infoRow(title: "Build", value: buildNumberString)
+            infoRow(title: "Theme", value: "Flow")
+
+            Text("Flow helps you decide when to leave for the airport using live wait times, travel time, and smart planning.")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white.opacity(0.68))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .flowSettingsCard()
+    }
+
+    var appVersionString: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
+
+    var buildNumberString: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+}
+
+// MARK: - Helpers
+
+private extension SettingsView {
+
+    func sectionTitle(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundColor(.white)
+    }
+
+    func settingLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundColor(.white.opacity(0.68))
+    }
+
+    func infoRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.72))
+
+            Spacer()
+
+            Text(value)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.white)
+        }
+    }
+}
+
+// MARK: - Styling
+
+private extension View {
+
+    func flowSettingsCard() -> some View {
+        self
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+            )
+            .shadow(color: .black.opacity(0.25), radius: 18, x: 0, y: 10)
+    }
+
+    func flowSettingsToggleStyle() -> some View {
+        self
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundColor(.white)
+            .tint(Color(hex: "9B6CFF"))
     }
 }

@@ -12,17 +12,19 @@ struct ATLStubWaitTimeProvider: WaitTimeProviding {
 
         return waits
             .map { item in
-                let isSouth = item.checkpointName.uppercased().contains("SOUTH")
+                let checkpointName = item.checkpointName.uppercased()
+                let isSouth = checkpointName.contains("SOUTH")
 
                 return WaitTimeEstimate(
                     airport: .atl,
                     terminal: nil,
                     queueType: isSouth ? .precheck : .general,
-                    minutes: item.minutes,
+                    minutes: item.isClosed ? 0 : (item.minutes ?? 0),
                     observedAt: now,
-                    checkpointName: item.checkpointName.uppercased(),
+                    checkpointName: checkpointName,
                     areaName: item.terminal == .domestic ? "Domestic" : "International",
-                    sourceType: .live
+                    sourceType: .live,
+                    isClosed: item.isClosed
                 )
             }
             .sorted { lhs, rhs in
@@ -34,7 +36,17 @@ struct ATLStubWaitTimeProvider: WaitTimeProviding {
                     if rhsArea == "Domestic" { return false }
                 }
 
-                return (lhs.checkpointName ?? "") < (rhs.checkpointName ?? "")
+                let lhsName = lhs.checkpointName ?? ""
+                let rhsName = rhs.checkpointName ?? ""
+
+                let order = ["MAIN", "NORTH", "LOWER NORTH", "SOUTH"]
+                if lhsArea == "Domestic", rhsArea == "Domestic" {
+                    let lhsIndex = order.firstIndex(of: lhsName) ?? 999
+                    let rhsIndex = order.firstIndex(of: rhsName) ?? 999
+                    if lhsIndex != rhsIndex { return lhsIndex < rhsIndex }
+                }
+
+                return lhsName < rhsName
             }
     }
 }

@@ -11,8 +11,6 @@ struct ATLCheckpointCard: View {
     @State private var errorMessage: String?
 
     private let provider = ATLLiveWaitTimeProvider()
-
-    // ✅ Auto refresh ATL every 60 seconds (same cadence as LandingStore)
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -76,8 +74,6 @@ struct ATLCheckpointCard: View {
         }
     }
 
-    // MARK: - Row (tap to select — like JFK terminals)
-
     private func checkpointRow(_ item: ATLSecurityCheckpointWait, area: String) -> some View {
         let nameUpper = item.checkpointName.uppercased()
         let isSouth = nameUpper.contains("SOUTH")
@@ -89,12 +85,11 @@ struct ATLCheckpointCard: View {
         return Button {
             selectedCheckpointArea = area
             selectedCheckpointName = nameUpper
-            selectedCheckpointMinutes = item.minutes
+            selectedCheckpointMinutes = item.isClosed ? nil : item.minutes
         } label: {
             HStack(spacing: 14) {
 
                 VStack(alignment: .leading, spacing: 4) {
-
                     Text(nameUpper)
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
@@ -108,7 +103,11 @@ struct ATLCheckpointCard: View {
 
                 Spacer()
 
-                timePill(value: item.minutes, label: isSouth ? "PreCheck" : "Wait")
+                timePill(
+                    value: item.minutes,
+                    isClosed: item.isClosed,
+                    label: isSouth ? "PreCheck" : "Wait"
+                )
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
@@ -128,14 +127,25 @@ struct ATLCheckpointCard: View {
         .buttonStyle(.plain)
     }
 
-    private func timePill(value: Int, label: String) -> some View {
+    private func timePill(value: Int?, isClosed: Bool, label: String) -> some View {
         VStack(spacing: 4) {
-            Text("\(value)m")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
-                .monospacedDigit()
+            if isClosed {
+                Text("Closed")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.red)
+            } else if let value {
+                Text("\(value)m")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .monospacedDigit()
+            } else {
+                Text("--")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white.opacity(0.75))
+                    .monospacedDigit()
+            }
 
-            Text(label)
+            Text(isClosed ? "Status" : label)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(.white.opacity(0.75))
         }
@@ -150,8 +160,6 @@ struct ATLCheckpointCard: View {
         )
     }
 
-    // MARK: - Load
-
     private func load() async {
         if domestic.isEmpty && intl.isEmpty { isLoading = true }
         errorMessage = nil
@@ -161,10 +169,7 @@ struct ATLCheckpointCard: View {
             domestic = items.filter { $0.terminal == .domestic }
             intl = items.filter { $0.terminal == .international }
 
-            // ✅ Default selection: DOMESTIC MAIN if present
             applyDefaultSelectionIfNeeded(domestic: domestic, intl: intl)
-
-            // ✅ Keep selected minutes in sync if the selected checkpoint still exists
             syncSelectionMinutes(domestic: domestic, intl: intl)
 
         } catch {
@@ -178,10 +183,11 @@ struct ATLCheckpointCard: View {
     }
 
     private func applyDefaultSelectionIfNeeded(domestic: [ATLSecurityCheckpointWait], intl: [ATLSecurityCheckpointWait]) {
-        // Only apply default if we have no selection minutes yet
         if selectedCheckpointMinutes != nil { return }
 
-        if let mainDomestic = domestic.first(where: { $0.checkpointName.uppercased().contains("MAIN") }) {
+        if let mainDomestic = domestic.first(where: {
+            $0.checkpointName.uppercased().contains("MAIN") && !$0.isClosed && $0.minutes != nil
+        }) {
             selectedCheckpointArea = "Domestic"
             selectedCheckpointName = mainDomestic.checkpointName.uppercased()
             selectedCheckpointMinutes = mainDomestic.minutes
@@ -189,21 +195,24 @@ struct ATLCheckpointCard: View {
         }
 
         let all = domestic.map { ("Domestic", $0) } + intl.map { ("International", $0) }
-        if let anyMain = all.first(where: { $0.1.checkpointName.uppercased().contains("MAIN") }) {
+
+        if let anyMain = all.first(where: {
+            $0.1.checkpointName.uppercased().contains("MAIN") && !$0.1.isClosed && $0.1.minutes != nil
+        }) {
             selectedCheckpointArea = anyMain.0
             selectedCheckpointName = anyMain.1.checkpointName.uppercased()
             selectedCheckpointMinutes = anyMain.1.minutes
             return
         }
 
-        if let firstDomestic = domestic.first {
+        if let firstDomestic = domestic.first(where: { !$0.isClosed && $0.minutes != nil }) {
             selectedCheckpointArea = "Domestic"
             selectedCheckpointName = firstDomestic.checkpointName.uppercased()
             selectedCheckpointMinutes = firstDomestic.minutes
             return
         }
 
-        if let firstIntl = intl.first {
+        if let firstIntl = intl.first(where: { !$0.isClosed && $0.minutes != nil }) {
             selectedCheckpointArea = "International"
             selectedCheckpointName = firstIntl.checkpointName.uppercased()
             selectedCheckpointMinutes = firstIntl.minutes
@@ -217,7 +226,7 @@ struct ATLCheckpointCard: View {
 
         let list = (targetArea == "DOMESTIC") ? domestic : intl
         if let match = list.first(where: { normalize($0.checkpointName) == targetName }) {
-            selectedCheckpointMinutes = match.minutes
+            selectedCheckpointMinutes = match.isClosed ? nil : match.minutes
         }
     }
 
@@ -227,8 +236,6 @@ struct ATLCheckpointCard: View {
 
     private var atlAccent: Color { Color(hex: "8B5CF6") }
 }
-
-// MARK: - Local glass card (matches LandingView.flowGlassCard look)
 
 private extension View {
     func atlGlassCard() -> some View {
@@ -245,4 +252,3 @@ private extension View {
             .shadow(color: .black.opacity(0.25), radius: 18, x: 0, y: 10)
     }
 }
-

@@ -39,6 +39,8 @@ extension LandingStore {
         let airport = airport ?? selectedAirport
         let options = availableSecurityRoutes(for: airport)
 
+        let preferPreCheck = UserDefaults.standard.bool(forKey: "flow_prefer_precheck")
+
         if let preferredRouteID,
            let manual = options.first(where: { $0.id == preferredRouteID }) {
             return PlannerSecuritySelection(
@@ -51,9 +53,31 @@ extension LandingStore {
         if let matched = automaticTerminalMatchedSelection(
             airport: airport,
             options: options,
-            flightTerminal: flightTerminal
+            flightTerminal: flightTerminal,
+            preferPreCheck: preferPreCheck
         ) {
             return matched
+        }
+
+        if preferPreCheck,
+           let fastestPreCheck = options
+            .filter({ $0.isPreCheckOnly })
+            .min(by: { $0.minutes < $1.minutes }) {
+
+            let fallbackOption = SecurityRouteOption(
+                id: fastestPreCheck.id,
+                title: fastestPreCheck.title,
+                subtitle: fastestPreCheck.subtitle,
+                detail: fastestPreCheck.detail,
+                minutes: fastestPreCheck.minutes,
+                isPreCheckOnly: true
+            )
+
+            return PlannerSecuritySelection(
+                mode: .automatic,
+                option: fallbackOption,
+                source: .fastestFallback
+            )
         }
 
         if let fastestNonPreCheck = options
@@ -152,25 +176,55 @@ extension LandingStore {
     private func automaticTerminalMatchedSelection(
         airport: FlowAirport,
         options: [SecurityRouteOption],
-        flightTerminal: String?
+        flightTerminal: String?,
+        preferPreCheck: Bool
     ) -> PlannerSecuritySelection? {
 
         let normalizedTerminal = normalizePlannerTerminal(flightTerminal)
-
         guard let normalizedTerminal else { return nil }
 
         if airport == .atl {
-            if isATLInternationalTerminal(normalizedTerminal),
-               let international = options
+            if isATLInternationalTerminal(normalizedTerminal) {
+
+                if preferPreCheck,
+                   let internationalPreCheck = options
+                    .filter({
+                        $0.isPreCheckOnly &&
+                        routeMatchesInternational($0)
+                    })
+                    .min(by: { $0.minutes < $1.minutes }) {
+                    return PlannerSecuritySelection(
+                        mode: .automatic,
+                        option: internationalPreCheck,
+                        source: .airportSpecific
+                    )
+                }
+
+                if let international = options
+                    .filter({
+                        !$0.isPreCheckOnly &&
+                        routeMatchesInternational($0)
+                    })
+                    .min(by: { $0.minutes < $1.minutes }) {
+
+                    return PlannerSecuritySelection(
+                        mode: .automatic,
+                        option: international,
+                        source: .airportSpecific
+                    )
+                }
+            }
+
+            if preferPreCheck,
+               let domesticPreCheck = options
                 .filter({
-                    !$0.isPreCheckOnly &&
-                    routeMatchesInternational($0)
+                    $0.isPreCheckOnly &&
+                    routeMatchesDomestic($0)
                 })
                 .min(by: { $0.minutes < $1.minutes }) {
-
                 return PlannerSecuritySelection(
                     mode: .automatic,
-                    option: international,
+                    option: domesticPreCheck,
                     source: .airportSpecific
                 )
             }
@@ -192,6 +246,20 @@ extension LandingStore {
 
         let candidateTokens = plannerTerminalTokens(from: normalizedTerminal)
 
+        if preferPreCheck,
+           let matchedPreCheck = options
+            .filter({
+                $0.isPreCheckOnly &&
+                route($0, matchesAnyTerminalToken: candidateTokens)
+            })
+            .min(by: { $0.minutes < $1.minutes }) {
+            return PlannerSecuritySelection(
+                mode: .automatic,
+                option: matchedPreCheck,
+                source: .terminalMatched
+            )
+        }
+
         if let matched = options
             .filter({
                 !$0.isPreCheckOnly &&
@@ -201,6 +269,20 @@ extension LandingStore {
             return PlannerSecuritySelection(
                 mode: .automatic,
                 option: matched,
+                source: .terminalMatched
+            )
+        }
+
+        if preferPreCheck,
+           let relaxedPreCheck = options
+            .filter({
+                $0.isPreCheckOnly &&
+                relaxedRouteMatch($0, terminal: normalizedTerminal)
+            })
+            .min(by: { $0.minutes < $1.minutes }) {
+            return PlannerSecuritySelection(
+                mode: .automatic,
+                option: relaxedPreCheck,
                 source: .terminalMatched
             )
         }
@@ -249,7 +331,7 @@ extension LandingStore {
 
         return "Terminal \(terminal) checkpoint data unavailable. Use \(routeDescription)"
     }
-    
+
     private func routeGroupingKey(for row: WaitTimeEstimate) -> String {
         let checkpoint = row.checkpointName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let area = row.areaName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -431,3 +513,4 @@ extension LandingStore {
         return false
     }
 }
+

@@ -291,11 +291,11 @@ final class LandingStore: ObservableObject {
     
     private func isFlightFinishedStatus(_ status: String?) -> Bool {
         guard let status else { return false }
-
+        
         let normalized = status
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
-
+        
         return normalized == "departed" || normalized == "arrived"
     }
     
@@ -366,7 +366,38 @@ final class LandingStore: ObservableObject {
                 preferredRouteID: preferredRouteID
             )
             
-            let securityMinutes = max(0, securitySelection.option.minutes)
+            let routeClosed =
+            current.securityRouteMode == .manual &&
+            preferredRouteID != nil &&
+            securitySelection.option.id != preferredRouteID
+            
+            let securityMinutes: Int
+            let securityRouteMode: SecurityRouteMode
+            let securityRouteID: String?
+            let securityRouteTitle: String
+            let securityRouteSubtitle: String
+            let securityRouteDetail: String
+            let securityRouteIsPreCheckOnly: Bool
+            
+            if routeClosed {
+                securityMinutes = current.securityMinutes
+                securityRouteMode = current.securityRouteMode
+                securityRouteID = current.securityRouteID
+                securityRouteTitle = current.securityRouteTitle
+                securityRouteSubtitle = current.securityRouteSubtitle
+                securityRouteDetail = current.securityRouteDetail
+                securityRouteIsPreCheckOnly = current.securityRouteIsPreCheckOnly
+            } else {
+                securityMinutes = max(0, securitySelection.option.minutes)
+                securityRouteMode = securitySelection.mode
+                securityRouteID = securitySelection.mode == .manual ? securitySelection.option.id : nil
+                securityRouteTitle = securitySelection.option.title
+                securityRouteSubtitle = securitySelection.option.subtitle
+                securityRouteDetail = securitySelection.mode == .manual
+                ? "\(securitySelection.option.detail) · Chosen by you"
+                : securitySelection.option.detail
+                securityRouteIsPreCheckOnly = securitySelection.option.isPreCheckOnly
+            }
             
             let plan = DeparturePlanner.makePlan(
                 departureTime: refreshedFlight.departureTime,
@@ -375,11 +406,14 @@ final class LandingStore: ObservableObject {
                 checkedBags: current.bagBufferMinutes > 0
             )
             
-            let trend: LeaveTimeTrend
+            let deltaMinutes = Int(
+                plan.recommendedLeaveTime.timeIntervalSince(current.leaveTime) / 60
+            )
             
-            if plan.recommendedLeaveTime < current.leaveTime {
+            let trend: LeaveTimeTrend
+            if deltaMinutes <= -5 {
                 trend = .earlier
-            } else if plan.recommendedLeaveTime > current.leaveTime {
+            } else if deltaMinutes >= 5 {
                 trend = .later
             } else {
                 trend = .unchanged
@@ -399,14 +433,12 @@ final class LandingStore: ObservableObject {
                 airportBufferMinutes: plan.airportBufferMinutes,
                 bagBufferMinutes: plan.bagBufferMinutes,
                 leaveTimeTrend: trend,
-                securityRouteMode: securitySelection.mode,
-                securityRouteID: securitySelection.mode == .manual ? securitySelection.option.id : nil,
-                securityRouteTitle: securitySelection.option.title,
-                securityRouteSubtitle: securitySelection.option.subtitle,
-                securityRouteDetail: securitySelection.mode == .manual
-                ? "\(securitySelection.option.detail) · Chosen by you"
-                : securitySelection.option.detail,
-                securityRouteIsPreCheckOnly: securitySelection.option.isPreCheckOnly
+                securityRouteMode: securityRouteMode,
+                securityRouteID: securityRouteID,
+                securityRouteTitle: securityRouteTitle,
+                securityRouteSubtitle: securityRouteSubtitle,
+                securityRouteDetail: securityRouteDetail,
+                securityRouteIsPreCheckOnly: securityRouteIsPreCheckOnly
             )
             
             let oldFlight = current
@@ -421,11 +453,18 @@ final class LandingStore: ObservableObject {
                 oldFlight: oldFlight,
                 newFlight: updated
             )
+            FlowNotificationManager.shared.notifyDepartureTimeChanged(
+                oldFlight: oldFlight,
+                newFlight: updated
+            )
+            
+            if routeClosed {
+                FlowNotificationManager.shared.notifyCheckpointClosed(updated)
+            }
             
             await FlowLiveActivityManager.shared.update(for: updated)
             
         } catch {
-            
             print("Tracked flight refresh failed: \(error.localizedDescription)")
         }
     }

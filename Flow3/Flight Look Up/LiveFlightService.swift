@@ -80,6 +80,8 @@ final class LiveFlightService {
             )
         }
 
+        // MARK: - Core Fields
+
         let airline =
         ((flight["airline"] as? [String: Any])?["name"] as? String) ?? "Unknown"
 
@@ -92,9 +94,20 @@ final class LiveFlightService {
         let arrivalAirport =
         ((arrival["airport"] as? [String: Any])?["iata"] as? String) ?? "UNK"
 
-        let terminal = departure["terminal"] as? String
-        let gate = departure["gate"] as? String
-        let status = flight["status"] as? String
+        // MARK: - Terminal + Gate (Improved)
+
+        let terminalRaw = departure["terminal"] as? String
+        let gateRaw = departure["gate"] as? String
+
+        let terminal = (terminalRaw?.isEmpty == false) ? terminalRaw : nil
+        let gate = (gateRaw?.isEmpty == false) ? gateRaw : "—"
+
+        // MARK: - Status (Normalized)
+
+        let rawStatus = flight["status"] as? String
+        let status = rawStatus?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // MARK: - Time Handling
 
         let scheduledLocal =
         ((departure["scheduledTime"] as? [String: Any])?["local"] as? String) ?? ""
@@ -106,7 +119,7 @@ final class LiveFlightService {
             throw NSError(
                 domain: "DateError",
                 code: 500,
-                userInfo: [NSLocalizedDescriptionKey: "Could not read scheduled departure time from AeroDataBox."]
+                userInfo: [NSLocalizedDescriptionKey: "Could not read scheduled departure time."]
             )
         }
 
@@ -118,6 +131,13 @@ final class LiveFlightService {
         } else {
             shownDepartureDate = scheduledDate
         }
+
+        // MARK: - Debug (IMPORTANT FOR YOU NOW)
+
+        print("✈️ Flight Debug:")
+        print("Terminal:", terminal ?? "nil")
+        print("Gate:", gate)
+        print("Status:", status ?? "nil")
 
         return FlightLookupResult(
             flightNumber: normalizedFlightNumber,

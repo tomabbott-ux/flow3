@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
 
+    @AppStorage("flow_default_airport") private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
+
     @StateObject private var store =
     LandingStore(
         waitTimeService: WaitTimeService(
@@ -14,6 +16,15 @@ struct ContentView: View {
 
     var body: some View {
         FlowRootView(store: store)
+            .onAppear {
+                applyDefaultAirportIfNeeded()
+            }
+    }
+
+    private func applyDefaultAirportIfNeeded() {
+        if let airport = FlowAirport(rawValue: defaultAirportRawValue) {
+            store.selectedAirport = airport
+        }
     }
 }
 
