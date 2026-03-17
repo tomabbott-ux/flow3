@@ -3,10 +3,11 @@ import SwiftUI
 struct LandingView: View {
 
     @ObservedObject var store: LandingStore
+    @Binding var selectedTab: FlowTab
+
     @State private var selectedRowID: String? = nil
     @State private var now = Date()
-    @State private var isShowingAirportSelector = false
-    @State var isShowingDeparturePlanner = false
+    @State private var isShowingTrackingDetail = false
 
     private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     private let updatedTicker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -27,7 +28,6 @@ struct LandingView: View {
     }
 
     private var confidenceLevel: FlowConfidenceLevel {
-
         guard let definition = AirportRegistry.definition(for: store.selectedAirport) else {
             return .comingSoon
         }
@@ -56,12 +56,15 @@ struct LandingView: View {
                     weatherRow
 
                     if store.trackedFlight != nil {
-                        TrackedFlightPill(store: store)
+                        Button {
+                            isShowingTrackingDetail = true
+                        } label: {
+                            TrackedFlightPill(store: store)
+                        }
+                        .buttonStyle(.plain)
                     }
 
                     securityHero
-
-                    departurePlannerButton
 
                     GenericAirportBreakdownCard(
                         store: store,
@@ -77,32 +80,28 @@ struct LandingView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(isPresented: $isShowingAirportSelector) {
-            AirportSelectorView(
-                store: store,
-                onAirportSelected: {
-                    isShowingAirportSelector = false
+        .sheet(isPresented: $isShowingTrackingDetail) {
+            if let trackedFlight = store.trackedFlight {
+                NavigationStack {
+                    TrackedFlightDetailView(
+                        flight: trackedFlight,
+                        airport: store.selectedAirport
+                    )
                 }
-            )
-        }
-        .sheet(isPresented: $isShowingDeparturePlanner) {
-            DeparturePlannerSheet(store: store)
+            }
         }
         .task {
             await refreshNow()
         }
         .onReceive(refreshTimer) { _ in
-            guard !isShowingAirportSelector else { return }
             Task {
                 await refreshNow()
             }
         }
         .onReceive(updatedTicker) { value in
-            guard !isShowingAirportSelector else { return }
             now = value
         }
         .onChange(of: store.selectedAirport) { _ in
-            guard !isShowingAirportSelector else { return }
             Task {
                 await refreshNow()
             }
@@ -130,7 +129,7 @@ private extension LandingView {
 
     var airportSelectorPill: some View {
         Button {
-            isShowingAirportSelector = true
+            selectedTab = .explore
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "chevron.left")
@@ -181,7 +180,6 @@ private extension LandingView {
 
     var weatherRow: some View {
         HStack(spacing: 12) {
-
             weatherSection
                 .frame(maxWidth: .infinity)
                 .frame(height: 110)
@@ -194,7 +192,6 @@ private extension LandingView {
 
     var weatherSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-
             Text("Weather")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white)
@@ -202,7 +199,6 @@ private extension LandingView {
             Spacer(minLength: 0)
 
             HStack(spacing: 10) {
-
                 Image(systemName: weatherSymbolName)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white.opacity(0.95))
@@ -226,7 +222,6 @@ private extension LandingView {
 
     var timeSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-
             Text("Time")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white)
@@ -234,7 +229,6 @@ private extension LandingView {
             Spacer(minLength: 0)
 
             HStack(spacing: 10) {
-
                 Image(systemName: "clock.fill")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white.opacity(0.95))
@@ -285,7 +279,6 @@ private extension LandingView {
     }
 
     var weatherSymbolName: String {
-
         let s = (store.weather?.summary ?? "").lowercased()
 
         if s.contains("thunder") || s.contains("storm") { return "cloud.bolt.rain.fill" }
@@ -332,7 +325,6 @@ private extension LandingView {
                 Spacer()
 
                 refreshButton
-
                 statusBadge
             }
 
@@ -443,7 +435,7 @@ private extension LandingView {
 
             heroContent
         }
-        .frame(height: 175)
+        .frame(height: 140)
     }
 
     @ViewBuilder
@@ -483,7 +475,7 @@ private extension LandingView {
                         }
                     } else {
                         Text(metric?.minutes == nil ? "--" : "\(metric!.minutes!)")
-                            .font(.system(size: 72, weight: .heavy))
+                            .font(.system(size: 60, weight: .heavy))
                             .foregroundColor(.white)
                             .monospacedDigit()
                     }
@@ -511,7 +503,7 @@ private extension LandingView {
         } else {
             VStack(spacing: 6) {
                 Text("--")
-                    .font(.system(size: 72, weight: .heavy))
+                    .font(.system(size: 60, weight: .heavy))
                     .foregroundColor(.white)
                     .monospacedDigit()
 
@@ -541,7 +533,7 @@ private extension LandingView {
                 }
             } else {
                 Text(value == nil ? "--" : "\(value!)")
-                    .font(.system(size: 58, weight: .heavy))
+                    .font(.system(size: 48, weight: .heavy))
                     .foregroundColor(.white)
                     .monospacedDigit()
             }
@@ -613,51 +605,6 @@ private extension LandingView {
 
         let days = hours / 24
         return "\(days)d ago"
-    }
-}
-
-// MARK: - Departure Planner
-
-private extension LandingView {
-
-    var departurePlannerButton: some View {
-        Button {
-            isShowingDeparturePlanner = true
-        } label: {
-            HStack(spacing: 12) {
-
-                Image(systemName: "car.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.95))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Plan my departure")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-
-                    Text("Travel time + security wait")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.68))
-                }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.58))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white.opacity(0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
     }
 }
 

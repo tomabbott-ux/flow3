@@ -11,22 +11,9 @@ struct ContentView: View {
             provider: AviationWeatherMETARProvider()
         )
     )
-    
-    @State private var hasSelectedAirport = false
 
     var body: some View {
-        NavigationStack {
-            if hasSelectedAirport {
-                LandingView(store: store)
-            } else {
-                AirportSelectorView(
-                    store: store,
-                    onAirportSelected: {
-                        hasSelectedAirport = true
-                    }
-                )
-            }
-        }
+        FlowRootView(store: store)
     }
 }
 
