@@ -534,7 +534,7 @@ struct DeparturePlannerSheet: View {
             securityRouteIsPreCheckOnly: securitySelection.option.isPreCheckOnly
         )
 
-        store.trackFlight(tracked)
+        store.setTrackedFlight(tracked)
         dismiss()
     }
 

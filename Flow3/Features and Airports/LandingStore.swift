@@ -26,6 +26,16 @@ final class LandingStore: ObservableObject {
     
     @Published var trackedFlight: TrackedFlight?
     
+    func setTrackedFlight(_ flight: TrackedFlight) {
+        self.trackedFlight = flight
+
+        // Save locally
+        SavedFlightStore.shared.save(flight)
+
+        // Send to Watch
+        FlowWatchConnectivityManager.shared.syncTrackedFlight(flight)
+    }
+    
     // MARK: - Services
     
     private let waitTimeService: WaitTimeService
@@ -305,6 +315,7 @@ final class LandingStore: ObservableObject {
         
         trackedFlight = flight
         SavedFlightStore.shared.save(flight)
+        FlowWatchConnectivityManager.shared.syncTrackedFlight(flight)
         
         Task {
             
@@ -317,12 +328,12 @@ final class LandingStore: ObservableObject {
             await FlowLiveActivityManager.shared.start(for: flight)
         }
     }
-    
     func clearTrackedFlight() {
         
         trackedFlight = nil
         
         SavedFlightStore.shared.clear()
+        FlowWatchConnectivityManager.shared.syncTrackedFlight(nil)
         
         FlowNotificationManager.shared.clearTrackedFlightNotifications()
         
@@ -330,7 +341,6 @@ final class LandingStore: ObservableObject {
             await FlowLiveActivityManager.shared.end()
         }
     }
-    
     // MARK: - Refresh tracked flight
     
     func refreshTrackedFlight() async {
@@ -445,6 +455,7 @@ final class LandingStore: ObservableObject {
             
             trackedFlight = updated
             SavedFlightStore.shared.save(updated)
+            FlowWatchConnectivityManager.shared.syncTrackedFlight(updated)
             
             await FlowNotificationManager.shared.requestPermission()
             

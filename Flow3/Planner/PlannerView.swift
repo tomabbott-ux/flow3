@@ -524,8 +524,8 @@ private extension PlannerPlaceholderView {
         )
 
         // ✅ Save flight
-        store.trackFlight(tracked)
-
+        store.setTrackedFlight(tracked)
+        
         // ✅ Navigate to Flight tab
         selectedTab = .flight
     }

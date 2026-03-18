@@ -97,6 +97,10 @@
 		F8A1AB5B2F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB522F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift */; };
 		F8A1AB6F2F6A02160093D0B6 /* CLELiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB6E2F6A02160093D0B6 /* CLELiveWaitTimeProvider.swift */; };
 		F8A1AB712F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB702F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift */; };
+		F8A1ABA42F6A9BB30093D0B6 /* FlowWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = F8A1AB9A2F6A9BB20093D0B6 /* FlowWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F8A1ABC32F6AA4A20093D0B6 /* WatchTrackedFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1ABC22F6AA4A20093D0B6 /* WatchTrackedFlight.swift */; };
+		F8A1ABC52F6AA7E10093D0B6 /* FlowWatchConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1ABC42F6AA7E10093D0B6 /* FlowWatchConnectivityManager.swift */; };
+		F8A1ABC62F6ABCFB0093D0B6 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80599D62F5AD4A200146BF1 /* Color+Hex.swift */; };
 		F8A4ABB52F644E2E003DDA0C /* FcoWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A4ABB42F644E2E003DDA0C /* FcoWaitTimeProvider.swift */; };
 		F8BD8FD92F62ADD0000EE425 /* DOHLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FD82F62ADD0000EE425 /* DOHLiveWaitTimeProvider.swift */; };
 		F8BD8FDB2F62ADF2000EE425 /* ZRHLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FDA2F62ADF2000EE425 /* ZRHLiveWaitTimeProvider.swift */; };
@@ -147,6 +151,13 @@
 			remoteGlobalIDString = F862F19E2F583923001666F2;
 			remoteInfo = Flow3;
 		};
+		F8A1ABA22F6A9BB30093D0B6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F862F1972F583923001666F2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F8A1AB992F6A9BB20093D0B6;
+			remoteInfo = "FlowWatch Watch App";
+		};
 		F8DBD8C82F682E4400246968 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F862F1972F583923001666F2 /* Project object */;
@@ -157,6 +168,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		F8A1AB932F6A97F10093D0B6 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				F8A1ABA42F6A9BB30093D0B6 /* FlowWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F8DBD8CF2F682E4400246968 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -263,6 +285,9 @@
 		F8A1AB522F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLiveActivityWidget.swift; sourceTree = "<group>"; };
 		F8A1AB6E2F6A02160093D0B6 /* CLELiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLELiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8A1AB702F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PITLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F8A1AB9A2F6A9BB20093D0B6 /* FlowWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FlowWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F8A1ABC22F6AA4A20093D0B6 /* WatchTrackedFlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTrackedFlight.swift; sourceTree = "<group>"; };
+		F8A1ABC42F6AA7E10093D0B6 /* FlowWatchConnectivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowWatchConnectivityManager.swift; sourceTree = "<group>"; };
 		F8A4ABB42F644E2E003DDA0C /* FcoWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FcoWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FD82F62ADD0000EE425 /* DOHLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOHLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FDA2F62ADF2000EE425 /* ZRHLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZRHLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
@@ -308,6 +333,7 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		F8A1AB9B2F6A9BB20093D0B6 /* FlowWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "FlowWatch Watch App"; sourceTree = "<group>"; };
 		F8DBD8BC2F682E4400246968 /* FlowLiveActivityExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (F8DBD8CB2F682E4400246968 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = FlowLiveActivityExtension; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -333,6 +359,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F8A1AB972F6A9BB20093D0B6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F8DBD8B32F682E4300246968 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -351,6 +384,7 @@
 				F828EF302F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift */,
 				F862F1A12F583923001666F2 /* Flow3 */,
 				F8DBD8BC2F682E4400246968 /* FlowLiveActivityExtension */,
+				F8A1AB9B2F6A9BB20093D0B6 /* FlowWatch Watch App */,
 				F8DBD8B72F682E4300246968 /* Frameworks */,
 				F862F1A02F583923001666F2 /* Products */,
 			);
@@ -363,6 +397,7 @@
 				F862F1AF2F583928001666F2 /* Flow3Tests.xctest */,
 				F862F1B92F583928001666F2 /* Flow3UITests.xctest */,
 				F8DBD8B62F682E4300246968 /* FlowLiveActivityExtensionExtension.appex */,
+				F8A1AB9A2F6A9BB20093D0B6 /* FlowWatch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -387,6 +422,8 @@
 				F8A1AB602F69F4960093D0B6 /* Planner */,
 				F8A1AB5F2F69F4190093D0B6 /* Flight */,
 				F862F1EB2F583B29001666F2 /* App */,
+				F8A1ABC22F6AA4A20093D0B6 /* WatchTrackedFlight.swift */,
+				F8A1ABC42F6AA7E10093D0B6 /* FlowWatchConnectivityManager.swift */,
 			);
 			path = Flow3;
 			sourceTree = "<group>";
@@ -647,11 +684,13 @@
 				F862F19C2F583923001666F2 /* Frameworks */,
 				F862F19D2F583923001666F2 /* Resources */,
 				F8DBD8CF2F682E4400246968 /* Embed Foundation Extensions */,
+				F8A1AB932F6A97F10093D0B6 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				F8DBD8C92F682E4400246968 /* PBXTargetDependency */,
+				F8A1ABA32F6A9BB30093D0B6 /* PBXTargetDependency */,
 			);
 			name = Flow3;
 			productName = Flow3;
@@ -693,6 +732,28 @@
 			productName = Flow3UITests;
 			productReference = F862F1B92F583928001666F2 /* Flow3UITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		F8A1AB992F6A9BB20093D0B6 /* FlowWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F8A1ABA52F6A9BB30093D0B6 /* Build configuration list for PBXNativeTarget "FlowWatch Watch App" */;
+			buildPhases = (
+				F8A1AB962F6A9BB20093D0B6 /* Sources */,
+				F8A1AB972F6A9BB20093D0B6 /* Frameworks */,
+				F8A1AB982F6A9BB20093D0B6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F8A1AB9B2F6A9BB20093D0B6 /* FlowWatch Watch App */,
+			);
+			name = "FlowWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "FlowWatch Watch App";
+			productReference = F8A1AB9A2F6A9BB20093D0B6 /* FlowWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
 		};
 		F8DBD8B52F682E4300246968 /* FlowLiveActivityExtensionExtension */ = {
 			isa = PBXNativeTarget;
@@ -737,6 +798,9 @@
 						CreatedOnToolsVersion = 14.2;
 						TestTargetID = F862F19E2F583923001666F2;
 					};
+					F8A1AB992F6A9BB20093D0B6 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 					F8DBD8B52F682E4300246968 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -759,6 +823,7 @@
 				F862F1AE2F583928001666F2 /* Flow3Tests */,
 				F862F1B82F583928001666F2 /* Flow3UITests */,
 				F8DBD8B52F682E4300246968 /* FlowLiveActivityExtensionExtension */,
+				F8A1AB992F6A9BB20093D0B6 /* FlowWatch Watch App */,
 			);
 		};
 /* End PBXProject section */
@@ -781,6 +846,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F862F1B72F583928001666F2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F8A1AB982F6A9BB20093D0B6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -853,6 +925,7 @@
 				F8DBD89C2F662EB200246968 /* SavedFlightPlan.swift in Sources */,
 				F8A1AB4C2F68E2BA0093D0B6 /* TrackedFlightDetailView.swift in Sources */,
 				F8BD8FDF2F62AE2C000EE425 /* SwedaviaLiveWaitTimeProvider.swift in Sources */,
+				F8A1ABC32F6AA4A20093D0B6 /* WatchTrackedFlight.swift in Sources */,
 				F828EF3D2F5A03FC00EC53EC /* LandingStore+LHR.swift in Sources */,
 				F828EF312F5873F100EC53EC /* SAVEPOINT_JFK_WORKING.swift in Sources */,
 				F80599F12F5B6AD700146BF1 /* MCOLiveWaitTimeProvider.swift in Sources */,
@@ -869,6 +942,7 @@
 				F80599FA2F5B960600146BF1 /* EstimatedWaitTimeProvider.swift in Sources */,
 				F8DBD8D32F682F4E00246968 /* FlowLiveActivityManager.swift in Sources */,
 				F822A8EC2F5DD203009F6107 /* EDILiveWaitTimeProvider.swift in Sources */,
+				F8A1ABC52F6AA7E10093D0B6 /* FlowWatchConnectivityManager.swift in Sources */,
 				F8DBD8A42F669D9700246968 /* TrackedFlight.swift in Sources */,
 				F822A8CE2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift in Sources */,
 				F8DBD8D12F682F2D00246968 /* FlowLiveActivityAttributes.swift in Sources */,
@@ -930,6 +1004,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F8A1AB962F6A9BB20093D0B6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F8A1ABC62F6ABCFB0093D0B6 /* Color+Hex.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F8DBD8B22F682E4300246968 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -955,6 +1037,11 @@
 			isa = PBXTargetDependency;
 			target = F862F19E2F583923001666F2 /* Flow3 */;
 			targetProxy = F862F1BA2F583928001666F2 /* PBXContainerItemProxy */;
+		};
+		F8A1ABA32F6A9BB30093D0B6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F8A1AB992F6A9BB20093D0B6 /* FlowWatch Watch App */;
+			targetProxy = F8A1ABA22F6A9BB30093D0B6 /* PBXContainerItemProxy */;
 		};
 		F8DBD8C92F682E4400246968 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1220,6 +1307,81 @@
 			};
 			name = Release;
 		};
+		F8A1ABA62F6A9BB30093D0B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QQ6KGT3TQ9;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = FlowWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = Flow.Flow3;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Flow.Flow3.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		F8A1ABA72F6A9BB30093D0B6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QQ6KGT3TQ9;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = FlowWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = Flow.Flow3;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = Flow.Flow3.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
 		F8DBD8CD2F682E4400246968 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1326,6 +1488,15 @@
 			buildConfigurations = (
 				F862F1CA2F583928001666F2 /* Debug */,
 				F862F1CB2F583928001666F2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F8A1ABA52F6A9BB30093D0B6 /* Build configuration list for PBXNativeTarget "FlowWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F8A1ABA62F6A9BB30093D0B6 /* Debug */,
+				F8A1ABA72F6A9BB30093D0B6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
