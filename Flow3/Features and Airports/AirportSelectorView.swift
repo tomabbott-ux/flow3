@@ -337,8 +337,7 @@ private extension AirportSelectorView {
         let favouriteSet = favourites
 
         return filteredDefinitions
-            .filter { !recentSet.contains($0.airport) && !favouriteSet.contains($0.airport) }
-            .sorted { lhs, rhs in
+            .filter { !favouriteSet.contains($0.airport) }            .sorted { lhs, rhs in
                 let lhsPriority = priority(lhs.feedType)
                 let rhsPriority = priority(rhs.feedType)
 

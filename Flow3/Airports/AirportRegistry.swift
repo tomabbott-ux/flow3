@@ -87,7 +87,7 @@ struct AirportRegistry {
 
     private static let baseAirports: [AirportDefinition] = [
 
-        AirportDefinition(airport: .atl, feedType: .live, providerKind: .atl),
+        AirportDefinition(airport: .atl, feedType: .estimated, providerKind: .atl),
         AirportDefinition(airport: .jfk, feedType: .live, providerKind: .jfk),
         AirportDefinition(airport: .lhr, feedType: .live, providerKind: .lhr),
         AirportDefinition(airport: .ist, feedType: .live, providerKind: .ist),

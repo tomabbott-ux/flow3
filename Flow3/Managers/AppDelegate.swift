@@ -7,12 +7,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
     ) -> Bool {
-        // 🔥 This is critical
         UNUserNotificationCenter.current().delegate = self
         return true
     }
 
-    // 🔥 Force notifications to show EVEN when app is open
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,

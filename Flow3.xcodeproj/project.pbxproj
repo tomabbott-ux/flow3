@@ -74,8 +74,10 @@
 		F862F1F02F5840C2001666F2 /* CompositeWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1EE2F583C32001666F2 /* CompositeWaitTimeProvider.swift */; };
 		F862F1F42F5844CE001666F2 /* StubWeatherProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1F32F5844CE001666F2 /* StubWeatherProvider.swift */; };
 		F8796C272F6B57A000040769 /* ATLWebViewFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C262F6B57A000040769 /* ATLWebViewFetcher.swift */; };
-		F8796C2D2F6B840C00040769 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C2C2F6B840C00040769 /* AppDelegate.swift */; };
 		F8796C2F2F6B8CB100040769 /* TSAWaitTimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C2E2F6B8CB100040769 /* TSAWaitTimeService.swift */; };
+		F8796C312F6BFEA800040769 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C302F6BFEA800040769 /* AppDelegate.swift */; };
+		F8796C332F6BFFE000040769 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */; };
+		F8796C342F6C04DC00040769 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */; };
 		F880516B2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516A2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift */; };
 		F880516D2F602286005CF24F /* CLTLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516C2F602286005CF24F /* CLTLiveWaitTimeProvider.swift */; };
 		F880516F2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516E2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift */; };
@@ -97,7 +99,6 @@
 		F8A1AB582F69EE2E0093D0B6 /* FlowLiveActivityExtensionControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB502F69EE2E0093D0B6 /* FlowLiveActivityExtensionControl.swift */; };
 		F8A1AB592F69EE2E0093D0B6 /* FlowLiveActivityExtensionLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB512F69EE2E0093D0B6 /* FlowLiveActivityExtensionLiveActivity.swift */; };
 		F8A1AB5A2F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB522F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift */; };
-		F8A1AB5B2F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB522F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift */; };
 		F8A1AB6F2F6A02160093D0B6 /* CLELiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB6E2F6A02160093D0B6 /* CLELiveWaitTimeProvider.swift */; };
 		F8A1AB712F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB702F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift */; };
 		F8A1ABA42F6A9BB30093D0B6 /* FlowWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = F8A1AB9A2F6A9BB20093D0B6 /* FlowWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -133,9 +134,7 @@
 		F8DBD8B92F682E4400246968 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8DBD8B82F682E4300246968 /* WidgetKit.framework */; };
 		F8DBD8BB2F682E4400246968 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8DBD8BA2F682E4400246968 /* SwiftUI.framework */; };
 		F8DBD8CA2F682E4400246968 /* FlowLiveActivityExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F8DBD8B62F682E4300246968 /* FlowLiveActivityExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		F8DBD8D12F682F2D00246968 /* FlowLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8D02F682F2D00246968 /* FlowLiveActivityAttributes.swift */; };
 		F8DBD8D32F682F4E00246968 /* FlowLiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8D22F682F4E00246968 /* FlowLiveActivityManager.swift */; };
-		F8DBD8D82F68321700246968 /* FlowLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8D02F682F2D00246968 /* FlowLiveActivityAttributes.swift */; };
 		F8DBD8DA2F687BD700246968 /* CountdownHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8D92F687BD700246968 /* CountdownHelper.swift */; };
 /* End PBXBuildFile section */
 
@@ -266,8 +265,9 @@
 		F862F1EE2F583C32001666F2 /* CompositeWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositeWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F862F1F32F5844CE001666F2 /* StubWeatherProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StubWeatherProvider.swift; sourceTree = "<group>"; };
 		F8796C262F6B57A000040769 /* ATLWebViewFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLWebViewFetcher.swift; sourceTree = "<group>"; };
-		F8796C2C2F6B840C00040769 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		F8796C2E2F6B8CB100040769 /* TSAWaitTimeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSAWaitTimeService.swift; sourceTree = "<group>"; };
+		F8796C302F6BFEA800040769 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowActivityAttributes.swift; sourceTree = "<group>"; };
 		F880516A2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSAWebsiteWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F880516C2F602286005CF24F /* CLTLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLTLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F880516E2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EWRLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
@@ -323,7 +323,6 @@
 		F8DBD8B62F682E4300246968 /* FlowLiveActivityExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FlowLiveActivityExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8DBD8B82F682E4300246968 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		F8DBD8BA2F682E4400246968 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		F8DBD8D02F682F2D00246968 /* FlowLiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLiveActivityAttributes.swift; sourceTree = "<group>"; };
 		F8DBD8D22F682F4E00246968 /* FlowLiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLiveActivityManager.swift; sourceTree = "<group>"; };
 		F8DBD8D92F687BD700246968 /* CountdownHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownHelper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -567,7 +566,6 @@
 			isa = PBXGroup;
 			children = (
 				F8A1AB472F68D0200093D0B6 /* AlertsView.swift */,
-				F8796C2C2F6B840C00040769 /* AppDelegate.swift */,
 			);
 			path = Alerts;
 			sourceTree = "<group>";
@@ -608,7 +606,8 @@
 			children = (
 				F8DBD8D22F682F4E00246968 /* FlowLiveActivityManager.swift */,
 				F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */,
-				F8DBD8D02F682F2D00246968 /* FlowLiveActivityAttributes.swift */,
+				F8796C302F6BFEA800040769 /* AppDelegate.swift */,
+				F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -918,7 +917,6 @@
 				F80599CB2F5ACAA300146BF1 /* AirportWaitTimeRouter.swift in Sources */,
 				F8DBD8AA2F672FCB00246968 /* LiveFlightService.swift in Sources */,
 				F8BD8FE32F631C53000EE425 /* ICNLiveWaitTimeProvider.swift in Sources */,
-				F8A1AB5B2F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift in Sources */,
 				F8A1AB462F68CFFC0093D0B6 /* PlannerView.swift in Sources */,
 				F8DBD8982F6625D000246968 /* FlightLookupResult.swift in Sources */,
 				F862F1A32F583923001666F2 /* Flow3App.swift in Sources */,
@@ -955,12 +953,13 @@
 				F8A1ABC52F6AA7E10093D0B6 /* FlowWatchConnectivityManager.swift in Sources */,
 				F8DBD8A42F669D9700246968 /* TrackedFlight.swift in Sources */,
 				F822A8CE2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift in Sources */,
-				F8DBD8D12F682F2D00246968 /* FlowLiveActivityAttributes.swift in Sources */,
 				F88051752F606BFA005CF24F /* PDXLiveWaitTimeProvider.swift in Sources */,
 				F8796C2F2F6B8CB100040769 /* TSAWaitTimeService.swift in Sources */,
 				F80599DD2F5AECB200146BF1 /* LivePulseDot.swift in Sources */,
 				F880517B2F60D163005CF24F /* AviationWeatherMETARProvider.swift in Sources */,
 				F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */,
+				F8796C312F6BFEA800040769 /* AppDelegate.swift in Sources */,
+				F8796C332F6BFFE000040769 /* FlowActivityAttributes.swift in Sources */,
 				F80599D32F5AD36B00146BF1 /* LandingStore+Presentation.swift in Sources */,
 				F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */,
 				F8DBD88F2F65639600246968 /* DeparturePlan.swift in Sources */,
@@ -972,7 +971,6 @@
 				F822A8D02F5CD692009F6107 /* FRALiveWaitTimeProvider.swift in Sources */,
 				F80599DF2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift in Sources */,
 				F8A1AB712F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift in Sources */,
-				F8796C2D2F6B840C00040769 /* AppDelegate.swift in Sources */,
 				F8BD8FDD2F62AE13000EE425 /* HELLiveWaitTimeProvider.swift in Sources */,
 				F80599F52F5B815600146BF1 /* PHLLiveWaitTimeProvider.swift in Sources */,
 				F822A8EA2F5DD1D5009F6107 /* DUSLiveWaitTimeProvider.swift in Sources */,
@@ -1028,8 +1026,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F8DBD8D82F68321700246968 /* FlowLiveActivityAttributes.swift in Sources */,
 				F8A1AB562F69EE2E0093D0B6 /* FlowLiveActivityExtension.swift in Sources */,
+				F8796C342F6C04DC00040769 /* FlowActivityAttributes.swift in Sources */,
 				F8A1AB572F69EE2E0093D0B6 /* FlowLiveActivityExtensionBundle.swift in Sources */,
 				F8A1AB582F69EE2E0093D0B6 /* FlowLiveActivityExtensionControl.swift in Sources */,
 				F8A1AB592F69EE2E0093D0B6 /* FlowLiveActivityExtensionLiveActivity.swift in Sources */,
