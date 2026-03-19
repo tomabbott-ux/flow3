@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct LandingView: View {
-
     @ObservedObject var store: LandingStore
     @Binding var selectedTab: FlowTab
 
@@ -124,6 +123,11 @@ struct LandingView: View {
         }
         .task {
             await refreshNow()
+        }
+        .onAppear {
+            Task {
+                await FlowNotificationManager.shared.requestPermission()
+            }
         }
         .onReceive(refreshTimer) { _ in
             Task {

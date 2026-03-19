@@ -9,37 +9,21 @@ struct WatchRootView: View {
 
             if let flight = session.trackedFlight {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 6) {
                         WatchHeroView(flight: flight)
-                            .padding(.top, 4)
 
                         WatchDetailView(flight: flight)
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.top, 8)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, 6)
+                    .padding(.top, 2)
+                    .padding(.bottom, 8)
                 }
             } else {
-                VStack(spacing: 6) {
-                    Text("Flow")
-                        .font(.headline)
-                        .foregroundColor(.white)
-
-                    Text("No tracked flight")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.85))
-
-                    Text("Start tracking a flight on your iPhone to see live departure timing here.")
-                        .font(.footnote)
-                        .foregroundColor(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 8)
-                }
-                .padding()
+                WatchEmptyStateView()
+                    .padding(.horizontal, 8)
             }
         }
         .onAppear {
-            print("⌚️ WatchRootView onAppear")
             WatchSessionManager.shared.activateSession()
         }
     }

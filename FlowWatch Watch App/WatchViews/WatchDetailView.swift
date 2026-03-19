@@ -4,49 +4,61 @@ struct WatchDetailView: View {
     let flight: WatchTrackedFlight
 
     var body: some View {
-        VStack(spacing: 10) {
-
-            WatchInfoPill(
-                title: "Security",
-                value: flight.securityText,
-                icon: "timer",
-                accent: .green
+        VStack(spacing: 6) {
+            WatchMiniRow(
+                title: "Leave",
+                value: leaveStatusShort,
+                valueColor: leaveColor
             )
 
-            WatchInfoPill(
+            WatchMiniRow(
                 title: "Gate",
-                value: flight.gateText,
-                icon: "mappin.and.ellipse",
-                accent: .white
+                value: gateValue
             )
 
-            WatchInfoPill(
+            WatchMiniRow(
                 title: "Bags",
-                value: flight.bagText,
-                icon: "suitcase",
-                accent: .white
+                value: bagsValue
             )
+        }
+    }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(flight.alertTitle)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.72))
+    private var leaveStatusShort: String {
+        let text = flight.leaveStatusText
 
-                Text(flight.alertBody)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(.white.opacity(0.07))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(.white.opacity(0.08), lineWidth: 1)
-                    )
-            )
+        if text.lowercased().contains("leave now") {
+            return "Now"
+        }
+
+        return text
+            .replacingOccurrences(of: "Leave in ", with: "")
+            .replacingOccurrences(of: " minutes", with: "m")
+            .replacingOccurrences(of: " minute", with: "m")
+    }
+
+    private var gateValue: String {
+        let gate = flight.gateText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return gate.isEmpty ? "TBD" : gate
+    }
+
+    private var bagsValue: String {
+        let bags = flight.bagText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return bags.isEmpty ? "Carry-on only" : bags
+    }
+
+    private var leaveColor: Color {
+        let text = flight.leaveStatusText.lowercased()
+
+        if text.contains("leave now") {
+            return .red
+        } else if text.contains("1 minute")
+                    || text.contains("2 minute")
+                    || text.contains("3 minute")
+                    || text.contains("4 minute")
+                    || text.contains("5 minute") {
+            return .orange
+        } else {
+            return .white
         }
     }
 }
