@@ -114,3 +114,17 @@ struct WatchHeroView: View {
         return raw.capitalized
     }
 }
+private func formatMinutesShort(_ minutes: Int) -> String {
+    let hours = minutes / 60
+    let mins = minutes % 60
+
+    if hours > 0 {
+        if mins > 0 {
+            return "\(hours)h \(mins)m"
+        } else {
+            return "\(hours)h"
+        }
+    } else {
+        return "\(mins)m"
+    }
+}
