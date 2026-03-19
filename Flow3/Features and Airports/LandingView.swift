@@ -412,11 +412,11 @@ private extension LandingView {
         switch confidenceLevel {
         case .live:
             confidenceBadge(
-                text: "LIVE",
-                textColor: .green,
-                dot: AnyView(LivePulseDot())
+                text: "ESTIMATED",
+                textColor: .orange,
+                dot: AnyView(OrangePulseDot())
             )
-
+            
         case .highConfidence:
             confidenceBadge(
                 text: "HIGH CONFIDENCE",
@@ -596,11 +596,11 @@ private extension LandingView {
         guard let date = store.lastUpdated else {
             switch confidenceLevel {
             case .live:
-                return "Live feed · Waiting for first update"
+                return "Feed · Waiting for first update"
             case .highConfidence:
                 return "High confidence feed · Waiting for first check"
             case .lowConfidence:
-                return "Estimated feed · Waiting for refresh"
+                return "Estimated · Waiting for refresh"
             case .comingSoon:
                 return "Coming soon"
             }
@@ -612,9 +612,9 @@ private extension LandingView {
         switch confidenceLevel {
         case .live:
             if seconds >= 900 {
-                return "Live feed · Delayed · Last update \(relative)"
+                return "Feed · Delayed · Last update \(relative)"
             } else {
-                return "Live feed · Updated \(relative)"
+                return "Feed · Updated \(relative)"
             }
 
         case .highConfidence:

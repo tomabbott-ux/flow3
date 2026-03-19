@@ -3,13 +3,14 @@ import Foundation
 struct ATLStubWaitTimeProvider: WaitTimeProviding {
 
     private let provider = ATLLiveWaitTimeProvider()
+    private let tsaService = TSAWaitTimeService()
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
         guard airport == .atl else { return [] }
 
         let now = Date()
 
-        // Try live first
+        // 1. Try ATL official source first
         let liveWaits = (try? await provider.fetch()) ?? []
 
         if !liveWaits.isEmpty {
@@ -33,10 +34,87 @@ struct ATLStubWaitTimeProvider: WaitTimeProviding {
                 .sorted(by: atlSort)
         }
 
-        // Graceful fallback
+        // 2. TSA fallback
+        if let tsaRows = try? await fetchTSAFallback(observedAt: now), !tsaRows.isEmpty {
+            return tsaRows.sorted(by: atlSort)
+        }
+
+        // 3. Final hardcoded fallback
         return fallbackWaits(observedAt: now).sorted(by: atlSort)
     }
 
+    private func fetchTSAFallback(observedAt: Date) async throws -> [WaitTimeEstimate] {
+        let response = try await tsaService.fetchWaitTimes(for: "ATL")
+
+        guard let general = response.resolvedGeneralMinutes else {
+            return []
+        }
+
+        let precheckMinutes = response.resolvedPrecheckMinutes
+
+        // ✅ DEBUG (SAFE POSITION)
+        print("ATL TSA fallback general:", general)
+        print("ATL TSA fallback precheck:", precheckMinutes as Any)
+
+        return [
+            WaitTimeEstimate(
+                airport: .atl,
+                terminal: nil,
+                queueType: .general,
+                minutes: general,
+                observedAt: observedAt,
+                checkpointName: "MAIN",
+                areaName: "Domestic",
+                sourceType: .estimated,
+                isClosed: false
+            ),
+            WaitTimeEstimate(
+                airport: .atl,
+                terminal: nil,
+                queueType: .general,
+                minutes: max(5, general + 2),
+                observedAt: observedAt,
+                checkpointName: "NORTH",
+                areaName: "Domestic",
+                sourceType: .estimated,
+                isClosed: false
+            ),
+            WaitTimeEstimate(
+                airport: .atl,
+                terminal: nil,
+                queueType: .general,
+                minutes: 0,
+                observedAt: observedAt,
+                checkpointName: "LOWER NORTH",
+                areaName: "Domestic",
+                sourceType: .estimated,
+                isClosed: true
+            ),
+            WaitTimeEstimate(
+                airport: .atl,
+                terminal: nil,
+                queueType: .precheck,
+                minutes: precheckMinutes ?? max(2, general - 3),
+                observedAt: observedAt,
+                checkpointName: "SOUTH",
+                areaName: "Domestic",
+                sourceType: .estimated,
+                isClosed: false
+            ),
+            WaitTimeEstimate(
+                airport: .atl,
+                terminal: nil,
+                queueType: .general,
+                minutes: max(3, general - 1),
+                observedAt: observedAt,
+                checkpointName: "MAIN",
+                areaName: "International",
+                sourceType: .estimated,
+                isClosed: false
+            )
+        ]
+    }
+    
     private func fallbackWaits(observedAt: Date) -> [WaitTimeEstimate] {
         [
             WaitTimeEstimate(
