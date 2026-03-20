@@ -1,15 +1,15 @@
 import SwiftUI
 import UIKit
 
-enum FlowTab: Hashable {
-    case explore
-    case planner
-    case flight
-    case alerts
-    case settings
-}
-
 struct FlowRootView: View {
+
+    enum FlowTab: Hashable {
+        case explore
+        case planner
+        case flight
+        case alerts
+        case settings
+    }
 
     @ObservedObject var store: LandingStore
     @State private var selectedTab: FlowTab = .flight
@@ -54,8 +54,6 @@ struct FlowRootView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
 
-            // MARK: - AIRPORTS
-
             NavigationStack {
                 AirportSelectorView(
                     store: store,
@@ -70,8 +68,6 @@ struct FlowRootView: View {
             }
             .tag(FlowTab.explore)
 
-            // MARK: - SEARCH
-
             NavigationStack {
                 PlannerPlaceholderView(
                     store: store,
@@ -83,8 +79,6 @@ struct FlowRootView: View {
                 Text("Search")
             }
             .tag(FlowTab.planner)
-
-            // MARK: - FLIGHT
 
             NavigationStack {
                 LandingView(
@@ -98,21 +92,14 @@ struct FlowRootView: View {
             }
             .tag(FlowTab.flight)
 
-            // MARK: - ALERTS
-
             NavigationStack {
-                AlertsView(
-                    store: store,
-                    selectedTab: $selectedTab
-                )
+                AlertsView(store: store)
             }
             .tabItem {
                 Image(systemName: "bell.fill")
                 Text("Alerts")
             }
             .tag(FlowTab.alerts)
-
-            // MARK: - SETTINGS
 
             NavigationStack {
                 SettingsView()
@@ -124,5 +111,14 @@ struct FlowRootView: View {
             .tag(FlowTab.settings)
         }
         .tint(Color(hex: "9B6CFF"))
+        .onReceive(NotificationCenter.default.publisher(for: .openSearchTab)) { _ in
+            selectedTab = .planner
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openAirportTab)) { _ in
+            selectedTab = .explore
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openFlightTab)) { _ in
+            selectedTab = .flight
+        }
     }
 }

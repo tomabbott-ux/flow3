@@ -3,9 +3,8 @@ import SwiftUI
 struct PlannerPlaceholderView: View {
 
     @ObservedObject var store: LandingStore
-    @Binding var selectedTab: FlowTab
-    @FocusState private var isFlightFieldFocused: Bool
-
+    @Binding var selectedTab: FlowRootView.FlowTab
+    
     @State private var departureTime: Date = Calendar.current.date(
         byAdding: .hour,
         value: 3,
@@ -31,7 +30,45 @@ struct PlannerPlaceholderView: View {
     private let flightLookupService = LiveFlightService()
 
     var body: some View {
-        ZStack {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 18) {
+
+                plannerIntroCard
+                plannerModePicker
+
+                if useFlightNumber {
+                    flightLookupCard
+                } else {
+                    inputsCard
+                }
+
+                if let flight = flightLookupResult, useFlightNumber {
+                    flightFoundCard(flight)
+                }
+
+                bagToggleCard
+                travelTimeCard
+                actionButton
+
+                if let plan {
+                    resultCard(plan)
+                }
+
+                if canTrackFlight {
+                    trackFlightButton
+                }
+
+                if let errorText, !errorText.isEmpty {
+                    Text(errorText)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.red.opacity(0.95))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 30)
+        }
+        .background(
             LinearGradient(
                 gradient: Gradient(colors: [
                     Color(hex: "2A0C5A"),
@@ -42,101 +79,54 @@ struct PlannerPlaceholderView: View {
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 18) {
-                    plannerHeaderCard
-                    plannerModePicker
-
-                    if useFlightNumber {
-                        flightLookupCard
-                    } else {
-                        manualPlannerCard
-                    }
-
-                    if let flight = flightLookupResult, useFlightNumber {
-                        flightFoundCard(flight)
-                    }
-
-                    travelSetupCard
-                    actionButton
-
-                    if let plan {
-                        leaveTimeHero(plan)
-                        breakdownCard(plan)
-                        trackFlightButton
-                    }
-
-                    if let errorText, !errorText.isEmpty {
-                        Text(errorText)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(.red.opacity(0.95))
-                            .padding(.top, 2)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
-                .padding(.bottom, 30)
-            }
-        }
-        .navigationTitle("Planner")
+        )
+        .navigationTitle("Search")
         .navigationBarTitleDisplayMode(.inline)
-        .scrollDismissesKeyboard(.interactively)
-        .onTapGesture {
-            isFlightFieldFocused = false
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-
-                Button("Done") {
-                    isFlightFieldFocused = false
-                }
-                .foregroundColor(.white)
-            }
-        }
-        .onChange(of: useFlightNumber) { _ in
-            errorText = nil
-            plan = nil
-            flightLookupResult = nil
-            isFlightFieldFocused = false
-        }
         .onAppear {
             resetPlannerForSelectedAirport()
         }
         .onChange(of: store.selectedAirport) { _ in
             resetPlannerForSelectedAirport()
         }
+        .onChange(of: useFlightNumber) { _ in
+            errorText = nil
+            plan = nil
+            flightLookupResult = nil
+        }
     }
 }
 
-// MARK: - Header
+// MARK: - UI
 
 private extension PlannerPlaceholderView {
+
+    var canTrackFlight: Bool {
+        useFlightNumber &&
+        flightLookupResult != nil &&
+        plan != nil
+    }
+
+    var airportTitle: String {
+        "\(store.selectedAirport.rawValue) search"
+    }
+
+    var airportDescription: String {
+        "Search by flight number or build a manual airport timing plan using live security waits and travel time."
+    }
 
     var airportDisplayLine: String {
         "\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)"
     }
 
-    var plannerHeaderCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Smart departure planning")
-                .font(.system(size: 20, weight: .semibold))
+    var plannerIntroCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(airportTitle)
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
 
-            Text("Calculate when to leave using your flight, live airport conditions, and travel time.")
+            Text(airportDescription)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.78))
-
-            HStack(spacing: 8) {
-                Image(systemName: "airplane.departure")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.8))
-
-                Text(airportDisplayLine)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.9))
-            }
         }
         .flowGlassCard()
     }
@@ -181,16 +171,34 @@ private extension PlannerPlaceholderView {
         }
         .buttonStyle(.plain)
     }
-}
 
-// MARK: - Input Cards
+    var inputsCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
 
-private extension PlannerPlaceholderView {
+            inputTitle("Airport")
+            valueLine(airportDisplayLine)
+
+            inputTitle("Departure")
+
+            DatePicker(
+                "",
+                selection: $departureTime,
+                displayedComponents: [.date, .hourAndMinute]
+            )
+            .labelsHidden()
+            .datePickerStyle(.compact)
+            .colorScheme(.dark)
+        }
+        .flowGlassCard()
+    }
 
     var flightLookupCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            inputTitle("Airport")
-            valueLine(airportDisplayLine)
+
+            VStack(alignment: .leading, spacing: 8) {
+                inputTitle("Airport")
+                valueLine(airportDisplayLine)
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 inputTitle("Flight number")
@@ -199,10 +207,6 @@ private extension PlannerPlaceholderView {
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled(true)
                     .submitLabel(.done)
-                    .focused($isFlightFieldFocused)
-                    .onSubmit {
-                        isFlightFieldFocused = false
-                    }
                     .foregroundColor(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
@@ -230,7 +234,6 @@ private extension PlannerPlaceholderView {
             }
 
             Button {
-                isFlightFieldFocused = false
                 Task {
                     await lookupFlight()
                 }
@@ -268,43 +271,32 @@ private extension PlannerPlaceholderView {
         .flowGlassCard()
     }
 
-    var manualPlannerCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            inputTitle("Airport")
-            valueLine(airportDisplayLine)
-
-            VStack(alignment: .leading, spacing: 8) {
-                inputTitle("Departure")
-
-                DatePicker(
-                    "",
-                    selection: $departureTime,
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .labelsHidden()
-                .datePickerStyle(.compact)
-                .colorScheme(.dark)
-            }
-        }
-        .flowGlassCard()
-    }
-
     func flightFoundCard(_ flight: FlightLookupResult) -> some View {
         VStack(alignment: .leading, spacing: 12) {
+
             Text("Flight found")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
 
             infoRow("Flight", flight.flightNumber)
-            infoRow("Route", cleanedRoute(origin: flight.originIATA, destination: flight.destinationIATA))
+            infoRow("Route", cleanedRoute("\(flight.originIATA) → \(flight.destinationIATA)"))
             infoRow("Airline", flight.airline)
 
-            if let terminal = flight.terminal, !terminal.isEmpty {
+            if let terminal = flight.terminal,
+               !terminal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 infoRow("Terminal", terminal)
             }
 
-            if let gate = flight.gate, !gate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if let gate = flight.gate,
+               !gate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 infoRow("Gate", gate)
+            } else {
+                infoRow("Gate", "TBD")
+            }
+
+            if let status = flight.status,
+               !status.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                infoRow("Status", status)
             }
 
             infoRow("Departure", flightDateTimeString(flight.departureTime))
@@ -312,18 +304,18 @@ private extension PlannerPlaceholderView {
         .flowGlassCard()
     }
 
-    var travelSetupCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Travel setup")
+    var bagToggleCard: some View {
+        Toggle(isOn: $checkedBags) {
+            Text("Checked bags")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
+        }
+        .tint(Color(hex: "7B6CFF"))
+        .flowGlassCard()
+    }
 
-            Toggle(isOn: $checkedBags) {
-                Text("Checked bags")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-            }
-            .tint(Color(hex: "7B6CFF"))
+    var travelTimeCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
 
             Toggle(isOn: $useManualTravelTime) {
                 Text("Enter travel time manually")
@@ -359,8 +351,6 @@ private extension PlannerPlaceholderView {
 
     var actionButton: some View {
         Button {
-            isFlightFieldFocused = false
-
             Task {
                 await calculate()
             }
@@ -379,7 +369,7 @@ private extension PlannerPlaceholderView {
 
                 Spacer()
             }
-            .padding(.vertical, 15)
+            .padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 18)
                     .fill(Color.white.opacity(0.14))
@@ -396,62 +386,47 @@ private extension PlannerPlaceholderView {
             (useFlightNumber && flightLookupResult == nil)
         )
     }
-}
 
-// MARK: - Result
+    func resultCard(_ plan: DeparturePlan) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
 
-private extension PlannerPlaceholderView {
-
-    func leaveTimeHero(_ plan: DeparturePlan) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
             Text("Leave at")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.72))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.white.opacity(0.76))
 
             Text(timeString(plan.recommendedLeaveTime))
-                .font(.system(size: 60, weight: .heavy))
-                .foregroundColor(.white)
+                .font(.system(size: 52, weight: .heavy))
+                .foregroundColor(countdownColor(for: plan.recommendedLeaveTime))
                 .monospacedDigit()
 
             Text(countdownText(for: plan.recommendedLeaveTime))
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(countdownColor(for: plan.recommendedLeaveTime))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 26)
-                .fill(Color.white.opacity(0.10))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 26)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                )
-                .shadow(color: Color.purple.opacity(0.35), radius: 20, x: 0, y: 10)
-        )
-    }
 
-    func breakdownCard(_ plan: DeparturePlan) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Breakdown")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
+            Text("to reach gate by \(timeString(plan.gateTargetTime))")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.white.opacity(0.78))
 
-            resultRow("Travel time", "\(plan.travelMinutes)m")
-            resultRow("Security wait", "\(plan.securityMinutes)m")
-            resultRow("Airport buffer", "\(plan.airportBufferMinutes)m")
+            Divider()
+                .overlay(Color.white.opacity(0.10))
 
-            if plan.bagBufferMinutes > 0 {
-                resultRow("Bag drop buffer", "\(plan.bagBufferMinutes)m")
+            VStack(spacing: 10) {
+                resultRow("Journey time", "\(plan.travelMinutes)m")
+                resultRow("Security wait", "\(plan.securityMinutes)m")
+                resultRow("Airport buffer", "\(plan.airportBufferMinutes)m")
+
+                if plan.bagBufferMinutes > 0 {
+                    resultRow("Bag drop buffer", "\(plan.bagBufferMinutes)m")
+                }
+
+                let totalBeforeAirport =
+                    plan.travelMinutes +
+                    plan.securityMinutes +
+                    plan.airportBufferMinutes +
+                    plan.bagBufferMinutes
+
+                resultRow("Total pre-airport time", "\(totalBeforeAirport)m")
             }
-
-            let totalBeforeAirport =
-                plan.travelMinutes +
-                plan.securityMinutes +
-                plan.airportBufferMinutes +
-                plan.bagBufferMinutes
-
-            resultRow("Total pre-airport time", "\(totalBeforeAirport)m")
-            resultRow("Gate target", timeString(plan.gateTargetTime))
         }
         .flowGlassCard()
     }
@@ -483,53 +458,10 @@ private extension PlannerPlaceholderView {
     }
 }
 
-// MARK: - Logic
+// MARK: - Actions
 
 private extension PlannerPlaceholderView {
 
-    func trackThisFlight() {
-        errorText = nil
-
-        guard let flight = flightLookupResult, let plan else {
-            errorText = "Look up a flight and calculate leave time first."
-            return
-        }
-
-        let securitySelection = store.plannerSecuritySelection(
-            for: store.selectedAirport,
-            flightTerminal: flight.terminal,
-            preferredRouteID: nil
-        )
-
-        let tracked = TrackedFlight(
-            flightNumber: flight.flightNumber,
-            route: "\(flight.originIATA) → \(flight.destinationIATA)",
-            airline: flight.airline,
-            terminal: flight.terminal ?? "",
-            gate: flight.gate,
-            departureTime: flight.departureTime,
-            leaveTime: plan.recommendedLeaveTime,
-            gateTargetTime: plan.gateTargetTime,
-            travelMinutes: plan.travelMinutes,
-            securityMinutes: plan.securityMinutes,
-            airportBufferMinutes: plan.airportBufferMinutes,
-            bagBufferMinutes: plan.bagBufferMinutes,
-            leaveTimeTrend: .unchanged,
-            securityRouteMode: securitySelection.mode,
-            securityRouteID: securitySelection.option.id,
-            securityRouteTitle: securitySelection.option.title,
-            securityRouteSubtitle: securitySelection.option.subtitle,
-            securityRouteDetail: securitySelection.option.detail,
-            securityRouteIsPreCheckOnly: securitySelection.option.isPreCheckOnly
-        )
-
-        // ✅ Save flight
-        store.setTrackedFlight(tracked)
-        
-        // ✅ Navigate to Flight tab
-        selectedTab = .flight
-    }
-    
     func resetPlannerForSelectedAirport() {
         errorText = nil
         plan = nil
@@ -606,6 +538,47 @@ private extension PlannerPlaceholderView {
             errorText = error.localizedDescription
         }
     }
+
+    func trackThisFlight() {
+        errorText = nil
+
+        guard let flight = flightLookupResult, let plan else {
+            errorText = "Look up a flight and calculate leave time first."
+            return
+        }
+
+        let securitySelection = store.plannerSecuritySelection(
+            for: store.selectedAirport,
+            flightTerminal: flight.terminal,
+            preferredRouteID: nil
+        )
+
+        let tracked = TrackedFlight(
+            flightNumber: flight.flightNumber,
+            route: "\(flight.originIATA) → \(flight.destinationIATA)",
+            airline: flight.airline,
+            terminal: flight.terminal ?? "",
+            gate: flight.gate,
+            status: flight.status,
+            departureTime: flight.departureTime,
+            leaveTime: plan.recommendedLeaveTime,
+            gateTargetTime: plan.gateTargetTime,
+            travelMinutes: plan.travelMinutes,
+            securityMinutes: plan.securityMinutes,
+            airportBufferMinutes: plan.airportBufferMinutes,
+            bagBufferMinutes: plan.bagBufferMinutes,
+            leaveTimeTrend: LeaveTimeTrend.unchanged,
+            securityRouteMode: securitySelection.mode,
+            securityRouteID: securitySelection.option.id,
+            securityRouteTitle: securitySelection.option.title,
+            securityRouteSubtitle: securitySelection.option.subtitle,
+            securityRouteDetail: securitySelection.option.detail,
+            securityRouteIsPreCheckOnly: securitySelection.option.isPreCheckOnly
+        )
+
+        store.setTrackedFlight(tracked)
+        selectedTab = .flight
+    }
 }
 
 // MARK: - Helpers
@@ -654,12 +627,10 @@ private extension PlannerPlaceholderView {
         }
     }
 
-    func cleanedRoute(origin: String, destination: String) -> String {
-        let safeDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || destination == "UNK"
-            ? "—"
-            : destination
-
-        return "\(origin) → \(safeDestination)"
+    func cleanedRoute(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "  ", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     func timeString(_ date: Date) -> String {
@@ -683,22 +654,23 @@ private extension PlannerPlaceholderView {
             return "Leave now"
         }
 
-        let minutes = seconds / 60
-        let hours = minutes / 60
-        let remainingMinutes = minutes % 60
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
 
-        return "Leaving in \(hours)h \(remainingMinutes)m"
+        if hours > 0 {
+            if minutes > 0 {
+                return "Leaving in \(hours)h \(minutes)m"
+            } else {
+                return "Leaving in \(hours)h"
+            }
+        } else {
+            return "Leaving in \(minutes)m"
+        }
     }
 
     func countdownColor(for leaveTime: Date) -> Color {
-        let seconds = leaveTime.timeIntervalSinceNow
-
-        if seconds <= 0 {
-            return .red
-        } else if seconds < 1800 {
-            return .orange
-        } else {
-            return .green
-        }
+        leaveTime.timeIntervalSinceNow <= 0
+            ? .red.opacity(0.95)
+            : .white.opacity(0.82)
     }
 }

@@ -140,6 +140,7 @@ struct DeparturePlannerSheet: View {
     private var airportDescription: String {
         "Search by flight number or build a manual airport timing plan using live security waits and travel time."
     }
+
     private var airportDisplayLine: String {
         "\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)"
     }
@@ -322,27 +323,65 @@ struct DeparturePlannerSheet: View {
     }
 
     private func flightFoundCard(_ flight: FlightLookupResult) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let signal = flight.boardingSignal()
+
+        return VStack(alignment: .leading, spacing: 14) {
 
             Text("Flight found")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
 
+            signalCard(signal)
+
             infoRow("Flight", flight.flightNumber)
             infoRow("Route", "\(flight.originIATA) → \(flight.destinationIATA)")
             infoRow("Airline", flight.airline)
 
-            if let terminal = flight.terminal {
-                infoRow("Terminal", terminal)
-            }
+            infoRow("Terminal", displayTerminal(from: flight))
+            infoRow("Gate", displayGate(from: flight))
 
-            if let gate = flight.gate, !gate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                infoRow("Gate", gate)
+            if let status = cleanedText(flight.status) {
+                infoRow("Status", status)
             }
 
             infoRow("Departure", flightDateTimeString(flight.departureTime))
         }
         .flowGlassCard()
+    }
+
+    private func signalCard(_ signal: BoardingSignal) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(signalColor(for: signal.level).opacity(0.18))
+                    .frame(width: 34, height: 34)
+
+                Image(systemName: signalIcon(for: signal.level))
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(signalColor(for: signal.level))
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(signal.title)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.white)
+
+                Text(signal.subtitle)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.74))
+            }
+
+            Spacer()
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.white.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(signalColor(for: signal.level).opacity(0.16), lineWidth: 1)
+                )
+        )
     }
 
     private var bagToggleCard: some View {
@@ -517,6 +556,7 @@ struct DeparturePlannerSheet: View {
             airline: flight.airline,
             terminal: flight.terminal ?? "",
             gate: flight.gate,
+            status: flight.status,
             departureTime: flight.departureTime,
             leaveTime: plan.recommendedLeaveTime,
             gateTargetTime: plan.gateTargetTime,
@@ -524,7 +564,7 @@ struct DeparturePlannerSheet: View {
             securityMinutes: plan.securityMinutes,
             airportBufferMinutes: plan.airportBufferMinutes,
             bagBufferMinutes: plan.bagBufferMinutes,
-            leaveTimeTrend: .unchanged,
+            leaveTimeTrend: LeaveTimeTrend.unchanged,
             securityRouteMode: securitySelection.mode,
             securityRouteID: securitySelection.option.id,
             securityRouteTitle: securitySelection.option.title,
@@ -532,7 +572,6 @@ struct DeparturePlannerSheet: View {
             securityRouteDetail: securitySelection.option.detail,
             securityRouteIsPreCheckOnly: securitySelection.option.isPreCheckOnly
         )
-
         store.setTrackedFlight(tracked)
         dismiss()
     }
@@ -582,6 +621,52 @@ struct DeparturePlannerSheet: View {
                 .foregroundColor(.white)
                 .multilineTextAlignment(.trailing)
         }
+    }
+
+    private func signalIcon(for level: BoardingSignalLevel) -> String {
+        switch level {
+        case .none:
+            return "airplane.departure"
+        case .headToTerminal:
+            return "building.2.fill"
+        case .gateAssigned:
+            return "mappin.and.ellipse"
+        case .boardingLikelySoon:
+            return "clock.badge.exclamationmark"
+        case .finalCall:
+            return "exclamationmark.circle.fill"
+        }
+    }
+
+    private func signalColor(for level: BoardingSignalLevel) -> Color {
+        switch level {
+        case .none:
+            return .white.opacity(0.85)
+        case .headToTerminal:
+            return Color(hex: "8EA7FF")
+        case .gateAssigned:
+            return Color(hex: "9B6CFF")
+        case .boardingLikelySoon:
+            return .orange.opacity(0.95)
+        case .finalCall:
+            return .red.opacity(0.95)
+        }
+    }
+
+    private func displayTerminal(from flight: FlightLookupResult) -> String {
+        let cleaned = cleanedText(flight.terminal)
+        return cleaned ?? "TBD"
+    }
+
+    private func displayGate(from flight: FlightLookupResult) -> String {
+        let cleaned = cleanedText(flight.gate)
+        return cleaned ?? "TBD"
+    }
+
+    private func cleanedText(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private func timeString(_ date: Date) -> String {

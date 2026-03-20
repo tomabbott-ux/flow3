@@ -1,18 +1,11 @@
 import Foundation
 
 enum SecurityRouteMode: String, Codable {
-    case automatic
+    case auto
     case manual
 }
 
-enum SecurityRouteSelectionSource: String, Codable {
-    case terminalMatched
-    case airportSpecific
-    case fastestFallback
-    case manual
-}
-
-struct SecurityRouteOption: Identifiable, Codable, Hashable {
+struct SecurityRouteOption: Identifiable, Equatable {
     let id: String
     let title: String
     let subtitle: String
@@ -21,8 +14,7 @@ struct SecurityRouteOption: Identifiable, Codable, Hashable {
     let isPreCheckOnly: Bool
 }
 
-struct PlannerSecuritySelection {
-    let mode: SecurityRouteMode
+struct PlannerSecuritySelection: Equatable {
     let option: SecurityRouteOption
-    let source: SecurityRouteSelectionSource
+    let mode: SecurityRouteMode
 }

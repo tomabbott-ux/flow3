@@ -80,6 +80,7 @@
 		F8796C342F6C04DC00040769 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */; };
 		F8796C9D2F6D5F3D00040769 /* FlowAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C9C2F6D5F3D00040769 /* FlowAlert.swift */; };
 		F8796C9F2F6D708400040769 /* NotificationNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C9E2F6D708400040769 /* NotificationNames.swift */; };
+		F8796CA12F6D935500040769 /* FlightLookupResult+Boarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796CA02F6D935500040769 /* FlightLookupResult+Boarding.swift */; };
 		F880516B2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516A2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift */; };
 		F880516D2F602286005CF24F /* CLTLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516C2F602286005CF24F /* CLTLiveWaitTimeProvider.swift */; };
 		F880516F2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516E2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift */; };
@@ -272,6 +273,7 @@
 		F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowActivityAttributes.swift; sourceTree = "<group>"; };
 		F8796C9C2F6D5F3D00040769 /* FlowAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowAlert.swift; sourceTree = "<group>"; };
 		F8796C9E2F6D708400040769 /* NotificationNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationNames.swift; sourceTree = "<group>"; };
+		F8796CA02F6D935500040769 /* FlightLookupResult+Boarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FlightLookupResult+Boarding.swift"; sourceTree = "<group>"; };
 		F880516A2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSAWebsiteWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F880516C2F602286005CF24F /* CLTLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLTLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F880516E2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EWRLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
@@ -548,6 +550,7 @@
 				F8DBD89D2F662EE900246968 /* SavedFlightStore.swift */,
 				F8DBD89F2F662F1000246968 /* DepartureMonitor.swift */,
 				F8DBD8992F6625F600246968 /* FlightLookupService.swift */,
+				F8796CA02F6D935500040769 /* FlightLookupResult+Boarding.swift */,
 			);
 			path = Flight;
 			sourceTree = "<group>";
@@ -933,6 +936,7 @@
 				F862F1E02F583A94001666F2 /* ATLStubWaitTimeProvider.swift in Sources */,
 				F880516D2F602286005CF24F /* CLTLiveWaitTimeProvider.swift in Sources */,
 				F80599EF2F5B679F00146BF1 /* HOULiveWaitTimeProvider.swift in Sources */,
+				F8796CA12F6D935500040769 /* FlightLookupResult+Boarding.swift in Sources */,
 				F8A1AB442F68CFD80093D0B6 /* FlowRootView.swift in Sources */,
 				F80599C92F5AC8F200146BF1 /* AirportRegistry.swift in Sources */,
 				F8DBD8912F6563A600246968 /* TravelTime Service.swift in Sources */,

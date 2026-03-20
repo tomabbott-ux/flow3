@@ -2,8 +2,8 @@ import SwiftUI
 
 struct LandingView: View {
     @ObservedObject var store: LandingStore
-    @Binding var selectedTab: FlowTab
-
+    @Binding var selectedTab: FlowRootView.FlowTab
+    
     @State private var selectedRowID: String? = nil
     @State private var now = Date()
     @State private var isShowingTrackingDetail = false
