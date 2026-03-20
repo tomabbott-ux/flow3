@@ -3,10 +3,11 @@ import SwiftUI
 struct LandingView: View {
     @ObservedObject var store: LandingStore
     @Binding var selectedTab: FlowRootView.FlowTab
-    
+
     @State private var selectedRowID: String? = nil
     @State private var now = Date()
     @State private var isShowingTrackingDetail = false
+    @State private var otherCheckpointsExpanded = false
 
     private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     private let updatedTicker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -75,6 +76,18 @@ struct LandingView: View {
         }
     }
 
+    private var secondaryCheckpointRows: [AirportDisplayRow] {
+        guard let primary = selectedRow else {
+            return displayRows
+        }
+
+        return displayRows.filter { $0.id != primary.id }
+    }
+
+    private var hasTrackedFlight: Bool {
+        store.trackedFlight != nil
+    }
+
     var body: some View {
         ZStack {
             FlowBrand.backgroundGradient
@@ -96,12 +109,7 @@ struct LandingView: View {
                     }
 
                     securityHero
-
-                    GenericAirportBreakdownCard(
-                        store: store,
-                        selectedRowID: $selectedRowID
-                    )
-
+                    checkpointsSection
                     errorSection
                 }
                 .padding(.horizontal, 16)
@@ -138,14 +146,17 @@ struct LandingView: View {
             now = value
         }
         .onChange(of: store.selectedAirport) { _ in
+            otherCheckpointsExpanded = false
             Task {
                 await refreshNow()
             }
         }
         .onChange(of: store.trackedFlight?.securityRouteTitle) { _ in
+            otherCheckpointsExpanded = false
             syncSelectedRowWithTrackedFlight()
         }
         .onChange(of: store.trackedFlight?.securityRouteSubtitle) { _ in
+            otherCheckpointsExpanded = false
             syncSelectedRowWithTrackedFlight()
         }
     }
@@ -366,7 +377,7 @@ private extension LandingView {
     var securityHero: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Security wait")
+                Text(hasTrackedFlight ? "Your Security Checkpoint" : "Security wait")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.white)
 
@@ -377,6 +388,10 @@ private extension LandingView {
             }
 
             heroCard
+
+            if hasTrackedFlight, let row = selectedRow {
+                trackedCheckpointSummary(for: row)
+            }
 
             Text(updatedRelativeText)
                 .font(.system(size: 12, weight: .medium))
@@ -416,7 +431,7 @@ private extension LandingView {
                 textColor: .orange,
                 dot: AnyView(OrangePulseDot())
             )
-            
+
         case .highConfidence:
             confidenceBadge(
                 text: "HIGH CONFIDENCE",
@@ -592,6 +607,39 @@ private extension LandingView {
         }
     }
 
+    func trackedCheckpointSummary(for row: AirportDisplayRow) -> some View {
+        HStack(spacing: 12) {
+            summaryChip(title: "Checkpoint", value: row.title)
+
+            if !row.subtitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                summaryChip(title: "Area", value: row.subtitle)
+            }
+        }
+    }
+
+    func summaryChip(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.white.opacity(0.58))
+
+            Text(value)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.white)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
+        )
+    }
+
     var updatedRelativeText: String {
         guard let date = store.lastUpdated else {
             switch confidenceLevel {
@@ -653,6 +701,188 @@ private extension LandingView {
 
         let days = hours / 24
         return "\(days)d ago"
+    }
+}
+
+// MARK: - Checkpoints
+
+private extension LandingView {
+
+    var checkpointsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if hasTrackedFlight {
+                if !secondaryCheckpointRows.isEmpty {
+                    Button {
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.90)) {
+                            otherCheckpointsExpanded.toggle()
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Other checkpoints")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
+
+                                Text(
+                                    otherCheckpointsExpanded
+                                    ? "Tap to hide other terminals"
+                                    : "Tap to view all terminals"
+                                )
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.white.opacity(0.70))
+                            }
+
+                            Spacer()
+
+                            Image(systemName: otherCheckpointsExpanded ? "chevron.down" : "chevron.right")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white.opacity(0.82))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 22)
+                                .fill(Color.white.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 22)
+                                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    if otherCheckpointsExpanded {
+                        VStack(spacing: 12) {
+                            ForEach(secondaryCheckpointRows) { row in
+                                checkpointCard(
+                                    row: row,
+                                    isSelected: selectedRowID == row.id
+                                )
+                            }
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(displayRows) { row in
+                        checkpointCard(
+                            row: row,
+                            isSelected: selectedRowID == row.id
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    func checkpointCard(
+        row: AirportDisplayRow,
+        isSelected: Bool
+    ) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.92)) {
+                selectedRowID = row.id
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(row.title)
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+
+                        Text(row.isClosed ? "Closed" : row.subtitle)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white.opacity(0.72))
+                            .multilineTextAlignment(.leading)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(isSelected ? Color(hex: "9B6CFF") : .white.opacity(0.28))
+                }
+
+                checkpointMetricsRow(for: row)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(isSelected ? Color.white.opacity(0.14) : Color.white.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(
+                                isSelected
+                                ? Color(hex: "9B6CFF").opacity(0.95)
+                                : Color.white.opacity(0.10),
+                                lineWidth: isSelected ? 1.4 : 1
+                            )
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    func checkpointMetricsRow(for row: AirportDisplayRow) -> some View {
+        if row.metrics.count > 1 {
+            HStack(spacing: 12) {
+                ForEach(row.metrics) { metric in
+                    miniMetricCard(
+                        label: metric.label,
+                        value: row.isClosed ? nil : metric.minutes,
+                        isClosed: row.isClosed
+                    )
+                }
+            }
+        } else {
+            let metric = row.metrics.first
+
+            HStack(spacing: 12) {
+                miniMetricCard(
+                    label: metric?.label ?? "Wait",
+                    value: row.isClosed ? nil : metric?.minutes,
+                    isClosed: row.isClosed
+                )
+            }
+        }
+    }
+
+    func miniMetricCard(label: String, value: Int?, isClosed: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if isClosed {
+                Text("Closed")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.red)
+            } else if let value, value == 0 {
+                Text("No wait")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.green)
+            } else {
+                Text(value == nil ? "--" : "\(value!) min")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+                    .monospacedDigit()
+            }
+
+            Text(label)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.white.opacity(0.70))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.black.opacity(0.18))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                )
+        )
     }
 }
 

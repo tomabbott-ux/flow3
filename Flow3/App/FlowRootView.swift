@@ -69,7 +69,7 @@ struct FlowRootView: View {
             .tag(FlowTab.explore)
 
             NavigationStack {
-                PlannerPlaceholderView(
+                PlannerView(
                     store: store,
                     selectedTab: $selectedTab
                 )
@@ -79,7 +79,7 @@ struct FlowRootView: View {
                 Text("Search")
             }
             .tag(FlowTab.planner)
-
+            
             NavigationStack {
                 LandingView(
                     store: store,

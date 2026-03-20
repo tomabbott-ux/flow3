@@ -1,10 +1,10 @@
 import SwiftUI
 
-struct PlannerPlaceholderView: View {
+struct PlannerView: View {
 
     @ObservedObject var store: LandingStore
     @Binding var selectedTab: FlowRootView.FlowTab
-    
+
     @State private var departureTime: Date = Calendar.current.date(
         byAdding: .hour,
         value: 3,
@@ -83,10 +83,7 @@ struct PlannerPlaceholderView: View {
         .navigationTitle("Search")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            resetPlannerForSelectedAirport()
-        }
-        .onChange(of: store.selectedAirport) { _ in
-            resetPlannerForSelectedAirport()
+            resetPlanner()
         }
         .onChange(of: useFlightNumber) { _ in
             errorText = nil
@@ -98,7 +95,7 @@ struct PlannerPlaceholderView: View {
 
 // MARK: - UI
 
-private extension PlannerPlaceholderView {
+private extension PlannerView {
 
     var canTrackFlight: Bool {
         useFlightNumber &&
@@ -107,11 +104,11 @@ private extension PlannerPlaceholderView {
     }
 
     var airportTitle: String {
-        "\(store.selectedAirport.rawValue) search"
+        "Flight search"
     }
 
     var airportDescription: String {
-        "Search by flight number or build a manual airport timing plan using live security waits and travel time."
+        "Search by flight number and Flow will find the airport automatically, or build a manual airport timing plan."
     }
 
     var airportDisplayLine: String {
@@ -196,11 +193,6 @@ private extension PlannerPlaceholderView {
         VStack(alignment: .leading, spacing: 16) {
 
             VStack(alignment: .leading, spacing: 8) {
-                inputTitle("Airport")
-                valueLine(airportDisplayLine)
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
                 inputTitle("Flight number")
 
                 TextField("e.g. BA216", text: $flightNumber)
@@ -231,6 +223,13 @@ private extension PlannerPlaceholderView {
                 .labelsHidden()
                 .datePickerStyle(.compact)
                 .colorScheme(.dark)
+            }
+
+            if let flightLookupResult {
+                VStack(alignment: .leading, spacing: 8) {
+                    inputTitle("Airport")
+                    valueLine("\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)")
+                }
             }
 
             Button {
@@ -279,6 +278,7 @@ private extension PlannerPlaceholderView {
                 .foregroundColor(.white)
 
             infoRow("Flight", flight.flightNumber)
+            infoRow("Airport", "\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)")
             infoRow("Route", cleanedRoute("\(flight.originIATA) → \(flight.destinationIATA)"))
             infoRow("Airline", flight.airline)
 
@@ -460,9 +460,9 @@ private extension PlannerPlaceholderView {
 
 // MARK: - Actions
 
-private extension PlannerPlaceholderView {
+private extension PlannerView {
 
-    func resetPlannerForSelectedAirport() {
+    func resetPlanner() {
         errorText = nil
         plan = nil
         flightLookupResult = nil
@@ -494,8 +494,12 @@ private extension PlannerPlaceholderView {
             let result = try await flightLookupService.lookupFlight(
                 flightNumber: trimmedFlightNumber,
                 date: flightDate,
-                airportIATA: store.selectedAirport.rawValue
+                airportIATA: nil
             )
+            
+            if let matchedAirport = flowAirport(from: result.originIATA) {
+                store.selectedAirport = matchedAirport
+            }
 
             flightLookupResult = result
             departureTime = result.departureTime
@@ -579,11 +583,17 @@ private extension PlannerPlaceholderView {
         store.setTrackedFlight(tracked)
         selectedTab = .flight
     }
+
+    func flowAirport(from code: String) -> FlowAirport? {
+        AirportRegistry.airports
+            .map(\.airport)
+            .first(where: { $0.rawValue.caseInsensitiveCompare(code) == .orderedSame })
+    }
 }
 
 // MARK: - Helpers
 
-private extension PlannerPlaceholderView {
+private extension PlannerView {
 
     func inputTitle(_ text: String) -> some View {
         Text(text)

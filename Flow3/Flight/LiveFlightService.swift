@@ -6,12 +6,13 @@ final class LiveFlightService {
 
     private let aeroDataBoxAPIKey = "326a347895msh7460adc2983b80cp19f5e1jsn6e51a9fd6172"
     private let aviationStackAPIKey = "5ef21e44ec52ecc924562e17c4ef4c02"
+
     // MARK: - Public
 
     func lookupFlight(
         flightNumber: String,
         date: Date,
-        airportIATA: String = "LHR"
+        airportIATA: String? = nil
     ) async throws -> FlightLookupResult {
 
         let normalizedFlightNumber = normalizeFlightNumber(flightNumber)
@@ -22,9 +23,10 @@ final class LiveFlightService {
             flightNumber: normalizedFlightNumber,
             dateString: dateString,
             date: date,
-            airportIATA: airportIATA
+            preferredAirportIATA: cleanedString(airportIATA)
         )
 
+        print("🔵 Aero result origin:", aeroResult.originIATA)
         print("🔵 Aero result terminal:", aeroResult.terminal ?? "nil")
         print("🔵 Aero result gate:", aeroResult.gate ?? "nil")
         print("🔵 Aero result status:", aeroResult.status ?? "nil")
@@ -41,7 +43,8 @@ final class LiveFlightService {
             let fallback = try await fetchFallbackFromAviationStack(
                 flightNumber: normalizedFlightNumber,
                 dateString: dateString,
-                airportIATA: airportIATA
+                preferredAirportIATA: cleanedString(airportIATA),
+                resolvedDepartureAirportIATA: aeroResult.originIATA
             )
 
             let merged = FlightLookupResult(
@@ -73,7 +76,7 @@ final class LiveFlightService {
         flightNumber: String,
         dateString: String,
         date: Date,
-        airportIATA: String
+        preferredAirportIATA: String?
     ) async throws -> FlightLookupResult {
 
         let urlString =
@@ -112,35 +115,20 @@ final class LiveFlightService {
             )
         }
 
-        let calendar = Calendar(identifier: .gregorian)
-
-        let matchingFlight = flights.first { flight in
-            guard
-                let departure = flight["departure"] as? [String: Any],
-                let airport = departure["airport"] as? [String: Any],
-                let iata = airport["iata"] as? String,
-                iata.uppercased() == airportIATA.uppercased()
-            else {
-                return false
-            }
-
-            guard
-                let scheduledLocal = ((departure["scheduledTime"] as? [String: Any])?["local"] as? String),
-                let scheduledDate = parseAeroDate(scheduledLocal)
-            else {
-                return false
-            }
-
-            return calendar.isDate(scheduledDate, inSameDayAs: date)
-        }
+        let matchingFlight = bestMatchingAeroFlight(
+            from: flights,
+            on: date,
+            preferredAirportIATA: preferredAirportIATA
+        )
 
         guard let flight = matchingFlight else {
+            let preferredText = preferredAirportIATA?.uppercased() ?? "supported airport"
             throw NSError(
                 domain: "FlightNotFound",
                 code: 404,
                 userInfo: [
                     NSLocalizedDescriptionKey:
-                        "No matching \(airportIATA.uppercased()) departure found for \(flightNumber) on \(dateString)."
+                        "No matching departure found for \(flightNumber) on \(dateString) for \(preferredText)."
                 ]
             )
         }
@@ -186,6 +174,7 @@ final class LiveFlightService {
 
         print("✈️ AeroDataBox Flight Debug:")
         print("✈️ Departure payload:", departure)
+        print("✈️ Aero origin:", departureAirport)
         print("✈️ Aero terminal:", terminal ?? "nil")
         print("✈️ Aero gate:", gate ?? "nil")
         print("✈️ Aero status:", status ?? "nil")
@@ -202,12 +191,77 @@ final class LiveFlightService {
         )
     }
 
+    private func bestMatchingAeroFlight(
+        from flights: [[String: Any]],
+        on date: Date,
+        preferredAirportIATA: String?
+    ) -> [String: Any]? {
+
+        let calendar = Calendar(identifier: .gregorian)
+
+        let sameDayFlights = flights.filter { flight in
+            guard
+                let departure = flight["departure"] as? [String: Any],
+                let scheduledLocal = ((departure["scheduledTime"] as? [String: Any])?["local"] as? String),
+                let scheduledDate = parseAeroDate(scheduledLocal)
+            else {
+                return false
+            }
+
+            return calendar.isDate(scheduledDate, inSameDayAs: date)
+        }
+
+        guard !sameDayFlights.isEmpty else {
+            return nil
+        }
+
+        if let preferredAirportIATA {
+            if let exactPreferred = sameDayFlights.first(where: { flight in
+                departureAirportIATA(from: flight)?.uppercased() == preferredAirportIATA.uppercased()
+            }) {
+                return exactPreferred
+            }
+        }
+
+        let supportedAirportCodes = Set(
+            AirportRegistry.airports.map { $0.airport.rawValue.uppercased() }
+        )
+
+        if let supportedMatch = sameDayFlights.first(where: { flight in
+            guard let code = departureAirportIATA(from: flight)?.uppercased() else { return false }
+            return supportedAirportCodes.contains(code)
+        }) {
+            return supportedMatch
+        }
+
+        let sortedByDepartureTime = sameDayFlights.sorted { lhs, rhs in
+            let lhsDate = aeroScheduledDate(from: lhs) ?? .distantFuture
+            let rhsDate = aeroScheduledDate(from: rhs) ?? .distantFuture
+            return lhsDate < rhsDate
+        }
+
+        return sortedByDepartureTime.first
+    }
+
+    private func departureAirportIATA(from flight: [String: Any]) -> String? {
+        let departure = flight["departure"] as? [String: Any]
+        let airport = departure?["airport"] as? [String: Any]
+        return cleanedString(airport?["iata"] as? String)
+    }
+
+    private func aeroScheduledDate(from flight: [String: Any]) -> Date? {
+        let departure = flight["departure"] as? [String: Any]
+        let scheduledLocal = ((departure?["scheduledTime"] as? [String: Any])?["local"] as? String) ?? ""
+        return parseAeroDate(scheduledLocal)
+    }
+
     // MARK: - Aviationstack Fallback
 
     private func fetchFallbackFromAviationStack(
         flightNumber: String,
         dateString: String,
-        airportIATA: String
+        preferredAirportIATA: String?,
+        resolvedDepartureAirportIATA: String
     ) async throws -> AviationStackFallbackFields {
 
         guard aviationStackAPIKey != "YOUR_AVIATIONSTACK_KEY" else {
@@ -225,7 +279,6 @@ final class LiveFlightService {
         components?.queryItems = [
             URLQueryItem(name: "access_key", value: aviationStackAPIKey),
             URLQueryItem(name: "flight_iata", value: flightNumber),
-            URLQueryItem(name: "dep_iata", value: airportIATA.uppercased()),
             URLQueryItem(name: "flight_date", value: dateString)
         ]
 
@@ -274,10 +327,25 @@ final class LiveFlightService {
             )
         }
 
-        let match = decoded.data.first(where: { item in
-            item.departure?.iata?.uppercased() == airportIATA.uppercased() &&
+        let preferredUpper = preferredAirportIATA?.uppercased()
+        let resolvedUpper = resolvedDepartureAirportIATA.uppercased()
+        let supportedAirportCodes = Set(
+            AirportRegistry.airports.map { $0.airport.rawValue.uppercased() }
+        )
+
+        let sameFlightItems = decoded.data.filter { item in
             item.flight?.iata?.uppercased() == flightNumber.uppercased()
-        }) ?? decoded.data.first
+        }
+
+        let match =
+            sameFlightItems.first(where: { $0.departure?.iata?.uppercased() == preferredUpper }) ??
+            sameFlightItems.first(where: { $0.departure?.iata?.uppercased() == resolvedUpper }) ??
+            sameFlightItems.first(where: {
+                guard let code = $0.departure?.iata?.uppercased() else { return false }
+                return supportedAirportCodes.contains(code)
+            }) ??
+            sameFlightItems.first ??
+            decoded.data.first
 
         guard let match else {
             throw NSError(
@@ -291,6 +359,7 @@ final class LiveFlightService {
         let gate = cleanedString(match.departure?.gate)
         let status = cleanedString(match.flight_status).map(mapAviationStackStatus)
 
+        print("🟣 Aviationstack departure:", match.departure?.iata ?? "nil")
         print("🟣 Aviationstack terminal:", terminal ?? "nil")
         print("🟣 Aviationstack gate:", gate ?? "nil")
         print("🟣 Aviationstack status:", status ?? "nil")
