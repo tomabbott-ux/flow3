@@ -78,6 +78,8 @@
 		F8796C312F6BFEA800040769 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C302F6BFEA800040769 /* AppDelegate.swift */; };
 		F8796C332F6BFFE000040769 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */; };
 		F8796C342F6C04DC00040769 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */; };
+		F8796C9D2F6D5F3D00040769 /* FlowAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C9C2F6D5F3D00040769 /* FlowAlert.swift */; };
+		F8796C9F2F6D708400040769 /* NotificationNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C9E2F6D708400040769 /* NotificationNames.swift */; };
 		F880516B2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516A2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift */; };
 		F880516D2F602286005CF24F /* CLTLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516C2F602286005CF24F /* CLTLiveWaitTimeProvider.swift */; };
 		F880516F2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516E2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift */; };
@@ -268,6 +270,8 @@
 		F8796C2E2F6B8CB100040769 /* TSAWaitTimeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSAWaitTimeService.swift; sourceTree = "<group>"; };
 		F8796C302F6BFEA800040769 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowActivityAttributes.swift; sourceTree = "<group>"; };
+		F8796C9C2F6D5F3D00040769 /* FlowAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowAlert.swift; sourceTree = "<group>"; };
+		F8796C9E2F6D708400040769 /* NotificationNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationNames.swift; sourceTree = "<group>"; };
 		F880516A2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSAWebsiteWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F880516C2F602286005CF24F /* CLTLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLTLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F880516E2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EWRLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
@@ -566,6 +570,8 @@
 			isa = PBXGroup;
 			children = (
 				F8A1AB472F68D0200093D0B6 /* AlertsView.swift */,
+				F8796C9C2F6D5F3D00040769 /* FlowAlert.swift */,
+				F8796C9E2F6D708400040769 /* NotificationNames.swift */,
 			);
 			path = Alerts;
 			sourceTree = "<group>";
@@ -967,6 +973,7 @@
 				F880517F2F60E64F005CF24F /* FavouriteAirports.swift in Sources */,
 				F822A8D62F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift in Sources */,
 				F8A4ABB52F644E2E003DDA0C /* FcoWaitTimeProvider.swift in Sources */,
+				F8796C9F2F6D708400040769 /* NotificationNames.swift in Sources */,
 				F862F1D32F5839B4001666F2 /* WaitTimeModels.swift in Sources */,
 				F822A8D02F5CD692009F6107 /* FRALiveWaitTimeProvider.swift in Sources */,
 				F80599DF2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift in Sources */,
@@ -989,6 +996,7 @@
 				F862F1D92F583A17001666F2 /* WaitTimeProviding.swift in Sources */,
 				F8A1AB482F68D0200093D0B6 /* AlertsView.swift in Sources */,
 				F80599D52F5AD3A100146BF1 /* GenericAirportBreakdownCard.swift in Sources */,
+				F8796C9D2F6D5F3D00040769 /* FlowAlert.swift in Sources */,
 				F862F1D52F5839C9001666F2 /* WeatherModels.swift in Sources */,
 				F822A8EE2F5DDBC1009F6107 /* STRLiveWaitTimeProvider.swift in Sources */,
 				F88051732F6061A9005CF24F /* DCALiveWaitTimeProvider.swift in Sources */,

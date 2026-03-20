@@ -21,6 +21,7 @@ final class LandingStore: ObservableObject {
     @Published var errorText: String?
 
     @Published private(set) var waitTimes: [WaitTimeEstimate] = []
+    @Published private(set) var alerts: [FlowAlert] = []
 
     // MARK: - Tracked Flight
 
@@ -31,6 +32,7 @@ final class LandingStore: ObservableObject {
 
         SavedFlightStore.shared.save(flight)
         FlowWatchConnectivityManager.shared.syncTrackedFlight(flight)
+        rebuildAlerts()
     }
 
     // MARK: - Services
@@ -49,6 +51,7 @@ final class LandingStore: ObservableObject {
     // MARK: - Cache
 
     private var waitTimeCache: [FlowAirport: [WaitTimeEstimate]] = [:]
+    private var previousWaitTimeCache: [FlowAirport: [WaitTimeEstimate]] = [:]
     private var weatherCache: [FlowAirport: WeatherSnapshot] = [:]
     private var refreshedAtCache: [FlowAirport: Date] = [:]
 
@@ -69,6 +72,7 @@ final class LandingStore: ObservableObject {
         self.weatherService = weatherService
 
         self.trackedFlight = SavedFlightStore.shared.load()
+        rebuildAlerts()
     }
 
     deinit {
@@ -87,6 +91,7 @@ final class LandingStore: ObservableObject {
         }
 
         startPrefetchAroundSelectedAirport()
+        rebuildAlerts()
     }
 
     private func refreshAirport(_ airport: FlowAirport, updateVisibleState: Bool) async {
@@ -101,6 +106,10 @@ final class LandingStore: ObservableObject {
             let (newWaitTimes, newWeather) = try await (wt, wx)
             let refreshedAt = Date()
 
+            if let current = waitTimeCache[airport], !current.isEmpty {
+                previousWaitTimeCache[airport] = current
+            }
+
             waitTimeCache[airport] = newWaitTimes
             weatherCache[airport] = newWeather
             refreshedAtCache[airport] = refreshedAt
@@ -109,6 +118,7 @@ final class LandingStore: ObservableObject {
                 waitTimes = newWaitTimes
                 weather = newWeather
                 lastUpdated = refreshedAt
+                rebuildAlerts()
             }
         } catch {
             if updateVisibleState, airport == selectedAirport {
@@ -117,6 +127,7 @@ final class LandingStore: ObservableObject {
                 } else {
                     errorText = "Refresh failed: \(error.localizedDescription)"
                 }
+                rebuildAlerts()
             }
         }
     }
@@ -151,6 +162,7 @@ final class LandingStore: ObservableObject {
     private func handleSelectedAirportChanged() async {
         applyCachedSnapshotIfAvailable(for: selectedAirport)
         startPrefetchAroundSelectedAirport()
+        rebuildAlerts()
     }
 
     private func applyCachedSnapshotIfAvailable(for airport: FlowAirport) {
@@ -295,6 +307,7 @@ final class LandingStore: ObservableObject {
         trackedFlight = flight
         SavedFlightStore.shared.save(flight)
         FlowWatchConnectivityManager.shared.syncTrackedFlight(flight)
+        rebuildAlerts()
 
         Task {
             await FlowNotificationManager.shared.requestPermission()
@@ -310,6 +323,7 @@ final class LandingStore: ObservableObject {
         FlowWatchConnectivityManager.shared.syncTrackedFlight(nil)
 
         FlowNotificationManager.shared.clearTrackedFlightNotifications()
+        rebuildAlerts()
 
         Task {
             await FlowLiveActivityManager.shared.end()
@@ -433,6 +447,7 @@ final class LandingStore: ObservableObject {
             trackedFlight = updated
             SavedFlightStore.shared.save(updated)
             FlowWatchConnectivityManager.shared.syncTrackedFlight(updated)
+            rebuildAlerts()
 
             await FlowNotificationManager.shared.requestPermission()
 
@@ -454,6 +469,175 @@ final class LandingStore: ObservableObject {
 
         } catch {
             print("Tracked flight refresh failed: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Alerts
+
+    func rebuildAlerts() {
+        var items: [FlowAlert] = []
+
+        let airportCode = selectedAirport.rawValue.uppercased()
+        let now = Date()
+
+        let airportWaits = waitTimes
+            .filter { $0.airport == selectedAirport && !$0.isClosed }
+
+        let highestWait = airportWaits.map(\.minutes).max() ?? 0
+        let liveCount = airportWaits.filter { $0.sourceType == .live }.count
+        let estimatedCount = airportWaits.filter { $0.sourceType == .estimated }.count
+
+        if let flight = trackedFlight {
+            let minutesUntilLeave = Int(flight.leaveTime.timeIntervalSince(now) / 60)
+
+            if minutesUntilLeave <= 0 {
+                items.append(
+                    FlowAlert(
+                        kind: .leaveNow,
+                        severity: .critical,
+                        title: "Leave now",
+                        message: "Your recommended leave time for \(flight.flightNumber) is now. Head to the airport.",
+                        airportCode: airportCode
+                    )
+                )
+            } else if minutesUntilLeave <= 15 {
+                items.append(
+                    FlowAlert(
+                        kind: .leaveSoon,
+                        severity: .warning,
+                        title: "Leave soon",
+                        message: "You should leave in \(max(0, minutesUntilLeave)) minutes for \(flight.flightNumber).",
+                        airportCode: airportCode
+                    )
+                )
+            } else {
+                items.append(
+                    FlowAlert(
+                        kind: .onTrack,
+                        severity: .info,
+                        title: "You’re on track",
+                        message: "Your leave time for \(flight.flightNumber) still looks good.",
+                        airportCode: airportCode
+                    )
+                )
+            }
+
+            items.append(
+                FlowAlert(
+                    kind: .trackedFlight,
+                    severity: .info,
+                    title: "Flight tracking on",
+                    message: "Tracking \(flight.flightNumber) from \(flight.route.replacingOccurrences(of: "→", with: "to")).",
+                    airportCode: airportCode
+                )
+            )
+
+            if flight.securityRouteMode == .manual {
+                items.append(
+                    FlowAlert(
+                        kind: .trackedFlight,
+                        severity: .info,
+                        title: "Manual checkpoint selected",
+                        message: "You selected \(flight.securityRouteTitle) instead of Flow auto route selection.",
+                        airportCode: airportCode
+                    )
+                )
+            }
+        }
+
+        if highestWait >= 45 {
+            items.append(
+                FlowAlert(
+                    kind: .securityHigh,
+                    severity: .warning,
+                    title: "Security is busy",
+                    message: "Current waits at \(airportCode) are elevated at around \(highestWait) minutes.",
+                    airportCode: airportCode
+                )
+            )
+        } else if highestWait >= 25 {
+            items.append(
+                FlowAlert(
+                    kind: .securityRising,
+                    severity: .info,
+                    title: "Allow extra time",
+                    message: "Security at \(airportCode) is moderate right now at around \(highestWait) minutes.",
+                    airportCode: airportCode
+                )
+            )
+        }
+
+        if let previousWaits = previousWaitTimeCache[selectedAirport] {
+            let previousMax = previousWaits
+                .filter { !$0.isClosed }
+                .map(\.minutes)
+                .max() ?? 0
+
+            let rise = highestWait - previousMax
+
+            if highestWait > 0 && rise >= 10 {
+                items.append(
+                    FlowAlert(
+                        kind: .securityRising,
+                        severity: .warning,
+                        title: "Security is rising",
+                        message: "Wait times at \(airportCode) have increased by around \(rise) minutes since the last refresh.",
+                        airportCode: airportCode
+                    )
+                )
+            }
+        }
+
+        if estimatedCount > 0 && liveCount == 0 {
+            items.append(
+                FlowAlert(
+                    kind: .securityRising,
+                    severity: .info,
+                    title: "Estimated security data",
+                    message: "Flow is currently using estimated security waits for \(airportCode), not a live feed.",
+                    airportCode: airportCode
+                )
+            )
+        }
+
+        let deduped = Array(Set(items)).sorted { lhs, rhs in
+            let lhsScore = severityRank(lhs.severity) * 10 + kindRank(lhs.kind)
+            let rhsScore = severityRank(rhs.severity) * 10 + kindRank(rhs.kind)
+            return lhsScore < rhsScore
+        }
+
+        alerts = Array(deduped.prefix(8))
+    }
+
+    private func severityRank(_ severity: FlowAlertSeverity) -> Int {
+        switch severity {
+        case .critical:
+            return 0
+        case .warning:
+            return 1
+        case .info:
+            return 2
+        }
+    }
+
+    private func kindRank(_ kind: FlowAlertKind) -> Int {
+        switch kind {
+        case .leaveNow:
+            return 0
+        case .leaveSoon:
+            return 1
+        case .securityHigh:
+            return 2
+        case .securityRising:
+            return 3
+        case .trackedFlight:
+            return 4
+        case .onTrack:
+            return 5
+        case .checkpointClosed:
+            return 6
+        case .weatherImpact:
+            return 7
         }
     }
 }

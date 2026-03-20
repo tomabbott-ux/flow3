@@ -52,7 +52,6 @@ struct FlowRootView: View {
     }
 
     var body: some View {
-
         TabView(selection: $selectedTab) {
 
             // MARK: - AIRPORTS
@@ -71,8 +70,7 @@ struct FlowRootView: View {
             }
             .tag(FlowTab.explore)
 
-
-            // MARK: - PLANNER
+            // MARK: - SEARCH
 
             NavigationStack {
                 PlannerPlaceholderView(
@@ -81,11 +79,10 @@ struct FlowRootView: View {
                 )
             }
             .tabItem {
-                Image(systemName: "clipboard.fill")
-                Text("Planner")
+                Image(systemName: "magnifyingglass")
+                Text("Search")
             }
             .tag(FlowTab.planner)
-
 
             // MARK: - FLIGHT
 
@@ -101,18 +98,19 @@ struct FlowRootView: View {
             }
             .tag(FlowTab.flight)
 
-
             // MARK: - ALERTS
 
             NavigationStack {
-                AlertsView()
+                AlertsView(
+                    store: store,
+                    selectedTab: $selectedTab
+                )
             }
             .tabItem {
                 Image(systemName: "bell.fill")
                 Text("Alerts")
             }
             .tag(FlowTab.alerts)
-
 
             // MARK: - SETTINGS
 

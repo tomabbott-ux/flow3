@@ -89,7 +89,7 @@ struct DeparturePlannerSheet: View {
                 )
                 .ignoresSafeArea()
             )
-            .navigationTitle("Plan Departure")
+            .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -134,13 +134,12 @@ struct DeparturePlannerSheet: View {
     }
 
     private var airportTitle: String {
-        "\(store.selectedAirport.rawValue) departure planner"
+        "\(store.selectedAirport.rawValue) search"
     }
 
     private var airportDescription: String {
-        "Flow calculates when to leave based on live \(store.selectedAirport.displayName) security wait times and travel time from your location."
+        "Search by flight number or build a manual airport timing plan using live security waits and travel time."
     }
-
     private var airportDisplayLine: String {
         "\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)"
     }
