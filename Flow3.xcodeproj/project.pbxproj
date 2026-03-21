@@ -76,11 +76,11 @@
 		F8796C272F6B57A000040769 /* ATLWebViewFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C262F6B57A000040769 /* ATLWebViewFetcher.swift */; };
 		F8796C2F2F6B8CB100040769 /* TSAWaitTimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C2E2F6B8CB100040769 /* TSAWaitTimeService.swift */; };
 		F8796C312F6BFEA800040769 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C302F6BFEA800040769 /* AppDelegate.swift */; };
-		F8796C332F6BFFE000040769 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */; };
-		F8796C342F6C04DC00040769 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */; };
 		F8796C9D2F6D5F3D00040769 /* FlowAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C9C2F6D5F3D00040769 /* FlowAlert.swift */; };
 		F8796C9F2F6D708400040769 /* NotificationNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796C9E2F6D708400040769 /* NotificationNames.swift */; };
 		F8796CA12F6D935500040769 /* FlightLookupResult+Boarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796CA02F6D935500040769 /* FlightLookupResult+Boarding.swift */; };
+		F8796CA32F6E040600040769 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796CA22F6E040600040769 /* FlowActivityAttributes.swift */; };
+		F8796CA42F6E040600040769 /* FlowActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8796CA22F6E040600040769 /* FlowActivityAttributes.swift */; };
 		F880516B2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516A2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift */; };
 		F880516D2F602286005CF24F /* CLTLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516C2F602286005CF24F /* CLTLiveWaitTimeProvider.swift */; };
 		F880516F2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F880516E2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift */; };
@@ -97,10 +97,7 @@
 		F8A1AB4A2F68D0430093D0B6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB492F68D0430093D0B6 /* SettingsView.swift */; };
 		F8A1AB4C2F68E2BA0093D0B6 /* TrackedFlightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB4B2F68E2BA0093D0B6 /* TrackedFlightDetailView.swift */; };
 		F8A1AB542F69EE2E0093D0B6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F8A1AB4D2F69EE2E0093D0B6 /* Assets.xcassets */; };
-		F8A1AB562F69EE2E0093D0B6 /* FlowLiveActivityExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB4E2F69EE2E0093D0B6 /* FlowLiveActivityExtension.swift */; };
 		F8A1AB572F69EE2E0093D0B6 /* FlowLiveActivityExtensionBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB4F2F69EE2E0093D0B6 /* FlowLiveActivityExtensionBundle.swift */; };
-		F8A1AB582F69EE2E0093D0B6 /* FlowLiveActivityExtensionControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB502F69EE2E0093D0B6 /* FlowLiveActivityExtensionControl.swift */; };
-		F8A1AB592F69EE2E0093D0B6 /* FlowLiveActivityExtensionLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB512F69EE2E0093D0B6 /* FlowLiveActivityExtensionLiveActivity.swift */; };
 		F8A1AB5A2F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB522F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift */; };
 		F8A1AB6F2F6A02160093D0B6 /* CLELiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB6E2F6A02160093D0B6 /* CLELiveWaitTimeProvider.swift */; };
 		F8A1AB712F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1AB702F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift */; };
@@ -270,10 +267,10 @@
 		F8796C262F6B57A000040769 /* ATLWebViewFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ATLWebViewFetcher.swift; sourceTree = "<group>"; };
 		F8796C2E2F6B8CB100040769 /* TSAWaitTimeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSAWaitTimeService.swift; sourceTree = "<group>"; };
 		F8796C302F6BFEA800040769 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowActivityAttributes.swift; sourceTree = "<group>"; };
 		F8796C9C2F6D5F3D00040769 /* FlowAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowAlert.swift; sourceTree = "<group>"; };
 		F8796C9E2F6D708400040769 /* NotificationNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationNames.swift; sourceTree = "<group>"; };
 		F8796CA02F6D935500040769 /* FlightLookupResult+Boarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FlightLookupResult+Boarding.swift"; sourceTree = "<group>"; };
+		F8796CA22F6E040600040769 /* FlowActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowActivityAttributes.swift; sourceTree = "<group>"; };
 		F880516A2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TSAWebsiteWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F880516C2F602286005CF24F /* CLTLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLTLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F880516E2F602ECE005CF24F /* EWRLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EWRLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
@@ -290,10 +287,7 @@
 		F8A1AB492F68D0430093D0B6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F8A1AB4B2F68E2BA0093D0B6 /* TrackedFlightDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedFlightDetailView.swift; sourceTree = "<group>"; };
 		F8A1AB4D2F69EE2E0093D0B6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		F8A1AB4E2F69EE2E0093D0B6 /* FlowLiveActivityExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLiveActivityExtension.swift; sourceTree = "<group>"; };
 		F8A1AB4F2F69EE2E0093D0B6 /* FlowLiveActivityExtensionBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLiveActivityExtensionBundle.swift; sourceTree = "<group>"; };
-		F8A1AB502F69EE2E0093D0B6 /* FlowLiveActivityExtensionControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLiveActivityExtensionControl.swift; sourceTree = "<group>"; };
-		F8A1AB512F69EE2E0093D0B6 /* FlowLiveActivityExtensionLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLiveActivityExtensionLiveActivity.swift; sourceTree = "<group>"; };
 		F8A1AB522F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLiveActivityWidget.swift; sourceTree = "<group>"; };
 		F8A1AB6E2F6A02160093D0B6 /* CLELiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLELiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8A1AB702F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PITLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
@@ -616,7 +610,6 @@
 				F8DBD8D22F682F4E00246968 /* FlowLiveActivityManager.swift */,
 				F8DBD8A72F66B77C00246968 /* FlowNotificationManager.swift */,
 				F8796C302F6BFEA800040769 /* AppDelegate.swift */,
-				F8796C322F6BFFE000040769 /* FlowActivityAttributes.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -672,11 +665,9 @@
 			isa = PBXGroup;
 			children = (
 				F8A1AB4D2F69EE2E0093D0B6 /* Assets.xcassets */,
-				F8A1AB4E2F69EE2E0093D0B6 /* FlowLiveActivityExtension.swift */,
 				F8A1AB4F2F69EE2E0093D0B6 /* FlowLiveActivityExtensionBundle.swift */,
-				F8A1AB502F69EE2E0093D0B6 /* FlowLiveActivityExtensionControl.swift */,
-				F8A1AB512F69EE2E0093D0B6 /* FlowLiveActivityExtensionLiveActivity.swift */,
 				F8A1AB522F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift */,
+				F8796CA22F6E040600040769 /* FlowActivityAttributes.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -938,6 +929,7 @@
 				F80599EF2F5B679F00146BF1 /* HOULiveWaitTimeProvider.swift in Sources */,
 				F8796CA12F6D935500040769 /* FlightLookupResult+Boarding.swift in Sources */,
 				F8A1AB442F68CFD80093D0B6 /* FlowRootView.swift in Sources */,
+				F8796CA42F6E040600040769 /* FlowActivityAttributes.swift in Sources */,
 				F80599C92F5AC8F200146BF1 /* AirportRegistry.swift in Sources */,
 				F8DBD8912F6563A600246968 /* TravelTime Service.swift in Sources */,
 				F8DBD89C2F662EB200246968 /* SavedFlightPlan.swift in Sources */,
@@ -969,7 +961,6 @@
 				F880517B2F60D163005CF24F /* AviationWeatherMETARProvider.swift in Sources */,
 				F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */,
 				F8796C312F6BFEA800040769 /* AppDelegate.swift in Sources */,
-				F8796C332F6BFFE000040769 /* FlowActivityAttributes.swift in Sources */,
 				F80599D32F5AD36B00146BF1 /* LandingStore+Presentation.swift in Sources */,
 				F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */,
 				F8DBD88F2F65639600246968 /* DeparturePlan.swift in Sources */,
@@ -1038,12 +1029,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F8A1AB562F69EE2E0093D0B6 /* FlowLiveActivityExtension.swift in Sources */,
-				F8796C342F6C04DC00040769 /* FlowActivityAttributes.swift in Sources */,
 				F8A1AB572F69EE2E0093D0B6 /* FlowLiveActivityExtensionBundle.swift in Sources */,
-				F8A1AB582F69EE2E0093D0B6 /* FlowLiveActivityExtensionControl.swift in Sources */,
-				F8A1AB592F69EE2E0093D0B6 /* FlowLiveActivityExtensionLiveActivity.swift in Sources */,
 				F8A1AB5A2F69EE2E0093D0B6 /* FlowLiveActivityWidget.swift in Sources */,
+				F8796CA32F6E040600040769 /* FlowActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1199,13 +1187,14 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSLocationUsageDescription = "Flow uses your location to calculate travel time to the airport so it can tell you when to leave for your flight.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Flow uses your location to calculate driving time to the airport and recommend when to leave for your flight.";
-				INFOPLIST_KEY_NSSupportsLiveActivities = NO;
-				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = NO;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1232,13 +1221,14 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSLocationUsageDescription = "Flow uses your location to calculate travel time to the airport so it can tell you when to leave for your flight.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Flow uses your location to calculate driving time to the airport and recommend when to leave for your flight.";
-				INFOPLIST_KEY_NSSupportsLiveActivities = NO;
-				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = NO;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1419,7 +1409,7 @@
 				INFOPLIST_FILE = FlowLiveActivityExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FlowLiveActivityExtension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1455,7 +1445,7 @@
 				INFOPLIST_FILE = FlowLiveActivityExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FlowLiveActivityExtension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

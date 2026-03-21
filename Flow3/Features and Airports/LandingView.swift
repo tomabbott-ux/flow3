@@ -427,9 +427,9 @@ private extension LandingView {
         switch confidenceLevel {
         case .live:
             confidenceBadge(
-                text: "ESTIMATED",
-                textColor: .orange,
-                dot: AnyView(OrangePulseDot())
+                text: "LIVE",
+                textColor: .green,
+                dot: AnyView(LivePulseDot())
             )
 
         case .highConfidence:
@@ -441,7 +441,7 @@ private extension LandingView {
 
         case .lowConfidence:
             confidenceBadge(
-                text: "LOW CONFIDENCE",
+                text: "ESTIMATED",
                 textColor: .orange,
                 dot: AnyView(OrangePulseDot())
             )
@@ -462,7 +462,7 @@ private extension LandingView {
                 )
         }
     }
-
+    
     func confidenceBadge(text: String, textColor: Color, dot: AnyView) -> some View {
         HStack(spacing: 6) {
             dot
