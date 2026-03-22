@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct AirportMetric: Identifiable, Hashable {
     let id = UUID()
@@ -15,6 +16,7 @@ struct AirportDisplayRow: Identifiable, Hashable {
     let metrics: [AirportMetric]
     let observedAt: Date?
     let isClosed: Bool
+    let isLive: Bool
 }
 
 extension LandingStore {
@@ -57,9 +59,9 @@ extension LandingStore {
 
                 let title = parts.first ?? "Security"
                 let subtitle = parts.count > 1 ? parts[1] : ""
-
                 let observedAt = items.map(\.observedAt).max()
                 let isClosed = items.allSatisfy(\.isClosed)
+                let isLive = items.contains { $0.sourceType == .live }
 
                 let general = items.first(where: { $0.queueType == .general && !$0.isClosed })?.minutes
                 let precheck = items.first(where: { $0.queueType == .precheck && !$0.isClosed })?.minutes
@@ -77,7 +79,8 @@ extension LandingStore {
                     subtitle: subtitle,
                     metrics: metrics,
                     observedAt: observedAt,
-                    isClosed: isClosed
+                    isClosed: isClosed,
+                    isLive: isLive
                 )
             }
 
@@ -93,7 +96,8 @@ extension LandingStore {
                         AirportMetric(label: "PreCheck", minutes: nil)
                     ],
                     observedAt: observedAt,
-                    isClosed: false
+                    isClosed: false,
+                    isLive: rows.contains { $0.sourceType == .live }
                 )
             )
         }
@@ -114,69 +118,69 @@ extension LandingStore {
 
     private func terminalDisplayRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
 
-        let grouped = Dictionary(grouping: rows) { $0.terminal ?? -1 }
+        let cleanedRows = rows.compactMap { row -> WaitTimeEstimate? in
+
+            if selectedAirport == .lax, row.terminal == 0 {
+                return WaitTimeEstimate(
+                    airport: row.airport,
+                    terminal: 999,
+                    queueType: row.queueType,
+                    minutes: row.minutes,
+                    observedAt: row.observedAt,
+                    checkpointName: "Tom Bradley International Terminal",
+                    areaName: row.areaName,
+                    sourceType: row.sourceType,
+                    isClosed: row.isClosed
+                )
+            }
+
+            return row
+        }
+
+        let grouped = Dictionary(grouping: cleanedRows) { $0.terminal ?? -1 }
 
         return grouped
             .compactMap { terminal, items -> AirportDisplayRow? in
 
                 guard terminal >= 0 else { return nil }
 
-                let title: String
+                if terminal == 0 { return nil }
 
-                if selectedAirport == .lga {
+                let isTBIT = terminal == 999 && selectedAirport == .lax
+                let isLive = isTBIT || items.contains { $0.sourceType == .live }
 
-                    switch terminal {
-                    case 1:
-                        title = "Terminal A"
-                    case 2:
-                        title = "Terminal B"
-                    case 3:
-                        title = "Terminal C"
-                    case 4:
-                        title = "Terminal D"
-                    default:
-                        title = "Terminal \(terminal)"
-                    }
+                let title: String = isTBIT ? "Terminal B" : "Terminal \(terminal)"
 
-                } else {
-
-                    title = "Terminal \(terminal)"
-
-                }
+                let subtitle: String = isTBIT
+                    ? "Tom Bradley International Terminal"
+                    : cleanedTerminalSubtitle(
+                        title: title,
+                        subtitle: items.first?.checkpointName ?? "Security"
+                    )
 
                 let observedAt = items.map(\.observedAt).max()
                 let isClosed = items.allSatisfy(\.isClosed)
 
-                if selectedAirport == .yyz {
-                    let best = items
-                        .filter { !$0.isClosed }
-                        .min(by: { $0.minutes < $1.minutes })
-
-                    return AirportDisplayRow(
-                        id: "\(selectedAirport.rawValue)-T\(terminal)",
-                        title: title,
-                        subtitle: isClosed ? "Closed" : cleanedTerminalSubtitle(title: title, subtitle: best?.checkpointName ?? "Security"),
-                        metrics: isClosed
-                            ? [AirportMetric(label: "Closed", minutes: nil)]
-                            : [AirportMetric(label: "Wait", minutes: best?.minutes)],
-                        observedAt: observedAt,
-                        isClosed: isClosed
-                    )
-                }
-
                 let general = items.first(where: { $0.queueType == .general && !$0.isClosed })?.minutes
                 let precheck = items.first(where: { $0.queueType == .precheck && !$0.isClosed })?.minutes
 
-                let metrics = metricsForRow(
-                    general: general,
-                    precheck: precheck,
-                    items: items,
-                    isClosed: isClosed
-                )
+                let metrics: [AirportMetric]
 
-                let subtitle = isClosed
-                    ? "Closed"
-                    : cleanedTerminalSubtitle(title: title, subtitle: items.first?.checkpointName ?? "Security")
+                if isClosed {
+                    metrics = [AirportMetric(label: "Closed", minutes: nil)]
+                } else if isTBIT {
+                    metrics = [
+                        AirportMetric(label: "General", minutes: general ?? precheck),
+                        AirportMetric(label: "PreCheck", minutes: precheck ?? general)
+                    ]
+                } else {
+                    metrics = metricsForRow(
+                        general: general,
+                        precheck: precheck,
+                        items: items,
+                        isClosed: isClosed
+                    )
+                }
 
                 return AirportDisplayRow(
                     id: "\(selectedAirport.rawValue)-T\(terminal)",
@@ -184,10 +188,15 @@ extension LandingStore {
                     subtitle: subtitle,
                     metrics: metrics,
                     observedAt: observedAt,
-                    isClosed: isClosed
+                    isClosed: isClosed,
+                    isLive: isLive
                 )
             }
-            .sorted { $0.title < $1.title }
+            .sorted { lhs, rhs in
+                if lhs.title == "Terminal B" { return true }
+                if rhs.title == "Terminal B" { return false }
+                return lhs.title < rhs.title
+            }
     }
 
     private func cleanedTerminalSubtitle(title: String, subtitle: String) -> String {
@@ -252,5 +261,222 @@ extension Array {
     func uniqued<T: Hashable>(by key: (Element) -> T) -> [Element] {
         var seen = Set<T>()
         return filter { seen.insert(key($0)).inserted }
+    }
+}
+
+struct GenericAirportBreakdownCard: View {
+
+    @ObservedObject var store: LandingStore
+    @Binding var selectedRowID: String?
+
+    private var rows: [AirportDisplayRow] {
+        store.displayRowsForSelectedAirport()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+
+            Text("\(store.selectedAirport.rawValue) checkpoints")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
+
+            VStack(spacing: 12) {
+                ForEach(rows) { row in
+                    rowView(row)
+                }
+            }
+        }
+        .flowGlassCard()
+        .onAppear {
+            if selectedRowID == nil {
+                selectedRowID = rows.first?.id
+            }
+        }
+    }
+
+    private func rowView(_ row: AirportDisplayRow) -> some View {
+
+        let isSelected = selectedRowID == row.id
+
+        return Button {
+            selectedRowID = row.id
+        } label: {
+
+            VStack(alignment: .leading, spacing: 10) {
+
+                HStack(spacing: 14) {
+
+                    VStack(alignment: .leading, spacing: 4) {
+
+                        Text(row.title)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        Text(row.subtitle)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white.opacity(0.65))
+                    }
+
+                    Spacer()
+
+                    if row.isLive {
+                        liveStatusPill()
+                    } else {
+                        estimatedStatusPill()
+                    }
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.55))
+                }
+
+                HStack(spacing: 10) {
+
+                    if row.isClosed {
+                        closedPill()
+                    } else {
+                        ForEach(row.metrics) { metric in
+                            metricPill(metric, isLive: row.isLive)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(isSelected ? Color.white.opacity(0.16) : Color.white.opacity(0.10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(Color.white.opacity(isSelected ? 0.18 : 0.10), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func liveStatusPill() -> some View {
+        HStack(spacing: 6) {
+            LivePulseDot()
+
+            Text("LIVE")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.green)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.10))
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
+        )
+    }
+
+    private func estimatedStatusPill() -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(Color.orange)
+                .frame(width: 8, height: 8)
+
+            Text("ESTIMATED")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.orange)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.10))
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
+        )
+    }
+
+    private func closedPill() -> some View {
+
+        Text("Closed")
+            .font(.system(size: 14, weight: .bold))
+            .foregroundColor(.red)
+            .frame(width: 92, height: 50)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.black.opacity(0.22))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+            )
+    }
+
+    private func metricPill(_ metric: AirportMetric, isLive: Bool = false) -> some View {
+
+        VStack(spacing: 4) {
+
+            if isLive {
+
+                HStack(spacing: 6) {
+                    LivePulseDot()
+
+                    Text("\(metric.minutes ?? 0)m")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.green)
+                }
+
+                Text(metric.label)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.75))
+
+            } else if metric.minutes == 0 {
+
+                HStack(spacing: 6) {
+
+                    LivePulseDot()
+
+                    Text("No wait")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.green)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+
+                Text(metric.label)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.75))
+                    .lineLimit(1)
+
+            } else {
+
+                Text("\(metric.minutes ?? 0)m")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+
+                Text(metric.label)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.75))
+            }
+        }
+        .frame(width: 92, height: 50)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(
+                    isLive
+                    ? Color.green.opacity(0.10)
+                    : Color.black.opacity(0.22)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(
+                            isLive
+                            ? Color.green.opacity(0.22)
+                            : Color.white.opacity(0.10),
+                            lineWidth: 1
+                        )
+                )
+        )
     }
 }

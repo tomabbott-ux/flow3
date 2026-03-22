@@ -64,6 +64,17 @@ struct LandingView: View {
             return .comingSoon
         }
 
+        if store.selectedAirport == .lax {
+            let selectedRows = store.displayRowsForSelectedAirport()
+            let selectedRow = selectedRows.first(where: { $0.id == selectedRowID }) ?? selectedRows.first
+
+            if selectedRow?.title == "Terminal B" {
+                return .live
+            } else {
+                return .highConfidence
+            }
+        }
+
         switch definition.feedType {
         case .live:
             return .live
@@ -75,7 +86,7 @@ struct LandingView: View {
             return .comingSoon
         }
     }
-
+    
     private var secondaryCheckpointRows: [AirportDisplayRow] {
         guard let primary = selectedRow else {
             return displayRows
@@ -640,34 +651,32 @@ private extension LandingView {
         )
     }
 
-    var updatedRelativeText: String {
-        guard let date = store.lastUpdated else {
-            switch confidenceLevel {
-            case .live:
-                return "Feed · Waiting for first update"
-            case .highConfidence:
-                return "High confidence feed · Waiting for first check"
-            case .lowConfidence:
-                return "Estimated · Waiting for refresh"
-            case .comingSoon:
-                return "Coming soon"
-            }
-        }
+    private var feedTimestamp: Date {
+        let selectedAirportRows = store
+            .allWaitTimes()
+            .filter { $0.airport == store.selectedAirport }
 
-        let seconds = max(0, Int(now.timeIntervalSince(date)))
+        return selectedAirportRows
+            .map(\.observedAt)
+            .max() ?? Date()
+    }
+
+    private var updatedRelativeText: String {
+        let now = Date()
+        let seconds = max(0, Int(now.timeIntervalSince(feedTimestamp)))
         let relative = relativeAgeString(for: seconds)
 
         switch confidenceLevel {
         case .live:
             if seconds >= 900 {
-                return "Feed · Delayed · Last update \(relative)"
+                return "Live feed · Last update \(relative)"
             } else {
-                return "Feed · Updated \(relative)"
+                return "Live feed · Updated \(relative)"
             }
 
         case .highConfidence:
             if seconds >= 900 {
-                return "High confidence feed · Last checked \(relative)"
+                return "High confidence feed · Last check \(relative)"
             } else {
                 return "High confidence feed · Checked \(relative)"
             }
@@ -683,7 +692,7 @@ private extension LandingView {
             return "Coming soon"
         }
     }
-
+    
     func relativeAgeString(for seconds: Int) -> String {
         if seconds < 60 {
             return "\(seconds)s ago"

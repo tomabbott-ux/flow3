@@ -122,13 +122,13 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         case .clt:
             return try await cltProvider.fetchWaitTimes(for: airport)
-            
+
         case .pit:
             return try await PITLiveWaitTimeProvider().fetchWaitTimes(for: airport)
-            
+
         case .cle:
             return try await CLELiveWaitTimeProvider().fetchWaitTimes(for: airport)
-            
+
         case .ewr:
             return try await ewrProvider.fetchWaitTimes(for: airport)
 
@@ -147,8 +147,14 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
         case .estimated:
             return try await estimatedProvider.fetchWaitTimes(for: airport)
 
+        case .lax:
+            return try await estimatedProvider.fetchWaitTimes(for: airport)
+
         case .none:
             return []
+
+        default:
+            return try await estimatedProvider.fetchWaitTimes(for: airport)
         }
     }
 }

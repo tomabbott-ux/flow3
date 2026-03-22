@@ -61,6 +61,11 @@ struct EstimatedWaitTimeProvider: WaitTimeProviding {
             }
         }
 
+        if airport == .lax {
+            let service = LAXTBITLiveService()
+            return await service.mergeTBITLiveIntoExistingLAXFeed(existing: results)
+        }
+
         return results
     }
 

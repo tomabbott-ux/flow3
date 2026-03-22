@@ -45,6 +45,8 @@ enum AirportProviderKind: String, Codable, Hashable {
     case slc
     case ord
     case ams
+    case laxTBIT
+    case lax
 
     case clt
     case pit
@@ -133,7 +135,8 @@ struct AirportRegistry {
         AirportDefinition(airport: .alc, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .tfs, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .lpa, feedType: .live, providerKind: .aena),
-
+        AirportDefinition(airport: .lax, feedType: .highConfidence, providerKind: .estimated),
+        
         // AENA coming soon
         AirportDefinition(airport: .svq, feedType: .comingSoon, providerKind: .none),
         AirportDefinition(airport: .bio, feedType: .comingSoon, providerKind: .none),
@@ -161,7 +164,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .cdg, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .dxb, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .sin, feedType: .estimated, providerKind: .estimated),
-        AirportDefinition(airport: .lax, feedType: .estimated, providerKind: .estimated),
+        
         AirportDefinition(airport: .hnd, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .syd, feedType: .estimated, providerKind: .estimated)
     ]
