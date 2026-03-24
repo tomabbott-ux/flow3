@@ -31,7 +31,7 @@ extension LandingStore {
         case .atl, .ist, .slc, .iah, .ham, .dus, .edi, .str, .bru,
              .arn, .got, .osl, .doh, .zrh, .hel,
              .yvr, .yyc, .den, .dfw, .hou, .mco, .pit, .phx,
-             .phl, .san, .las, .bos, .sea, .mia, .sfo,
+             .phl, .san, .las, .bos, .sea, .sfo,
              .bna, .tpa, .dtw, .clt, .ewr, .bwi, .cle, .dca, .pdx,
              .icn, .mad, .ber, .bcn,
              .pmi, .agp, .alc, .svq, .bio, .ibz, .vlc, .tfs, .lpa:
@@ -39,11 +39,12 @@ extension LandingStore {
 
         case .jfk, .lhr, .lga, .cph, .yyz,
              .ams, .cdg, .dxb, .sin, .fra,
-             .lax, .ord, .fco, .hnd, .syd, .msp:
+             .lax, .ord, .fco, .hnd, .syd, .msp,
+             .mia:
             return terminalDisplayRows(from: rows)
         }
     }
-
+    
     private func namedCheckpointRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
 
         let grouped = Dictionary(grouping: rows) { row in
@@ -106,6 +107,12 @@ extension LandingStore {
             .sorted { lhs, rhs in
                 if lhs.id == "SLC-PRECHECK-AVAILABLE" { return false }
                 if rhs.id == "SLC-PRECHECK-AVAILABLE" { return true }
+
+                if selectedAirport == .sea {
+                    if lhs.isClosed != rhs.isClosed {
+                        return rhs.isClosed
+                    }
+                }
 
                 if lhs.title == rhs.title {
                     return lhs.subtitle < rhs.subtitle
@@ -193,9 +200,17 @@ extension LandingStore {
                 )
             }
             .sorted { lhs, rhs in
+                
+                // 🔥 Keep Terminal B at top
                 if lhs.title == "Terminal B" { return true }
                 if rhs.title == "Terminal B" { return false }
-                return lhs.title < rhs.title
+
+                func extractNumber(_ title: String) -> Int {
+                    let cleaned = title.replacingOccurrences(of: "Terminal ", with: "")
+                    return Int(cleaned) ?? 999
+                }
+
+                return extractNumber(lhs.title) < extractNumber(rhs.title)
             }
     }
 
@@ -333,11 +348,17 @@ struct GenericAirportBreakdownCard: View {
                 HStack(spacing: 10) {
 
                     if row.isClosed {
-                        closedPill()
+
+                        closedPill(
+                            text: store.selectedAirport == .sea ? "Unavailable" : "Closed"
+                        )
+
                     } else {
+
                         ForEach(row.metrics) { metric in
-                            metricPill(metric, isLive: row.isLive)
+                            metricPill(metric)
                         }
+
                     }
                 }
             }
@@ -397,12 +418,12 @@ struct GenericAirportBreakdownCard: View {
         )
     }
 
-    private func closedPill() -> some View {
+    private func closedPill(text: String) -> some View {
 
-        Text("Closed")
+        Text(text)
             .font(.system(size: 14, weight: .bold))
             .foregroundColor(.red)
-            .frame(width: 92, height: 50)
+            .frame(width: 110, height: 50)
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(Color.black.opacity(0.22))
@@ -412,7 +433,7 @@ struct GenericAirportBreakdownCard: View {
                     )
             )
     }
-
+    
     private func metricPill(_ metric: AirportMetric, isLive: Bool = false) -> some View {
 
         VStack(spacing: 4) {

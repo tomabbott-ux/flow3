@@ -26,10 +26,12 @@ enum AirportProviderKind: String, Codable, Hashable {
     case got
     case osl
     case zrh
+    case sea
     case hel
     case icn
     case aena
     case ber
+    case mia
     
     case yyz
     case yvr
@@ -126,7 +128,9 @@ struct AirportRegistry {
         AirportDefinition(airport: .zrh, feedType: .live, providerKind: .zrh),
         AirportDefinition(airport: .hel, feedType: .live, providerKind: .hel),
         AirportDefinition(airport: .icn, feedType: .live, providerKind: .icn),
-
+        AirportDefinition(airport: .mia, feedType: .live, providerKind: .mia),
+        AirportDefinition(airport: .sea, feedType: .live, providerKind: .sea),
+        
         // AENA live
         AirportDefinition(airport: .mad, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .bcn, feedType: .live, providerKind: .aena),
@@ -152,13 +156,10 @@ struct AirportRegistry {
         AirportDefinition(airport: .san, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .las, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .bos, feedType: .highConfidence, providerKind: .tsaWebsite),
-        AirportDefinition(airport: .sea, feedType: .highConfidence, providerKind: .tsaWebsite),
-        AirportDefinition(airport: .mia, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .sfo, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .bna, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .tpa, feedType: .highConfidence, providerKind: .tsaWebsite),
         AirportDefinition(airport: .dtw, feedType: .highConfidence, providerKind: .tsaWebsite),
-
         AirportDefinition(airport: .msp, feedType: .comingSoon, providerKind: .none),
 
         AirportDefinition(airport: .cdg, feedType: .estimated, providerKind: .estimated),

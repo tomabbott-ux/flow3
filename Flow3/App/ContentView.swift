@@ -7,8 +7,7 @@ struct ContentView: View {
     @StateObject private var store =
     LandingStore(
         waitTimeService: WaitTimeService(
-            provider: AirportWaitTimeRouter()
-        ),
+            provider: AirportWaitTimeRouter(trackedFlight: nil)        ),
         weatherService: WeatherService(
             provider: AviationWeatherMETARProvider()
         )

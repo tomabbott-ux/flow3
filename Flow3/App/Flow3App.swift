@@ -8,7 +8,12 @@ struct Flow3App: App {
 
     // ✅ Core store
     @StateObject private var store = LandingStore(
-        waitTimeService: WaitTimeService(provider: AirportWaitTimeRouter()),        weatherService: WeatherService(provider: AviationWeatherMETARProvider())
+        waitTimeService: WaitTimeService(
+            provider: AirportWaitTimeRouter(trackedFlight: nil) // 👈 FIXED
+        ),
+        weatherService: WeatherService(
+            provider: AviationWeatherMETARProvider()
+        )
     )
 
     var body: some Scene {

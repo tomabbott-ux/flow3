@@ -1,7 +1,8 @@
 import Foundation
 
 struct AirportWaitTimeRouter: WaitTimeProviding {
-
+    let trackedFlight: TrackedFlight?
+    
     private let estimatedProvider = EstimatedWaitTimeProvider()
     private let tsaWebsiteProvider = TSAWebsiteWaitTimeProvider()
     private let cltProvider = CLTLiveWaitTimeProvider()
@@ -9,7 +10,9 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
     private let bwiProvider = BWILiveWaitTimeProvider()
     private let dcaProvider = DCALiveWaitTimeProvider()
     private let pdxProvider = PDXLiveWaitTimeProvider()
-
+    private let miaProvider = MIALiveWaitTimeProvider()
+    private let seaProvider = SEALiveWaitTimeProvider()
+    
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
 
         guard let definition = AirportRegistry.definition(for: airport) else {
@@ -20,7 +23,11 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         case .atl:
             return try await ATLStubWaitTimeProvider().fetchWaitTimes(for: airport)
-
+            
+        case .ams:
+            return try await AMSWaitTimeProvider(trackedFlight: trackedFlight)
+                .fetchWaitTimes(for: airport)
+            
         case .icn:
             return try await ICNLiveWaitTimeProvider().fetchWaitTimes(for: airport)
 
@@ -35,7 +42,10 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         case .ist:
             return try await ISTLiveWaitTimeProvider().fetchWaitTimes(for: airport)
-
+            
+        case .sea:
+            return try await SEALiveWaitTimeProvider().fetchWaitTimes(for: airport)
+            
         case .lga:
             return try await LGALiveWaitTimeProvider().fetchWaitTimes(for: airport)
 
@@ -114,9 +124,6 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
         case .aena:
             return try await AenaLiveWaitTimeProvider().fetchWaitTimes(for: airport)
 
-        case .ams:
-            return try await AMSWaitTimeProvider().fetchWaitTimes(for: airport)
-
         case .ber:
             return try await BERLiveWaitTimeProvider().fetchWaitTimes(for: airport)
 
@@ -149,7 +156,10 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         case .lax:
             return try await estimatedProvider.fetchWaitTimes(for: airport)
-
+            
+        case .mia:
+            return try await miaProvider.fetchWaitTimes(for: airport)
+            
         case .none:
             return []
 

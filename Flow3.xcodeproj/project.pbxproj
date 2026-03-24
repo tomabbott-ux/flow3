@@ -114,6 +114,11 @@
 		F8BD8FE52F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FE42F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift */; };
 		F8CD3EB02F703DB500490E20 /* LAXTBITLiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EAF2F703DB500490E20 /* LAXTBITLiveService.swift */; };
 		F8CD3EB22F70519500490E20 /* LAXTBITLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EB12F70519500490E20 /* LAXTBITLiveWaitTimeProvider.swift */; };
+		F8CD3EB42F70654500490E20 /* MIALiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EB32F70654500490E20 /* MIALiveWaitTimeProvider.swift */; };
+		F8CD3EB62F7075FB00490E20 /* SEALiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EB52F7075FB00490E20 /* SEALiveWaitTimeProvider.swift */; };
+		F8CD3EE12F72009900490E20 /* AMSWaitTimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EDF2F72009900490E20 /* AMSWaitTimeService.swift */; };
+		F8CD3EE22F72009900490E20 /* AMSFlightLookupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EDE2F72009900490E20 /* AMSFlightLookupService.swift */; };
+		F8CD3EE32F72009900490E20 /* SchipholAPIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EE02F72009900490E20 /* SchipholAPIConfig.swift */; };
 		F8DBD88C2F64858B00246968 /* BERLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD88B2F64858B00246968 /* BERLiveWaitTimeProvider.swift */; };
 		F8DBD88F2F65639600246968 /* DeparturePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD88E2F65639600246968 /* DeparturePlan.swift */; };
 		F8DBD8912F6563A600246968 /* TravelTime Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8902F6563A600246968 /* TravelTime Service.swift */; };
@@ -304,6 +309,11 @@
 		F8BD8FE42F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AenaLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8CD3EAF2F703DB500490E20 /* LAXTBITLiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LAXTBITLiveService.swift; sourceTree = "<group>"; };
 		F8CD3EB12F70519500490E20 /* LAXTBITLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LAXTBITLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F8CD3EB32F70654500490E20 /* MIALiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIALiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F8CD3EB52F7075FB00490E20 /* SEALiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SEALiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F8CD3EDE2F72009900490E20 /* AMSFlightLookupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AMSFlightLookupService.swift; sourceTree = "<group>"; };
+		F8CD3EDF2F72009900490E20 /* AMSWaitTimeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AMSWaitTimeService.swift; sourceTree = "<group>"; };
+		F8CD3EE02F72009900490E20 /* SchipholAPIConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchipholAPIConfig.swift; sourceTree = "<group>"; };
 		F8DBD88B2F64858B00246968 /* BERLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BERLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8DBD88E2F65639600246968 /* DeparturePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturePlan.swift; sourceTree = "<group>"; };
 		F8DBD8902F6563A600246968 /* TravelTime Service.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TravelTime Service.swift"; sourceTree = "<group>"; };
@@ -412,6 +422,7 @@
 		F862F1A12F583923001666F2 /* Flow3 */ = {
 			isa = PBXGroup;
 			children = (
+				F8CD3ED72F71FB4D00490E20 /* AMS */,
 				F8A1AB6C2F69F8160093D0B6 /* Extensions */,
 				F8A1AB6B2F69F7E50093D0B6 /* Tests */,
 				F8A1AB6A2F69F79C0093D0B6 /* Resources */,
@@ -504,6 +515,8 @@
 				F8A1AB702F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift */,
 				F8796C262F6B57A000040769 /* ATLWebViewFetcher.swift */,
 				F8CD3EB12F70519500490E20 /* LAXTBITLiveWaitTimeProvider.swift */,
+				F8CD3EB32F70654500490E20 /* MIALiveWaitTimeProvider.swift */,
+				F8CD3EB52F7075FB00490E20 /* SEALiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -673,6 +686,16 @@
 				F8796CA22F6E040600040769 /* FlowActivityAttributes.swift */,
 			);
 			path = Extensions;
+			sourceTree = "<group>";
+		};
+		F8CD3ED72F71FB4D00490E20 /* AMS */ = {
+			isa = PBXGroup;
+			children = (
+				F8CD3EDE2F72009900490E20 /* AMSFlightLookupService.swift */,
+				F8CD3EDF2F72009900490E20 /* AMSWaitTimeService.swift */,
+				F8CD3EE02F72009900490E20 /* SchipholAPIConfig.swift */,
+			);
+			path = AMS;
 			sourceTree = "<group>";
 		};
 		F8DBD8B72F682E4300246968 /* Frameworks */ = {
@@ -901,6 +924,7 @@
 				F80599ED2F5B407700146BF1 /* DFWLiveWaitTimeProvider.swift in Sources */,
 				F8DBD8A02F662F1000246968 /* DepartureMonitor.swift in Sources */,
 				F80599CD2F5ACDB500146BF1 /* AirportPresentation.swift in Sources */,
+				F8CD3EB62F7075FB00490E20 /* SEALiveWaitTimeProvider.swift in Sources */,
 				F822A8CC2F5C9466009F6107 /* ISTLiveWaitTimeProvider.swift in Sources */,
 				F80599F32F5B6D0E00146BF1 /* PHXLiveWaitTimeProvider.swift in Sources */,
 				F822A8E22F5D0CD3009F6107 /* IAHLiveWaitTimeProvider.swift in Sources */,
@@ -951,6 +975,9 @@
 				F822A8E62F5DB9E4009F6107 /* HAMLiveWaitProvider.swift in Sources */,
 				F828EF332F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift in Sources */,
 				F8BD8FE12F62AE3F000EE425 /* OSLLiveWaitTimeProvider.swift in Sources */,
+				F8CD3EE12F72009900490E20 /* AMSWaitTimeService.swift in Sources */,
+				F8CD3EE22F72009900490E20 /* AMSFlightLookupService.swift in Sources */,
+				F8CD3EE32F72009900490E20 /* SchipholAPIConfig.swift in Sources */,
 				F828EF3B2F5A006C00EC53EC /* LHRCheckpointCard.swift in Sources */,
 				F80599D92F5AE51900146BF1 /* JFKAzureAPIWaitTimeProvider.swift in Sources */,
 				F80599FA2F5B960600146BF1 /* EstimatedWaitTimeProvider.swift in Sources */,
@@ -981,6 +1008,7 @@
 				F80599F52F5B815600146BF1 /* PHLLiveWaitTimeProvider.swift in Sources */,
 				F822A8EA2F5DD1D5009F6107 /* DUSLiveWaitTimeProvider.swift in Sources */,
 				F8DBD8B02F68135C00246968 /* PlannerSecurityModels.swift in Sources */,
+				F8CD3EB42F70654500490E20 /* MIALiveWaitTimeProvider.swift in Sources */,
 				F8CD3EB02F703DB500490E20 /* LAXTBITLiveService.swift in Sources */,
 				F822A8D82F5CE9CE009F6107 /* TSAGenericWaitTimeProvider.swift in Sources */,
 				F80599D72F5AD4A200146BF1 /* Color+Hex.swift in Sources */,

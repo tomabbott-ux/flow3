@@ -91,8 +91,8 @@ final class LandingStore: ObservableObject {
         self.weatherService = weatherService
         self.trackedFlight = SavedFlightStore.shared.load()
         rebuildAlerts()
-    }
 
+    }
     deinit {
         autoRefreshTask?.cancel()
         prefetchTask?.cancel()
@@ -508,6 +508,7 @@ final class LandingStore: ObservableObject {
             print("Tracked flight refresh failed:", error.localizedDescription)
         }
     }
+
     // MARK: - Alerts
 
     func rebuildAlerts() {
