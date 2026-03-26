@@ -81,6 +81,10 @@ final class LandingStore: ObservableObject {
 
     private var prefetchTask: Task<Void, Never>?
 
+    // MARK: - Startup smoothing
+
+    private var hasCompletedInitialRefresh = false
+
     // MARK: - Init
 
     init(
@@ -91,8 +95,8 @@ final class LandingStore: ObservableObject {
         self.weatherService = weatherService
         self.trackedFlight = SavedFlightStore.shared.load()
         rebuildAlerts()
-
     }
+
     deinit {
         autoRefreshTask?.cancel()
         prefetchTask?.cancel()
@@ -104,45 +108,97 @@ final class LandingStore: ObservableObject {
         let airport = selectedAirport
         await refreshAirport(airport, updateVisibleState: true)
 
-        if trackedFlight != nil {
-            await refreshTrackedFlight()
+        if hasCompletedInitialRefresh {
+            if trackedFlight != nil {
+                await refreshTrackedFlight()
+            }
+
+            startPrefetchAroundSelectedAirport()
+        } else {
+            hasCompletedInitialRefresh = true
+
+            Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 1_200_000_000)
+                guard let self else { return }
+                self.startPrefetchAroundSelectedAirport()
+            }
         }
 
-        startPrefetchAroundSelectedAirport()
         rebuildAlerts()
     }
 
     private func refreshAirport(_ airport: FlowAirport, updateVisibleState: Bool) async {
+        if updateVisibleState {
+            errorText = nil
+        }
+
+        var newWaitTimes: [WaitTimeEstimate]?
+        var newWeather: WeatherSnapshot?
+
+        var waitTimeError: Error?
+        var weatherError: Error?
+
         do {
-            if updateVisibleState {
-                errorText = nil
-            }
+            let waits = try await loadWaitTimes(for: airport)
+            newWaitTimes = waits
+            waitTimeCache[airport] = waits
+        } catch {
+            waitTimeError = error
+            print("Wait time refresh failed for \(airport.rawValue): \(error.localizedDescription)")
+        }
 
-            async let wt = loadWaitTimes(for: airport)
-            async let wx = loadWeather(for: airport)
+        do {
+            let weatherSnapshot = try await loadWeather(for: airport)
+            newWeather = weatherSnapshot
+            weatherCache[airport] = weatherSnapshot
+        } catch {
+            weatherError = error
+            print("Weather refresh failed for \(airport.rawValue): \(error.localizedDescription)")
+        }
 
-            let (newWaitTimes, newWeather) = try await (wt, wx)
+        if newWaitTimes != nil || newWeather != nil {
             let refreshedAt = Date()
-
-            waitTimeCache[airport] = newWaitTimes
-            weatherCache[airport] = newWeather
             refreshedAtCache[airport] = refreshedAt
 
             if updateVisibleState, airport == selectedAirport {
-                waitTimes = newWaitTimes
-                weather = newWeather
+                if let newWaitTimes {
+                    waitTimes = newWaitTimes
+                }
+
+                if let newWeather {
+                    weather = newWeather
+                }
+
                 lastUpdated = refreshedAt
                 rebuildAlerts()
             }
-        } catch {
-            if updateVisibleState, airport == selectedAirport {
-                if airport == .atl {
+        }
+
+        if updateVisibleState, airport == selectedAirport {
+            switch (waitTimeError, weatherError, newWaitTimes, newWeather) {
+            case (nil, nil, _, _):
+                errorText = nil
+
+            case (let waitErr?, nil, nil, _):
+                errorText = "Security wait refresh failed: \(waitErr.localizedDescription)"
+
+            case (nil, let weatherErr?, _, nil):
+                errorText = "Weather refresh failed: \(weatherErr.localizedDescription)"
+
+            case (let waitErr?, let weatherErr?, nil, nil):
+                errorText = "Refresh failed: \(waitErr.localizedDescription) · \(weatherErr.localizedDescription)"
+
+            default:
+                if newWaitTimes != nil {
                     errorText = nil
-                } else {
-                    errorText = "Refresh failed: \(error.localizedDescription)"
                 }
-                rebuildAlerts()
             }
+
+            if airport == .atl, newWaitTimes != nil {
+                errorText = nil
+            }
+
+            rebuildAlerts()
         }
     }
 
@@ -175,7 +231,14 @@ final class LandingStore: ObservableObject {
 
     private func handleSelectedAirportChanged() async {
         applyCachedSnapshotIfAvailable(for: selectedAirport)
-        startPrefetchAroundSelectedAirport()
+
+        // Always fetch fresh data when airport changes
+        await refreshAirport(selectedAirport, updateVisibleState: true)
+
+        if hasCompletedInitialRefresh {
+            startPrefetchAroundSelectedAirport()
+        }
+
         rebuildAlerts()
     }
 

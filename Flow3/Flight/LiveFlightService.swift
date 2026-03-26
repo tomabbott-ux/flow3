@@ -18,55 +18,67 @@ final class LiveFlightService {
         let normalizedFlightNumber = normalizeFlightNumber(flightNumber)
         let dateString = requestDateString(from: date)
 
-        // 1. Primary source = AeroDataBox
-        let aeroResult = try await fetchFromAeroDataBox(
-            flightNumber: normalizedFlightNumber,
-            dateString: dateString,
-            date: date,
-            preferredAirportIATA: cleanedString(airportIATA)
-        )
-
-        print("🔵 Aero result origin:", aeroResult.originIATA)
-        print("🔵 Aero result terminal:", aeroResult.terminal ?? "nil")
-        print("🔵 Aero result gate:", aeroResult.gate ?? "nil")
-        print("🔵 Aero result status:", aeroResult.status ?? "nil")
-
-        // 2. Only fall back if gate is missing
-        let needsGateFallback = isNilOrEmpty(aeroResult.gate)
-        print("🔵 Needs gate fallback:", needsGateFallback)
-
-        guard needsGateFallback else {
-            return aeroResult
-        }
-
         do {
-            let fallback = try await fetchFallbackFromAviationStack(
+            let aeroResult = try await fetchFromAeroDataBox(
                 flightNumber: normalizedFlightNumber,
                 dateString: dateString,
-                preferredAirportIATA: cleanedString(airportIATA),
-                resolvedDepartureAirportIATA: aeroResult.originIATA
+                date: date,
+                preferredAirportIATA: cleanedString(airportIATA)
             )
 
-            let merged = FlightLookupResult(
-                flightNumber: aeroResult.flightNumber,
-                airline: aeroResult.airline,
-                originIATA: aeroResult.originIATA,
-                destinationIATA: aeroResult.destinationIATA,
-                terminal: firstNonEmpty(aeroResult.terminal, fallback.terminal),
-                gate: firstNonEmpty(aeroResult.gate, fallback.gate),
-                status: firstNonEmpty(aeroResult.status, fallback.status),
-                departureTime: aeroResult.departureTime
-            )
+            print("🔵 Aero result origin:", aeroResult.originIATA)
+            print("🔵 Aero result terminal:", aeroResult.terminal ?? "nil")
+            print("🔵 Aero result gate:", aeroResult.gate ?? "nil")
+            print("🔵 Aero result status:", aeroResult.status ?? "nil")
 
-            print("🟢 Merged terminal:", merged.terminal ?? "nil")
-            print("🟢 Merged gate:", merged.gate ?? "nil")
-            print("🟢 Merged status:", merged.status ?? "nil")
+            let needsGateFallback = isNilOrEmpty(aeroResult.gate)
+            print("🔵 Needs gate fallback:", needsGateFallback)
 
-            return merged
+            guard needsGateFallback else {
+                return aeroResult
+            }
+
+            do {
+                let fallback = try await fetchFallbackFromAviationStack(
+                    flightNumber: normalizedFlightNumber,
+                    dateString: dateString,
+                    preferredAirportIATA: cleanedString(airportIATA),
+                    resolvedDepartureAirportIATA: aeroResult.originIATA
+                )
+
+                let merged = FlightLookupResult(
+                    flightNumber: aeroResult.flightNumber,
+                    airline: aeroResult.airline,
+                    originIATA: aeroResult.originIATA,
+                    destinationIATA: aeroResult.destinationIATA,
+                    terminal: firstNonEmpty(aeroResult.terminal, fallback.terminal),
+                    gate: firstNonEmpty(aeroResult.gate, fallback.gate),
+                    status: firstNonEmpty(aeroResult.status, fallback.status),
+                    departureTime: aeroResult.departureTime
+                )
+
+                print("🟢 Merged terminal:", merged.terminal ?? "nil")
+                print("🟢 Merged gate:", merged.gate ?? "nil")
+                print("🟢 Merged status:", merged.status ?? "nil")
+
+                return merged
+
+            } catch {
+                print("🔴 Aviationstack fallback failed:", error.localizedDescription)
+                return aeroResult
+            }
 
         } catch {
-            print("🔴 Aviationstack fallback failed:", error.localizedDescription)
-            return aeroResult
+            print("🔴 LiveFlightService lookup failed:", error.localizedDescription)
+
+            throw NSError(
+                domain: "FlowFlightLookup",
+                code: 500,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "We couldn’t find this flight right now. Please check the flight number and date."
+                ]
+            )
         }
     }
 
@@ -83,7 +95,11 @@ final class LiveFlightService {
             "https://aerodatabox.p.rapidapi.com/flights/number/\(flightNumber)/\(dateString)"
 
         guard let url = URL(string: urlString) else {
-            throw URLError(.badURL)
+            throw NSError(
+                domain: "AeroDataBoxURL",
+                code: 400,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid AeroDataBox URL."]
+            )
         }
 
         var request = URLRequest(url: url)
@@ -93,11 +109,23 @@ final class LiveFlightService {
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let http = response as? HTTPURLResponse,
-              (200...299).contains(http.statusCode) else {
+        guard let http = response as? HTTPURLResponse else {
             throw NSError(
                 domain: "AeroDataBoxHTTPError",
                 code: 500,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid AeroDataBox response."]
+            )
+        }
+
+        guard (200...299).contains(http.statusCode) else {
+            if let body = String(data: data, encoding: .utf8) {
+                print("🔴 AeroDataBox HTTP \(http.statusCode):")
+                print(body)
+            }
+
+            throw NSError(
+                domain: "AeroDataBoxHTTPError",
+                code: http.statusCode,
                 userInfo: [NSLocalizedDescriptionKey: "AeroDataBox request failed."]
             )
         }
@@ -107,13 +135,7 @@ final class LiveFlightService {
             print(jsonString)
         }
 
-        guard let flights = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
-            throw NSError(
-                domain: "InvalidJSON",
-                code: 500,
-                userInfo: [NSLocalizedDescriptionKey: "AeroDataBox returned an unexpected response."]
-            )
-        }
+        let flights = try parseAeroFlights(from: data)
 
         let matchingFlight = bestMatchingAeroFlight(
             from: flights,
@@ -188,6 +210,54 @@ final class LiveFlightService {
             gate: gate,
             status: status,
             departureTime: shownDepartureDate
+        )
+    }
+
+    private func parseAeroFlights(from data: Data) throws -> [[String: Any]] {
+        let object = try JSONSerialization.jsonObject(with: data)
+
+        if let array = object as? [[String: Any]] {
+            return array
+        }
+
+        if let dictionary = object as? [String: Any] {
+
+            if let flights = dictionary["data"] as? [[String: Any]] {
+                return flights
+            }
+
+            if let flights = dictionary["items"] as? [[String: Any]] {
+                return flights
+            }
+
+            if let flights = dictionary["flights"] as? [[String: Any]] {
+                return flights
+            }
+
+            if let message = dictionary["message"] as? String {
+                throw NSError(
+                    domain: "AeroDataBoxPayload",
+                    code: 500,
+                    userInfo: [NSLocalizedDescriptionKey: message]
+                )
+            }
+
+            if let error = dictionary["error"] as? String {
+                throw NSError(
+                    domain: "AeroDataBoxPayload",
+                    code: 500,
+                    userInfo: [NSLocalizedDescriptionKey: error]
+                )
+            }
+        }
+
+        throw NSError(
+            domain: "InvalidJSON",
+            code: 500,
+            userInfo: [
+                NSLocalizedDescriptionKey:
+                    "AeroDataBox returned an unexpected response format."
+            ]
         )
     }
 
@@ -314,7 +384,7 @@ final class LiveFlightService {
         if let apiError = decoded.error {
             throw NSError(
                 domain: "AviationStackAPIError",
-                code: 500,
+                code: apiError.numericCode ?? 500,
                 userInfo: [NSLocalizedDescriptionKey: apiError.message]
             )
         }
@@ -474,6 +544,32 @@ private struct AviationStackFlightsResponse: Decodable {
 private struct AviationStackAPIError: Decodable {
     let code: String?
     let message: String
+
+    var numericCode: Int? {
+        if let code, let intValue = Int(code) {
+            return intValue
+        }
+        return nil
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        if let stringCode = try? container.decode(String.self, forKey: .code) {
+            code = stringCode
+        } else if let intCode = try? container.decode(Int.self, forKey: .code) {
+            code = String(intCode)
+        } else {
+            code = nil
+        }
+
+        message = (try? container.decode(String.self, forKey: .message)) ?? "Unknown Aviationstack error"
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case code
+        case message
+    }
 }
 
 private struct AviationStackFlight: Decodable {

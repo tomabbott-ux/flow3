@@ -6,8 +6,17 @@ struct AirportSelectorView: View {
     let onAirportSelected: () -> Void
 
     @State private var searchText: String = ""
+    @State private var debouncedSearchText: String = ""
+
     @State private var favourites: Set<FlowAirport> = FavouriteAirports.shared.load()
     @State private var recents: [FlowAirport] = RecentAirports.shared.load()
+
+    @State private var recentSection: [AirportDefinition] = []
+    @State private var favouriteSection: [AirportDefinition] = []
+    @State private var airportSection: [AirportDefinition] = []
+
+    @State private var searchTask: Task<Void, Never>? = nil
+    @FocusState private var isSearchFocused: Bool
 
     var body: some View {
         ZStack {
@@ -19,35 +28,40 @@ struct AirportSelectorView: View {
                     headerSection
                     searchSection
 
-                    if !recentDefinitions.isEmpty {
-                        AirportSectionHeader(title: "RECENT")
-                            .padding(.top, 6)
+                    if showingEmptySearchState {
+                        emptySearchState
+                            .padding(.top, 8)
+                    } else {
+                        if !recentSection.isEmpty {
+                            AirportSectionHeader(title: "RECENT")
+                                .padding(.top, 6)
 
-                        VStack(spacing: 12) {
-                            ForEach(recentDefinitions) { definition in
-                                airportRow(definition)
+                            VStack(spacing: 12) {
+                                ForEach(recentSection) { definition in
+                                    airportRow(definition)
+                                }
                             }
                         }
-                    }
 
-                    if !pinnedFavouriteDefinitions.isEmpty {
-                        AirportSectionHeader(title: "FAVOURITES")
-                            .padding(.top, 6)
+                        if !favouriteSection.isEmpty {
+                            AirportSectionHeader(title: "FAVOURITES")
+                                .padding(.top, 6)
 
-                        VStack(spacing: 12) {
-                            ForEach(pinnedFavouriteDefinitions) { definition in
-                                airportRow(definition)
+                            VStack(spacing: 12) {
+                                ForEach(favouriteSection) { definition in
+                                    airportRow(definition)
+                                }
                             }
                         }
-                    }
 
-                    if !remainingAirportDefinitions.isEmpty {
-                        AirportSectionHeader(title: "AIRPORTS")
-                            .padding(.top, 6)
+                        if !airportSection.isEmpty {
+                            AirportSectionHeader(title: "AIRPORTS")
+                                .padding(.top, 6)
 
-                        VStack(spacing: 12) {
-                            ForEach(remainingAirportDefinitions) { definition in
-                                airportRow(definition)
+                            VStack(spacing: 12) {
+                                ForEach(airportSection) { definition in
+                                    airportRow(definition)
+                                }
                             }
                         }
                     }
@@ -56,9 +70,22 @@ struct AirportSelectorView: View {
                 .padding(.top, 14)
                 .padding(.bottom, 30)
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .navigationBarBackButtonHidden(false)
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            rebuildSections()
+        }
+        .onChange(of: searchText) { newValue in
+            scheduleDebouncedSearch(newValue)
+        }
+        .onChange(of: favourites) { _ in
+            rebuildSections()
+        }
+        .onChange(of: recents) { _ in
+            rebuildSections()
+        }
     }
 }
 
@@ -88,12 +115,18 @@ private extension AirportSelectorView {
             TextField("Search airport or code", text: $searchText)
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
+                .submitLabel(.search)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.white)
+                .focused($isSearchFocused)
 
             if !searchText.isEmpty {
                 Button {
+                    searchTask?.cancel()
                     searchText = ""
+                    debouncedSearchText = ""
+                    rebuildSections()
+                    isSearchFocused = true
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16, weight: .semibold))
@@ -101,6 +134,10 @@ private extension AirportSelectorView {
                 }
                 .buttonStyle(.plain)
             }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isSearchFocused = true
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -112,6 +149,21 @@ private extension AirportSelectorView {
                         .stroke(Color.white.opacity(0.10), lineWidth: 1)
                 )
         )
+        .zIndex(10)
+    }
+
+    func scheduleDebouncedSearch(_ value: String) {
+        searchTask?.cancel()
+
+        searchTask = Task {
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            if Task.isCancelled { return }
+
+            await MainActor.run {
+                debouncedSearchText = value
+                rebuildSections()
+            }
+        }
     }
 }
 
@@ -179,6 +231,50 @@ private extension AirportSelectorView {
             .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Empty State
+
+private extension AirportSelectorView {
+
+    var showingEmptySearchState: Bool {
+        !debouncedSearchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        recentSection.isEmpty &&
+        favouriteSection.isEmpty &&
+        airportSection.isEmpty
+    }
+
+    var emptySearchState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "airplane.circle")
+                .font(.system(size: 34, weight: .regular))
+                .foregroundColor(.white.opacity(0.75))
+
+            Text("We’re not covering that airport yet.")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+
+            Text("Try another airport, or check back soon as Flow continues to expand.")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.72))
+                .multilineTextAlignment(.center)
+
+            Text("Search: \(debouncedSearchText)")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.58))
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 24)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 22)
+                .fill(Color.white.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -260,6 +356,43 @@ private extension AirportSelectorView {
 
 private extension AirportSelectorView {
 
+    func rebuildSections() {
+        let filtered = filteredDefinitions(for: debouncedSearchText)
+        let recentSet = Set(canonicalRecents)
+        let favouriteSet = favourites
+
+        recentSection = filtered
+            .filter { recentSet.contains($0.airport) }
+            .sorted { lhs, rhs in
+                let lhsIndex = canonicalRecents.firstIndex(of: lhs.airport) ?? .max
+                let rhsIndex = canonicalRecents.firstIndex(of: rhs.airport) ?? .max
+                return lhsIndex < rhsIndex
+            }
+
+        favouriteSection = filtered
+            .filter { favouriteSet.contains($0.airport) && !recentSet.contains($0.airport) }
+            .sorted { lhs, rhs in
+                lhs.airport.displayName.localizedCaseInsensitiveCompare(
+                    rhs.airport.displayName
+                ) == .orderedAscending
+            }
+
+        airportSection = filtered
+            .filter { !recentSet.contains($0.airport) && !favouriteSet.contains($0.airport) }
+            .sorted { lhs, rhs in
+                let lhsPriority = priority(lhs.feedType)
+                let rhsPriority = priority(rhs.feedType)
+
+                if lhsPriority != rhsPriority {
+                    return lhsPriority < rhsPriority
+                }
+
+                return lhs.airport.displayName.localizedCaseInsensitiveCompare(
+                    rhs.airport.displayName
+                ) == .orderedAscending
+            }
+    }
+
     var uniqueDefinitions: [AirportDefinition] {
         var seen: Set<FlowAirport> = []
         var unique: [AirportDefinition] = []
@@ -274,8 +407,8 @@ private extension AirportSelectorView {
         return unique
     }
 
-    var filteredDefinitions: [AirportDefinition] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    func filteredDefinitions(for queryText: String) -> [AirportDefinition] {
+        let query = queryText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !query.isEmpty else {
             return uniqueDefinitions
@@ -306,49 +439,6 @@ private extension AirportSelectorView {
         }
 
         return Array(ordered.prefix(4))
-    }
-
-    var recentDefinitions: [AirportDefinition] {
-        let recentSet = Set(canonicalRecents)
-
-        return filteredDefinitions
-            .filter { recentSet.contains($0.airport) }
-            .sorted { lhs, rhs in
-                let lhsIndex = canonicalRecents.firstIndex(of: lhs.airport) ?? .max
-                let rhsIndex = canonicalRecents.firstIndex(of: rhs.airport) ?? .max
-                return lhsIndex < rhsIndex
-            }
-    }
-
-    var pinnedFavouriteDefinitions: [AirportDefinition] {
-        let recentSet = Set(canonicalRecents)
-
-        return filteredDefinitions
-            .filter { favourites.contains($0.airport) && !recentSet.contains($0.airport) }
-            .sorted { lhs, rhs in
-                lhs.airport.displayName.localizedCaseInsensitiveCompare(
-                    rhs.airport.displayName
-                ) == .orderedAscending
-            }
-    }
-
-    var remainingAirportDefinitions: [AirportDefinition] {
-        let recentSet = Set(canonicalRecents)
-        let favouriteSet = favourites
-
-        return filteredDefinitions
-            .filter { !favouriteSet.contains($0.airport) }            .sorted { lhs, rhs in
-                let lhsPriority = priority(lhs.feedType)
-                let rhsPriority = priority(rhs.feedType)
-
-                if lhsPriority != rhsPriority {
-                    return lhsPriority < rhsPriority
-                }
-
-                return lhs.airport.displayName.localizedCaseInsensitiveCompare(
-                    rhs.airport.displayName
-                ) == .orderedAscending
-            }
     }
 
     func priority(_ feedType: AirportFeedType) -> Int {

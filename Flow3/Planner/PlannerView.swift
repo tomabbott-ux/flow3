@@ -4,6 +4,7 @@ struct PlannerView: View {
 
     @ObservedObject var store: LandingStore
     @Binding var selectedTab: FlowRootView.FlowTab
+    @FocusState private var isFlightFieldFocused: Bool
 
     @State private var departureTime: Date = Calendar.current.date(
         byAdding: .hour,
@@ -25,6 +26,9 @@ struct PlannerView: View {
 
     @State private var useManualTravelTime = false
     @State private var manualTravelMinutes = 20
+
+    @State private var autoLookupTask: Task<Void, Never>?
+    @State private var lastLookupSignature: String?
 
     private let travelTimeService = TravelTimeService()
     private let flightLookupService = LiveFlightService()
@@ -82,13 +86,35 @@ struct PlannerView: View {
         )
         .navigationTitle("Search")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+
+                Button("Done") {
+                    isFlightFieldFocused = false
+                }
+                .foregroundColor(.white)
+            }
+        }
         .onAppear {
             resetPlanner()
         }
-        .onChange(of: useFlightNumber) { _ in
+        .onChange(of: useFlightNumber) {
+            autoLookupTask?.cancel()
+            lastLookupSignature = nil
             errorText = nil
             plan = nil
             flightLookupResult = nil
+            isFlightFieldFocused = false
+        }
+        .onChange(of: flightNumber) {
+            scheduleAutoLookupIfNeeded()
+        }
+        .onChange(of: flightDate) {
+            scheduleAutoLookupIfNeeded()
+        }
+        .onDisappear {
+            autoLookupTask?.cancel()
         }
     }
 }
@@ -100,7 +126,8 @@ private extension PlannerView {
     var canTrackFlight: Bool {
         useFlightNumber &&
         flightLookupResult != nil &&
-        plan != nil
+        plan != nil &&
+        currentFlightIsSupported
     }
 
     var airportTitle: String {
@@ -113,6 +140,11 @@ private extension PlannerView {
 
     var airportDisplayLine: String {
         "\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)"
+    }
+
+    var currentFlightIsSupported: Bool {
+        guard let flightLookupResult else { return true }
+        return flowAirport(from: flightLookupResult.originIATA) != nil
     }
 
     var plannerIntroCard: some View {
@@ -198,7 +230,14 @@ private extension PlannerView {
                 TextField("e.g. BA216", text: $flightNumber)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled(true)
-                    .submitLabel(.done)
+                    .submitLabel(.search)
+                    .focused($isFlightFieldFocused)
+                    .onSubmit {
+                        isFlightFieldFocused = false
+                        Task {
+                            await lookupFlight(force: true)
+                        }
+                    }
                     .foregroundColor(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
@@ -227,14 +266,15 @@ private extension PlannerView {
 
             if let flightLookupResult {
                 VStack(alignment: .leading, spacing: 8) {
-                    inputTitle("Airport")
-                    valueLine("\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)")
+                    inputTitle("Departure airport")
+                    valueLine(displayAirportLine(for: flightLookupResult.originIATA))
                 }
             }
 
             Button {
+                isFlightFieldFocused = false
                 Task {
-                    await lookupFlight()
+                    await lookupFlight(force: true)
                 }
             } label: {
                 HStack {
@@ -264,7 +304,7 @@ private extension PlannerView {
             .buttonStyle(.plain)
             .disabled(
                 isLookingUpFlight ||
-                flightNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                normalizedFlightNumber.isEmpty
             )
         }
         .flowGlassCard()
@@ -278,7 +318,7 @@ private extension PlannerView {
                 .foregroundColor(.white)
 
             infoRow("Flight", flight.flightNumber)
-            infoRow("Airport", "\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)")
+            infoRow("Departure airport", displayAirportLine(for: flight.originIATA))
             infoRow("Route", cleanedRoute("\(flight.originIATA) → \(flight.destinationIATA)"))
             infoRow("Airline", flight.airline)
 
@@ -300,6 +340,14 @@ private extension PlannerView {
             }
 
             infoRow("Departure", flightDateTimeString(flight.departureTime))
+
+            if !currentFlightIsSupported {
+                Text("Flow found this flight, but live airport support for \(flight.originIATA) is not available yet. You can still review the flight details here.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.72))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 4)
+            }
         }
         .flowGlassCard()
     }
@@ -351,6 +399,7 @@ private extension PlannerView {
 
     var actionButton: some View {
         Button {
+            isFlightFieldFocused = false
             Task {
                 await calculate()
             }
@@ -438,7 +487,7 @@ private extension PlannerView {
             HStack {
                 Spacer()
 
-                Text("Track This Flight")
+                Text(currentFlightIsSupported ? "Track This Flight" : "Flight Not Yet Supported")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
 
@@ -455,6 +504,7 @@ private extension PlannerView {
             )
         }
         .buttonStyle(.plain)
+        .disabled(!currentFlightIsSupported)
     }
 }
 
@@ -463,6 +513,8 @@ private extension PlannerView {
 private extension PlannerView {
 
     func resetPlanner() {
+        autoLookupTask?.cancel()
+        lastLookupSignature = nil
         errorText = nil
         plan = nil
         flightLookupResult = nil
@@ -477,9 +529,58 @@ private extension PlannerView {
         ) ?? Date()
         flightDate = Date()
         useFlightNumber = true
+        isFlightFieldFocused = false
     }
 
-    func lookupFlight() async {
+    var normalizedFlightNumber: String {
+        flightNumber
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+    }
+
+    var currentLookupSignature: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        let day = formatter.string(from: flightDate)
+        return "\(normalizedFlightNumber)|\(day)"
+    }
+
+    func looksLikeValidFlightNumber(_ value: String) -> Bool {
+        let compact = value.replacingOccurrences(of: " ", with: "")
+        let pattern = #"^[A-Z0-9]{2,3}\d{1,4}[A-Z]?$"#
+        return compact.range(of: pattern, options: .regularExpression) != nil
+    }
+
+    func scheduleAutoLookupIfNeeded() {
+        autoLookupTask?.cancel()
+
+        guard useFlightNumber else { return }
+
+        let candidate = normalizedFlightNumber
+        guard looksLikeValidFlightNumber(candidate) else { return }
+
+        let signature = currentLookupSignature
+        guard signature != lastLookupSignature else { return }
+
+        autoLookupTask = Task {
+            try? await Task.sleep(nanoseconds: 550_000_000)
+            if Task.isCancelled { return }
+
+            await lookupFlight(force: false)
+        }
+    }
+
+    func lookupFlight(force: Bool) async {
+        let trimmedFlightNumber = normalizedFlightNumber
+
+        guard !trimmedFlightNumber.isEmpty else { return }
+        guard force || looksLikeValidFlightNumber(trimmedFlightNumber) else { return }
+        guard !isLookingUpFlight else { return }
+
+        let signature = currentLookupSignature
+        guard force || signature != lastLookupSignature else { return }
+
         errorText = nil
         plan = nil
         flightLookupResult = nil
@@ -487,25 +588,25 @@ private extension PlannerView {
         defer { isLookingUpFlight = false }
 
         do {
-            let trimmedFlightNumber = flightNumber
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .uppercased()
-
             let result = try await flightLookupService.lookupFlight(
                 flightNumber: trimmedFlightNumber,
                 date: flightDate,
                 airportIATA: nil
             )
-            
+
             if let matchedAirport = flowAirport(from: result.originIATA) {
                 store.selectedAirport = matchedAirport
             }
 
+            lastLookupSignature = signature
             flightLookupResult = result
             departureTime = result.departureTime
+            isFlightFieldFocused = false
 
         } catch {
-            errorText = error.localizedDescription
+            if force {
+                errorText = error.localizedDescription
+            }
         }
     }
 
@@ -551,6 +652,11 @@ private extension PlannerView {
             return
         }
 
+        guard currentFlightIsSupported else {
+            errorText = "Flow does not support live airport data for \(flight.originIATA) yet."
+            return
+        }
+
         let securitySelection = store.plannerSecuritySelection(
             for: store.selectedAirport,
             flightTerminal: flight.terminal,
@@ -588,6 +694,14 @@ private extension PlannerView {
         AirportRegistry.airports
             .map(\.airport)
             .first(where: { $0.rawValue.caseInsensitiveCompare(code) == .orderedSame })
+    }
+
+    func displayAirportLine(for code: String) -> String {
+        if let airport = flowAirport(from: code) {
+            return "\(airport.rawValue) · \(airport.displayName)"
+        } else {
+            return "\(code) · Not yet supported in Flow"
+        }
     }
 }
 

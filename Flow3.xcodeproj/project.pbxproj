@@ -54,6 +54,7 @@
 		F828EF3B2F5A006C00EC53EC /* LHRCheckpointCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF3A2F5A006C00EC53EC /* LHRCheckpointCard.swift */; };
 		F828EF3D2F5A03FC00EC53EC /* LandingStore+LHR.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF3C2F5A03FC00EC53EC /* LandingStore+LHR.swift */; };
 		F828EF3F2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF3E2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift */; };
+		F855A2FC2F7550A700302569 /* BoardingPassScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F855A2FB2F7550A700302569 /* BoardingPassScannerView.swift */; };
 		F862F1A32F583923001666F2 /* Flow3App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1A22F583923001666F2 /* Flow3App.swift */; };
 		F862F1A72F583927001666F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F862F1A62F583927001666F2 /* Assets.xcassets */; };
 		F862F1AA2F583927001666F2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F862F1A92F583927001666F2 /* Preview Assets.xcassets */; };
@@ -119,6 +120,7 @@
 		F8CD3EE12F72009900490E20 /* AMSWaitTimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EDF2F72009900490E20 /* AMSWaitTimeService.swift */; };
 		F8CD3EE22F72009900490E20 /* AMSFlightLookupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EDE2F72009900490E20 /* AMSFlightLookupService.swift */; };
 		F8CD3EE32F72009900490E20 /* SchipholAPIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EE02F72009900490E20 /* SchipholAPIConfig.swift */; };
+		F8CD3EE62F72BFDC00490E20 /* FlowDisplayPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8CD3EE52F72BFDC00490E20 /* FlowDisplayPreferences.swift */; };
 		F8DBD88C2F64858B00246968 /* BERLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD88B2F64858B00246968 /* BERLiveWaitTimeProvider.swift */; };
 		F8DBD88F2F65639600246968 /* DeparturePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD88E2F65639600246968 /* DeparturePlan.swift */; };
 		F8DBD8912F6563A600246968 /* TravelTime Service.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8902F6563A600246968 /* TravelTime Service.swift */; };
@@ -248,6 +250,7 @@
 		F828EF3A2F5A006C00EC53EC /* LHRCheckpointCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LHRCheckpointCard.swift; sourceTree = "<group>"; };
 		F828EF3C2F5A03FC00EC53EC /* LandingStore+LHR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+LHR.swift"; sourceTree = "<group>"; };
 		F828EF3E2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LHRLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F855A2FB2F7550A700302569 /* BoardingPassScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardingPassScannerView.swift; sourceTree = "<group>"; };
 		F862F19F2F583923001666F2 /* Flow3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Flow3.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F862F1A22F583923001666F2 /* Flow3App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flow3App.swift; sourceTree = "<group>"; };
 		F862F1A62F583927001666F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -314,6 +317,7 @@
 		F8CD3EDE2F72009900490E20 /* AMSFlightLookupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AMSFlightLookupService.swift; sourceTree = "<group>"; };
 		F8CD3EDF2F72009900490E20 /* AMSWaitTimeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AMSWaitTimeService.swift; sourceTree = "<group>"; };
 		F8CD3EE02F72009900490E20 /* SchipholAPIConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchipholAPIConfig.swift; sourceTree = "<group>"; };
+		F8CD3EE52F72BFDC00490E20 /* FlowDisplayPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowDisplayPreferences.swift; sourceTree = "<group>"; };
 		F8DBD88B2F64858B00246968 /* BERLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BERLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8DBD88E2F65639600246968 /* DeparturePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturePlan.swift; sourceTree = "<group>"; };
 		F8DBD8902F6563A600246968 /* TravelTime Service.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TravelTime Service.swift"; sourceTree = "<group>"; };
@@ -422,6 +426,8 @@
 		F862F1A12F583923001666F2 /* Flow3 */ = {
 			isa = PBXGroup;
 			children = (
+				F8CD3EE72F73CD7400490E20 /* Boarding Pass */,
+				F8CD3EE42F72BFC100490E20 /* Weather */,
 				F8CD3ED72F71FB4D00490E20 /* AMS */,
 				F8A1AB6C2F69F8160093D0B6 /* Extensions */,
 				F8A1AB6B2F69F7E50093D0B6 /* Tests */,
@@ -698,6 +704,22 @@
 			path = AMS;
 			sourceTree = "<group>";
 		};
+		F8CD3EE42F72BFC100490E20 /* Weather */ = {
+			isa = PBXGroup;
+			children = (
+				F8CD3EE52F72BFDC00490E20 /* FlowDisplayPreferences.swift */,
+			);
+			path = Weather;
+			sourceTree = "<group>";
+		};
+		F8CD3EE72F73CD7400490E20 /* Boarding Pass */ = {
+			isa = PBXGroup;
+			children = (
+				F855A2FB2F7550A700302569 /* BoardingPassScannerView.swift */,
+			);
+			path = "Boarding Pass";
+			sourceTree = "<group>";
+		};
 		F8DBD8B72F682E4300246968 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -947,6 +969,7 @@
 				F8A1AB462F68CFFC0093D0B6 /* PlannerView.swift in Sources */,
 				F8DBD8982F6625D000246968 /* FlightLookupResult.swift in Sources */,
 				F862F1A32F583923001666F2 /* Flow3App.swift in Sources */,
+				F8CD3EE62F72BFDC00490E20 /* FlowDisplayPreferences.swift in Sources */,
 				F828EF372F59CE1300EC53EC /* ATLCheckpointCard.swift in Sources */,
 				F8BD8FDB2F62ADF2000EE425 /* ZRHLiveWaitTimeProvider.swift in Sources */,
 				F80599DB2F5AEC8F00146BF1 /* AirportSelectorView.swift in Sources */,
@@ -991,6 +1014,7 @@
 				F80599DD2F5AECB200146BF1 /* LivePulseDot.swift in Sources */,
 				F880517B2F60D163005CF24F /* AviationWeatherMETARProvider.swift in Sources */,
 				F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */,
+				F855A2FC2F7550A700302569 /* BoardingPassScannerView.swift in Sources */,
 				F8796C312F6BFEA800040769 /* AppDelegate.swift in Sources */,
 				F80599D32F5AD36B00146BF1 /* LandingStore+Presentation.swift in Sources */,
 				F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */,

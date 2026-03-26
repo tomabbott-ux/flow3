@@ -2,11 +2,11 @@ import SwiftUI
 
 struct SettingsView: View {
 
-    @AppStorage("flow_default_airport") private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
-    @AppStorage("flow_use_24h_time") private var use24HourTime: Bool = true
-    @AppStorage("flow_use_celsius") private var useCelsius: Bool = true
-    @AppStorage("flow_auto_select_fastest_checkpoint") private var autoSelectFastestCheckpoint: Bool = true
-    @AppStorage("flow_prefer_precheck") private var preferPreCheck: Bool = false
+    @AppStorage("flow.defaultAirportCode") private var defaultAirportRawValue: String = FlowAirport.lhr.rawValue
+    @AppStorage("flow.timeFormat") private var timeFormatRawValue: String = "twentyFourHour"
+    @AppStorage("flow.temperatureUnit") private var temperatureUnitRawValue: String = "celsius"
+    @AppStorage("flow.autoSelectFastestCheckpoint") private var autoSelectFastestCheckpoint: Bool = false
+    @AppStorage("flow.preferPreCheck") private var preferPreCheck: Bool = false
 
     @AppStorage("flow_notify_30") private var notify30Minutes: Bool = true
     @AppStorage("flow_notify_15") private var notify15Minutes: Bool = true
@@ -32,9 +32,7 @@ struct SettingsView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
-
                     headerSection
-
                     displayCard
                     planningCard
                     notificationsCard
@@ -90,9 +88,9 @@ private extension SettingsView {
             VStack(alignment: .leading, spacing: 8) {
                 settingLabel("Time format")
 
-                Picker("", selection: $use24HourTime) {
-                    Text("24-hour").tag(true)
-                    Text("12-hour").tag(false)
+                Picker("", selection: $timeFormatRawValue) {
+                    Text("24-hour").tag("twentyFourHour")
+                    Text("12-hour").tag("twelveHour")
                 }
                 .pickerStyle(.segmented)
             }
@@ -100,9 +98,9 @@ private extension SettingsView {
             VStack(alignment: .leading, spacing: 8) {
                 settingLabel("Temperature")
 
-                Picker("", selection: $useCelsius) {
-                    Text("°C").tag(true)
-                    Text("°F").tag(false)
+                Picker("", selection: $temperatureUnitRawValue) {
+                    Text("°C").tag("celsius")
+                    Text("°F").tag("fahrenheit")
                 }
                 .pickerStyle(.segmented)
             }
@@ -210,7 +208,6 @@ private extension SettingsView {
             }
 
             Button {
-                // Future upgrade / manage subscription action
             } label: {
                 HStack {
                     Text("Manage subscription")

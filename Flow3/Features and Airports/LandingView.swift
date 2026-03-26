@@ -4,11 +4,18 @@ struct LandingView: View {
     @ObservedObject var store: LandingStore
     @Binding var selectedTab: FlowRootView.FlowTab
 
+    @AppStorage("flow.defaultAirportCode") private var defaultAirportRawValue: String = FlowAirport.lhr.rawValue
+    @AppStorage("flow.timeFormat") private var timeFormatRawValue: String = "twentyFourHour"
+    @AppStorage("flow.temperatureUnit") private var temperatureUnitRawValue: String = "celsius"
+
+    @StateObject private var preferences = FlowDisplayPreferences.shared
+
     @State private var selectedRowID: String? = nil
     @State private var now = Date()
     @State private var isShowingTrackingDetail = false
     @State private var otherCheckpointsExpanded = false
-
+    @State private var hasPerformedInitialRefresh = false
+    
     private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     private let updatedTicker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -86,7 +93,7 @@ struct LandingView: View {
             return .comingSoon
         }
     }
-    
+
     private var secondaryCheckpointRows: [AirportDisplayRow] {
         guard let primary = selectedRow else {
             return displayRows
@@ -141,8 +148,11 @@ struct LandingView: View {
             }
         }
         .task {
+            guard !hasPerformedInitialRefresh else { return }
+            hasPerformedInitialRefresh = true
             await refreshNow()
         }
+
         .onAppear {
             Task {
                 await FlowNotificationManager.shared.requestPermission()
@@ -156,10 +166,10 @@ struct LandingView: View {
         .onReceive(updatedTicker) { value in
             now = value
         }
-        .onChange(of: store.selectedAirport) { _ in
-            otherCheckpointsExpanded = false
-            Task {
-                await refreshNow()
+        .onChange(of: defaultAirportRawValue) { newValue in
+            guard store.trackedFlight == nil else { return }
+            if let airport = FlowAirport(rawValue: newValue) {
+                store.selectedAirport = airport
             }
         }
         .onChange(of: store.trackedFlight?.securityRouteTitle) { _ in
@@ -332,10 +342,7 @@ private extension LandingView {
     }
 
     func timeString(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeZone = store.selectedAirport.timeZone
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+        preferences.timeString(for: date, in: store.selectedAirport.timeZone)
     }
 
     var timeZoneAbbreviation: String {
@@ -344,9 +351,9 @@ private extension LandingView {
 
     var weatherTemperatureLine: String {
         guard let weather = store.weather else { return "--" }
-        return "\(weather.temperatureC)°C"
+        return preferences.temperatureString(fromCelsius: weather.temperatureC)
     }
-
+    
     var weatherConditionLine: String {
         guard let weather = store.weather else { return "--" }
 
@@ -407,6 +414,7 @@ private extension LandingView {
             Text(updatedRelativeText)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.white.opacity(0.7))
+                .monospacedDigit()
         }
         .flowGlassCard()
     }
@@ -473,7 +481,7 @@ private extension LandingView {
                 )
         }
     }
-    
+
     func confidenceBadge(text: String, textColor: Color, dot: AnyView) -> some View {
         HStack(spacing: 6) {
             dot
@@ -651,18 +659,30 @@ private extension LandingView {
         )
     }
 
-    private var feedTimestamp: Date {
+    private var feedTimestamp: Date? {
         let selectedAirportRows = store
             .allWaitTimes()
             .filter { $0.airport == store.selectedAirport }
 
         return selectedAirportRows
             .map(\.observedAt)
-            .max() ?? Date()
+            .max()
     }
 
     private var updatedRelativeText: String {
-        let now = Date()
+        guard let feedTimestamp else {
+            switch confidenceLevel {
+            case .live:
+                return "Live feed · Updated —"
+            case .highConfidence:
+                return "High confidence feed · Checked —"
+            case .lowConfidence:
+                return "Estimated feed · Refreshed —"
+            case .comingSoon:
+                return "Coming soon"
+            }
+        }
+
         let seconds = max(0, Int(now.timeIntervalSince(feedTimestamp)))
         let relative = relativeAgeString(for: seconds)
 
@@ -692,7 +712,7 @@ private extension LandingView {
             return "Coming soon"
         }
     }
-    
+
     func relativeAgeString(for seconds: Int) -> String {
         if seconds < 60 {
             return "\(seconds)s ago"

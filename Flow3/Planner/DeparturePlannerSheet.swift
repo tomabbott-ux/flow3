@@ -1,4 +1,5 @@
 import SwiftUI
+import VisionKit
 
 struct DeparturePlannerSheet: View {
 
@@ -26,6 +27,12 @@ struct DeparturePlannerSheet: View {
 
     @State private var useManualTravelTime = false
     @State private var manualTravelMinutes = 20
+
+    @State private var isShowingBoardingPassScanner = false
+    @State private var scannedBoardingPassText: String?
+
+    @State private var autoLookupTask: Task<Void, Never>?
+    @State private var lastLookupSignature: String?
 
     private let travelTimeService = TravelTimeService()
     private let flightLookupService = LiveFlightService()
@@ -71,12 +78,6 @@ struct DeparturePlannerSheet: View {
                 .padding(.bottom, 30)
             }
             .scrollDismissesKeyboard(.interactively)
-            .simultaneousGesture(
-                TapGesture().onEnded {
-                    isFlightFieldFocused = false
-                    hideKeyboard()
-                }
-            )
             .background(
                 LinearGradient(
                     gradient: Gradient(colors: [
@@ -111,18 +112,32 @@ struct DeparturePlannerSheet: View {
                     .foregroundColor(.white)
                 }
             }
-            .onChange(of: useFlightNumber) { _ in
+            .sheet(isPresented: $isShowingBoardingPassScanner) {
+                boardingPassScannerSheet
+            }
+            .onChange(of: useFlightNumber) {
+                autoLookupTask?.cancel()
+                lastLookupSignature = nil
                 errorText = nil
                 plan = nil
                 flightLookupResult = nil
                 isFlightFieldFocused = false
                 hideKeyboard()
             }
+            .onChange(of: flightNumber) {
+                scheduleAutoLookupIfNeeded()
+            }
+            .onChange(of: flightDate) {
+                scheduleAutoLookupIfNeeded()
+            }
             .onAppear {
                 resetPlannerForSelectedAirport()
             }
-            .onChange(of: store.selectedAirport) { _ in
+            .onChange(of: store.selectedAirport) {
                 resetPlannerForSelectedAirport()
+            }
+            .onDisappear {
+                autoLookupTask?.cancel()
             }
         }
     }
@@ -138,7 +153,7 @@ struct DeparturePlannerSheet: View {
     }
 
     private var airportDescription: String {
-        "Search by flight number or build a manual airport timing plan using live security waits and travel time."
+        "Search by flight number, scan a boarding pass, or build a manual airport timing plan using live security waits and travel time."
     }
 
     private var airportDisplayLine: String {
@@ -247,11 +262,15 @@ struct DeparturePlannerSheet: View {
                 TextField("e.g. BA216", text: $flightNumber)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled(true)
-                    .submitLabel(.done)
+                    .submitLabel(.search)
                     .focused($isFlightFieldFocused)
                     .onSubmit {
                         isFlightFieldFocused = false
                         hideKeyboard()
+
+                        Task {
+                            await lookupFlight(force: true)
+                        }
                     }
                     .foregroundColor(.white)
                     .padding(.horizontal, 14)
@@ -284,9 +303,41 @@ struct DeparturePlannerSheet: View {
             Button {
                 isFlightFieldFocused = false
                 hideKeyboard()
+                isShowingBoardingPassScanner = true
+            } label: {
+                HStack {
+                    Image(systemName: "viewfinder")
+                        .font(.system(size: 15, weight: .bold))
+
+                    Text("Scan Boarding Pass")
+                        .font(.system(size: 15, weight: .bold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(Color(hex: "9B6CFF").opacity(0.22))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+
+            if let scannedBoardingPassText, !scannedBoardingPassText.isEmpty {
+                Text("Boarding pass scanned")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.68))
+            }
+
+            Button {
+                isFlightFieldFocused = false
+                hideKeyboard()
 
                 Task {
-                    await lookupFlight()
+                    await lookupFlight(force: true)
                 }
             } label: {
                 HStack {
@@ -316,10 +367,60 @@ struct DeparturePlannerSheet: View {
             .buttonStyle(.plain)
             .disabled(
                 isLookingUpFlight ||
-                flightNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                normalizedFlightNumber.isEmpty
             )
         }
         .flowGlassCard()
+    }
+
+    private var boardingPassScannerSheet: some View {
+        ZStack {
+            if DataScannerViewController.isSupported && DataScannerViewController.isAvailable {
+                BoardingPassScannerView(
+                    onResult: { result in
+                        scannedBoardingPassText = result.rawText
+                        flightNumber = result.flightNumber
+                        if let date = result.flightDate {
+                            flightDate = date
+                        }
+                        isShowingBoardingPassScanner = false
+                    },
+                    onCancel: {
+                        isShowingBoardingPassScanner = false
+                    }
+                )
+                .ignoresSafeArea()
+            } else {
+                VStack(spacing: 16) {
+                    Text("Scanner unavailable")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text("Boarding pass scanning is not available on this device.")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.72))
+                        .multilineTextAlignment(.center)
+
+                    Button("Close") {
+                        isShowingBoardingPassScanner = false
+                    }
+                    .foregroundColor(.white)
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(hex: "2A0C5A"),
+                            Color(hex: "3B136E"),
+                            Color(hex: "14062F")
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            }
+        }
     }
 
     private func flightFoundCard(_ flight: FlightLookupResult) -> some View {
@@ -577,6 +678,8 @@ struct DeparturePlannerSheet: View {
     }
 
     private func resetPlannerForSelectedAirport() {
+        autoLookupTask?.cancel()
+        lastLookupSignature = nil
         errorText = nil
         plan = nil
         flightLookupResult = nil
@@ -591,6 +694,7 @@ struct DeparturePlannerSheet: View {
         ) ?? Date()
         flightDate = Date()
         useFlightNumber = true
+        scannedBoardingPassText = nil
     }
 
     private func resultRow(_ title: String, _ value: String) -> some View {
@@ -683,7 +787,54 @@ struct DeparturePlannerSheet: View {
         return formatter.string(from: date)
     }
 
-    private func lookupFlight() async {
+    private var normalizedFlightNumber: String {
+        flightNumber
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+    }
+
+    private var currentLookupSignature: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        let day = formatter.string(from: flightDate)
+        return "\(store.selectedAirport.rawValue)|\(normalizedFlightNumber)|\(day)"
+    }
+
+    private func looksLikeValidFlightNumber(_ value: String) -> Bool {
+        let compact = value.replacingOccurrences(of: " ", with: "")
+        let pattern = #"^[A-Z0-9]{2,3}\d{1,4}[A-Z]?$"#
+        return compact.range(of: pattern, options: .regularExpression) != nil
+    }
+
+    private func scheduleAutoLookupIfNeeded() {
+        autoLookupTask?.cancel()
+
+        guard useFlightNumber else { return }
+
+        let candidate = normalizedFlightNumber
+        guard looksLikeValidFlightNumber(candidate) else { return }
+
+        let signature = currentLookupSignature
+        guard signature != lastLookupSignature else { return }
+
+        autoLookupTask = Task {
+            try? await Task.sleep(nanoseconds: 550_000_000)
+            if Task.isCancelled { return }
+
+            await lookupFlight(force: false)
+        }
+    }
+
+    private func lookupFlight(force: Bool) async {
+        let trimmedFlightNumber = normalizedFlightNumber
+
+        guard !trimmedFlightNumber.isEmpty else { return }
+        guard force || looksLikeValidFlightNumber(trimmedFlightNumber) else { return }
+
+        let signature = currentLookupSignature
+        guard force || signature != lastLookupSignature else { return }
+        guard !isLookingUpFlight else { return }
 
         errorText = nil
         plan = nil
@@ -692,22 +843,20 @@ struct DeparturePlannerSheet: View {
         defer { isLookingUpFlight = false }
 
         do {
-
-            let trimmedFlightNumber = flightNumber
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .uppercased()
-
             let result = try await flightLookupService.lookupFlight(
                 flightNumber: trimmedFlightNumber,
                 date: flightDate,
                 airportIATA: store.selectedAirport.rawValue
             )
 
+            lastLookupSignature = signature
             flightLookupResult = result
             departureTime = result.departureTime
 
         } catch {
-            errorText = error.localizedDescription
+            if force {
+                errorText = error.localizedDescription
+            }
         }
     }
 
