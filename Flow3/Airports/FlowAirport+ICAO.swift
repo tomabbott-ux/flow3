@@ -8,6 +8,7 @@ extension FlowAirport {
         case .atl: return "KATL"
         case .jfk: return "KJFK"
         case .lhr: return "EGLL"
+        case .dub: return "EIDW"
         case .ist: return "LTFM"
         case .lga: return "KLGA"
 

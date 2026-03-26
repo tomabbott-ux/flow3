@@ -54,6 +54,7 @@
 		F828EF3B2F5A006C00EC53EC /* LHRCheckpointCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF3A2F5A006C00EC53EC /* LHRCheckpointCard.swift */; };
 		F828EF3D2F5A03FC00EC53EC /* LandingStore+LHR.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF3C2F5A03FC00EC53EC /* LandingStore+LHR.swift */; };
 		F828EF3F2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF3E2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift */; };
+		F855A3402F75D80B00302569 /* DUBLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F855A33F2F75D80B00302569 /* DUBLiveWaitTimeProvider.swift */; };
 		F862F1A32F583923001666F2 /* Flow3App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1A22F583923001666F2 /* Flow3App.swift */; };
 		F862F1A72F583927001666F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F862F1A62F583927001666F2 /* Assets.xcassets */; };
 		F862F1AA2F583927001666F2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F862F1A92F583927001666F2 /* Preview Assets.xcassets */; };
@@ -248,6 +249,7 @@
 		F828EF3A2F5A006C00EC53EC /* LHRCheckpointCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LHRCheckpointCard.swift; sourceTree = "<group>"; };
 		F828EF3C2F5A03FC00EC53EC /* LandingStore+LHR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+LHR.swift"; sourceTree = "<group>"; };
 		F828EF3E2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LHRLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F855A33F2F75D80B00302569 /* DUBLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DUBLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F862F19F2F583923001666F2 /* Flow3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Flow3.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F862F1A22F583923001666F2 /* Flow3App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flow3App.swift; sourceTree = "<group>"; };
 		F862F1A62F583927001666F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -517,6 +519,7 @@
 				F8CD3EB12F70519500490E20 /* LAXTBITLiveWaitTimeProvider.swift */,
 				F8CD3EB32F70654500490E20 /* MIALiveWaitTimeProvider.swift */,
 				F8CD3EB52F7075FB00490E20 /* SEALiveWaitTimeProvider.swift */,
+				F855A33F2F75D80B00302569 /* DUBLiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -1022,6 +1025,7 @@
 				F80599E52F5B024600146BF1 /* WeatherEstimate.swift in Sources */,
 				F828EF3F2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift in Sources */,
 				F862F1D92F583A17001666F2 /* WaitTimeProviding.swift in Sources */,
+				F855A3402F75D80B00302569 /* DUBLiveWaitTimeProvider.swift in Sources */,
 				F8A1AB482F68D0200093D0B6 /* AlertsView.swift in Sources */,
 				F8796C9D2F6D5F3D00040769 /* FlowAlert.swift in Sources */,
 				F862F1D52F5839C9001666F2 /* WeatherModels.swift in Sources */,

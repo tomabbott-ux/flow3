@@ -40,7 +40,7 @@ extension LandingStore {
         case .jfk, .lhr, .lga, .cph, .yyz,
              .ams, .cdg, .dxb, .sin, .fra,
              .lax, .ord, .fco, .hnd, .syd, .msp,
-             .mia:
+             .mia, .dub:
             return terminalDisplayRows(from: rows)
         }
     }
