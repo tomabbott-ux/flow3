@@ -35,6 +35,14 @@ extension LandingStore {
 
         let terminalText = normalizedTerminalText(from: flightTerminal)
 
+        // ATL special handling
+        if airport == .atl,
+           let terminalText,
+           let atlMatch = atlRouteMatch(for: terminalText, in: allRoutes) {
+            return PlannerSecuritySelection(option: atlMatch, mode: .auto)
+        }
+
+        // Standard terminal matching
         if let terminalText,
            let terminalMatch = allRoutes.first(where: {
                $0.title.localizedCaseInsensitiveContains("Terminal \(terminalText)") ||
@@ -42,6 +50,16 @@ extension LandingStore {
                $0.detail.localizedCaseInsensitiveContains("Terminal \(terminalText)")
            }) {
             return PlannerSecuritySelection(option: terminalMatch, mode: .auto)
+        }
+
+        // Smarter fallback
+        if let terminalText,
+           let smartFallback = bestFallbackRouteMatch(
+                airport: airport,
+                terminalText: terminalText,
+                in: allRoutes
+           ) {
+            return PlannerSecuritySelection(option: smartFallback, mode: .auto)
         }
 
         if let best = allRoutes.min(by: { $0.minutes < $1.minutes }) {
@@ -442,5 +460,84 @@ private extension LandingStore {
         }
 
         return trimmed
+    }
+
+    func atlRouteMatch(
+        for terminalText: String,
+        in routes: [SecurityRouteOption]
+    ) -> SecurityRouteOption? {
+
+        let value = terminalText.uppercased()
+
+        if value == "N" || value == "NORTH" {
+            return routes.first(where: {
+                $0.title.localizedCaseInsensitiveContains("NORTH")
+            })
+        }
+
+        if value == "S" || value == "SOUTH" {
+            return routes.first(where: {
+                $0.title.localizedCaseInsensitiveContains("SOUTH")
+            })
+        }
+
+        if value == "MAIN" || value == "M" {
+            return routes.first(where: {
+                $0.title.localizedCaseInsensitiveContains("MAIN") &&
+                $0.subtitle.localizedCaseInsensitiveContains("DOMESTIC")
+            }) ?? routes.first(where: {
+                $0.title.localizedCaseInsensitiveContains("MAIN")
+            })
+        }
+
+        if value == "1" || value == "DOMESTIC" || value == "D" {
+            let domesticRoutes = routes.filter {
+                $0.subtitle.localizedCaseInsensitiveContains("DOMESTIC")
+            }
+            return domesticRoutes.min(by: { $0.minutes < $1.minutes })
+        }
+
+        if value == "2" || value == "INTERNATIONAL" || value == "I" {
+            let internationalRoutes = routes.filter {
+                $0.subtitle.localizedCaseInsensitiveContains("INTERNATIONAL")
+            }
+            return internationalRoutes.min(by: { $0.minutes < $1.minutes })
+        }
+
+        return nil
+    }
+
+    func bestFallbackRouteMatch(
+        airport: FlowAirport,
+        terminalText: String,
+        in routes: [SecurityRouteOption]
+    ) -> SecurityRouteOption? {
+
+        let value = terminalText.uppercased()
+
+        // Prefer domestic over international when terminal is unknown but looks domestic-ish
+        if airport == .atl {
+            if value == "N" || value == "S" || value == "MAIN" || value == "D" || value == "DOMESTIC" {
+                let domesticRoutes = routes.filter {
+                    $0.subtitle.localizedCaseInsensitiveContains("DOMESTIC")
+                }
+
+                if let bestDomestic = domesticRoutes.min(by: { $0.minutes < $1.minutes }) {
+                    return bestDomestic
+                }
+            }
+        }
+
+        let exactTextMatch = routes.first(where: {
+            $0.title.localizedCaseInsensitiveContains(value) ||
+            $0.subtitle.localizedCaseInsensitiveContains(value) ||
+            $0.detail.localizedCaseInsensitiveContains(value)
+        })
+
+        if let exactTextMatch {
+            return exactTextMatch
+        }
+
+        return routes.min(by: { $0.minutes < $1.minutes })
     }
 }

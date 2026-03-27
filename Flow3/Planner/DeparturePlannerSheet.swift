@@ -654,8 +654,10 @@ struct DeparturePlannerSheet: View {
     }
 
     private func displayTerminal(from flight: FlightLookupResult) -> String {
-        let cleaned = cleanedText(flight.terminal)
-        return cleaned ?? "TBD"
+        AirportTerminalFormatter.displayName(
+            for: store.selectedAirport,
+            rawTerminal: flight.terminal
+        )
     }
 
     private func displayGate(from flight: FlightLookupResult) -> String {

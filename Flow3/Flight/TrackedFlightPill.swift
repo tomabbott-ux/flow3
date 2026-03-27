@@ -190,16 +190,9 @@ struct TrackedFlightPill: View {
                 Text(displayTerminalCompact(flight.terminal))
             }
 
-            if let gate = cleanedText(flight.gate) {
-                HStack(spacing: 6) {
-                    Image(systemName: "mappin.and.ellipse")
-                    Text(gate)
-                }
-            }
-
             HStack(spacing: 6) {
                 Image(systemName: "suitcase")
-                Text(flight.securityRouteTitle)
+                Text(securityRouteSummary(for: flight))
             }
 
             Spacer()
@@ -301,11 +294,19 @@ struct TrackedFlightPill: View {
             ? flight.securityRouteTitle
             : "\(flight.securityRouteTitle) • \(flight.securityRouteSubtitle)"
 
-        if flight.securityRouteMode == SecurityRouteMode.manual {
+        if flight.securityRouteMode == .manual {
             return "\(base) • Chosen by you"
         }
 
         return base
+    }
+
+    private func securityRouteSummary(for flight: TrackedFlight) -> String {
+        if !flight.securityRouteTitle.isEmpty {
+            return flight.securityRouteTitle
+        }
+
+        return "Security"
     }
 
     private func routePickerTitle(for route: SecurityRouteOption) -> String {
@@ -325,45 +326,32 @@ struct TrackedFlightPill: View {
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         if raw.isEmpty {
-            return "Status unavailable"
+            return "On Time"
         }
 
         let normalized = raw.lowercased()
 
         switch normalized {
-
-        // ✅ ON TIME
+        case "unknown", "na", "n/a":
+            return "On Time"
         case "expected", "scheduled", "active":
             return "On Time"
-
-        // ✅ BOARDING
         case "boarding":
             return "Boarding"
-
-        // ✅ GATE OPEN
         case "gateopen", "gate_open", "gate open":
             return "Gate Open"
-
-        // ✅ GATE CLOSED / FINAL CALL → treat as closing
         case "gateclosed", "gate_closed", "gate closed", "finalcall", "final_call", "final call":
             return "Gate Closing"
-
-        // ✅ DELAYED
         case "delayed":
             return "Delayed"
-
-        // ✅ COMPLETED STATES
         case "departed":
             return "Departed"
         case "landed", "arrived":
             return "Arrived"
-
-        // ✅ CANCELLED / ISSUES
         case "cancelled":
             return "Cancelled"
         case "incident", "diverted":
             return "Disrupted"
-
         default:
             return raw
                 .replacingOccurrences(of: "_", with: " ")
@@ -376,38 +364,30 @@ struct TrackedFlightPill: View {
                 .capitalized
         }
     }
-    
+
     private func statusColor(for flight: TrackedFlight) -> Color {
         let raw = flight.status?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased() ?? ""
 
         switch raw {
-
-        // 🟢 GREEN
-        case "expected", "scheduled", "active",
+        case "", "unknown", "na", "n/a",
+             "expected", "scheduled", "active",
              "gateopen", "gate_open", "gate open":
             return .green
-
-        // 🟡 YELLOW (Boarding phase)
         case "boarding":
             return .yellow
-
-        // 🔴 RED (Critical / closing / delayed)
         case "gateclosed", "gate_closed", "gate closed",
              "finalcall", "final_call", "final call",
              "delayed":
             return .red
-
-        // ⚪️ Completed / neutral
         case "departed", "arrived", "landed":
             return .white.opacity(0.9)
-
         default:
             return .white.opacity(0.85)
         }
     }
-    
+
     private func leaveTimeColor(for trend: LeaveTimeTrend) -> Color {
         switch trend {
         case .unchanged:
@@ -435,13 +415,11 @@ struct TrackedFlightPill: View {
     }
 
     private func displayTerminalCompact(_ terminal: String) -> String {
-        let trimmed = terminal.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "TBD" : "T\(trimmed)"
+        AirportTerminalFormatter.compactName(for: store.selectedAirport, rawTerminal: terminal)
     }
 
     private func displayTerminalExpanded(_ terminal: String) -> String {
-        let trimmed = terminal.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "TBD" : trimmed
+        AirportTerminalFormatter.displayName(for: store.selectedAirport, rawTerminal: terminal)
     }
 
     private func displayGateExpanded(_ gate: String?) -> String {

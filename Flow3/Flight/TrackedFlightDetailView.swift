@@ -37,8 +37,6 @@ struct TrackedFlightDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    // MARK: - Hero
-
     private var heroSection: some View {
         VStack(alignment: .leading, spacing: 10) {
 
@@ -58,22 +56,18 @@ struct TrackedFlightDetailView: View {
         .flowGlassCard()
     }
 
-    // MARK: - Flight Info
-
     private var flightInfo: some View {
         VStack(alignment: .leading, spacing: 12) {
 
             infoRow("Flight", flight.flightNumber)
             infoRow("Route", flight.route)
-            infoRow("Terminal", flight.terminal)
-            infoRow("Gate", flight.gate ?? "—")
+            infoRow("Terminal", displayTerminal(flight.terminal))
+            infoRow("Gate", displayGate(flight.gate))
             infoRow("Departure", timeString(flight.departureTime))
 
         }
         .flowGlassCard()
     }
-
-    // MARK: - Breakdown
 
     private var breakdownSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -93,8 +87,6 @@ struct TrackedFlightDetailView: View {
         .flowGlassCard()
     }
 
-    // MARK: - Helpers
-
     private func infoRow(_ title: String, _ value: String) -> some View {
         HStack {
             Text(title)
@@ -104,7 +96,20 @@ struct TrackedFlightDetailView: View {
 
             Text(value)
                 .foregroundColor(.white)
+                .multilineTextAlignment(.trailing)
         }
+    }
+
+    private func displayTerminal(_ terminal: String) -> String {
+        AirportTerminalFormatter.displayName(
+            for: airport,
+            rawTerminal: terminal
+        )
+    }
+
+    private func displayGate(_ gate: String?) -> String {
+        let trimmed = gate?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? "TBD" : trimmed
     }
 
     private func timeString(_ date: Date) -> String {
@@ -125,6 +130,10 @@ struct TrackedFlightDetailView: View {
         let hours = minutes / 60
         let remainingMinutes = minutes % 60
 
-        return "Leaving in \(hours)h \(remainingMinutes)m"
+        if hours > 0 {
+            return "Leaving in \(hours)h \(remainingMinutes)m"
+        } else {
+            return "Leaving in \(remainingMinutes)m"
+        }
     }
 }
