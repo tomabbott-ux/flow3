@@ -34,7 +34,7 @@ enum AirportProviderKind: String, Codable, Hashable {
     case ber
     case mia
     case del
-    
+
     case yyz
     case yvr
     case yyc
@@ -133,7 +133,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .mia, feedType: .live, providerKind: .mia),
         AirportDefinition(airport: .sea, feedType: .live, providerKind: .sea),
         AirportDefinition(airport: .del, feedType: .estimated, providerKind: .estimated),
-        
+
         // AENA live
         AirportDefinition(airport: .mad, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .bcn, feedType: .live, providerKind: .aena),
@@ -143,7 +143,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .tfs, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .lpa, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .lax, feedType: .highConfidence, providerKind: .estimated),
-        
+
         // AENA coming soon
         AirportDefinition(airport: .svq, feedType: .comingSoon, providerKind: .none),
         AirportDefinition(airport: .bio, feedType: .comingSoon, providerKind: .none),
@@ -156,19 +156,20 @@ struct AirportRegistry {
         AirportDefinition(airport: .dca, feedType: .live, providerKind: .dca),
         AirportDefinition(airport: .pdx, feedType: .live, providerKind: .pdx),
 
-        AirportDefinition(airport: .san, feedType: .highConfidence, providerKind: .tsaWebsite),
-        AirportDefinition(airport: .las, feedType: .highConfidence, providerKind: .tsaWebsite),
-        AirportDefinition(airport: .bos, feedType: .highConfidence, providerKind: .tsaWebsite),
-        AirportDefinition(airport: .sfo, feedType: .highConfidence, providerKind: .tsaWebsite),
-        AirportDefinition(airport: .bna, feedType: .highConfidence, providerKind: .tsaWebsite),
-        AirportDefinition(airport: .tpa, feedType: .highConfidence, providerKind: .tsaWebsite),
-        AirportDefinition(airport: .dtw, feedType: .highConfidence, providerKind: .tsaWebsite),
+        // Changed from broken TSA website high confidence to estimated
+        AirportDefinition(airport: .san, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .las, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .bos, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .sfo, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .bna, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .tpa, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .dtw, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .msp, feedType: .comingSoon, providerKind: .none),
 
         AirportDefinition(airport: .cdg, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .dxb, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .sin, feedType: .estimated, providerKind: .estimated),
-        
+
         AirportDefinition(airport: .hnd, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .syd, feedType: .estimated, providerKind: .estimated)
     ]
