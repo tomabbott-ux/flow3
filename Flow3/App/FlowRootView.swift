@@ -13,6 +13,7 @@ struct FlowRootView: View {
 
     @ObservedObject var store: LandingStore
     @State private var selectedTab: FlowTab = .flight
+    @State private var hasAppliedStartupAirport = false
 
     init(store: LandingStore) {
         self.store = store
@@ -79,7 +80,7 @@ struct FlowRootView: View {
                 Text("Search")
             }
             .tag(FlowTab.planner)
-            
+
             NavigationStack {
                 LandingView(
                     store: store,
@@ -111,6 +112,11 @@ struct FlowRootView: View {
             .tag(FlowTab.settings)
         }
         .tint(Color(hex: "9B6CFF"))
+        .task {
+            guard !hasAppliedStartupAirport else { return }
+            hasAppliedStartupAirport = true
+            await store.applyStartupAirportSelectionIfNeeded()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .openSearchTab)) { _ in
             selectedTab = .planner
         }

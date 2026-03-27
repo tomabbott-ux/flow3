@@ -12,7 +12,7 @@ extension FlowAirport {
              .phl, .san, .las, .bos, .sea, .sfo,
              .bna, .tpa, .dtw, .clt, .ewr, .bwi, .dca, .cle, .pdx,
              .icn, .mad, .ber, .bcn, .pmi, .agp, .alc,
-             .svq, .bio, .ibz, .vlc, .tfs, .lpa:
+             .svq, .bio, .ibz, .vlc, .tfs, .lpa, .del:
             return true
 
         // Terminal-style presentation

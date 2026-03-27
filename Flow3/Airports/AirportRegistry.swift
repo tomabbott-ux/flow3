@@ -33,6 +33,7 @@ enum AirportProviderKind: String, Codable, Hashable {
     case aena
     case ber
     case mia
+    case del
     
     case yyz
     case yvr
@@ -131,6 +132,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .icn, feedType: .live, providerKind: .icn),
         AirportDefinition(airport: .mia, feedType: .live, providerKind: .mia),
         AirportDefinition(airport: .sea, feedType: .live, providerKind: .sea),
+        AirportDefinition(airport: .del, feedType: .estimated, providerKind: .estimated),
         
         // AENA live
         AirportDefinition(airport: .mad, feedType: .live, providerKind: .aena),

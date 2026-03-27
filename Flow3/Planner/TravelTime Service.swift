@@ -31,8 +31,7 @@ final class TravelTimeService: NSObject, CLLocationManagerDelegate {
     }
 
     func drivingMinutes(to airport: FlowAirport) async throws -> Int {
-
-        let userCoordinate = try await currentLocationCoordinate(for: airport)
+        let userCoordinate = try await currentLocationCoordinate(fallbackAirport: airport)
 
         let request = MKDirections.Request()
         request.source = MKMapItem(
@@ -52,12 +51,31 @@ final class TravelTimeService: NSObject, CLLocationManagerDelegate {
         return Int(ceil(route.expectedTravelTime / 60.0))
     }
 
-    private func currentLocationCoordinate(for airport: FlowAirport) async throws -> CLLocationCoordinate2D {
+    func nearestAirport(from airports: [FlowAirport]) async throws -> FlowAirport {
+        let userCoordinate = try await currentLocationCoordinate(fallbackAirport: nil)
+        let userLocation = CLLocation(latitude: userCoordinate.latitude, longitude: userCoordinate.longitude)
+
+        guard let nearest = airports.min(by: { lhs, rhs in
+            let lhsLocation = CLLocation(latitude: lhs.coordinate.latitude, longitude: lhs.coordinate.longitude)
+            let rhsLocation = CLLocation(latitude: rhs.coordinate.latitude, longitude: rhs.coordinate.longitude)
+            return userLocation.distance(from: lhsLocation) < userLocation.distance(from: rhsLocation)
+        }) else {
+            throw TravelTimeServiceError.locationUnavailable
+        }
+
+        return nearest
+    }
+
+    func currentLocationCoordinate() async throws -> CLLocationCoordinate2D {
+        try await currentLocationCoordinate(fallbackAirport: nil)
+    }
+
+    private func currentLocationCoordinate(fallbackAirport: FlowAirport?) async throws -> CLLocationCoordinate2D {
 #if targetEnvironment(simulator)
         if let existing = locationManager.location?.coordinate {
             return existing
         } else {
-            return simulatorFallbackCoordinate(for: airport)
+            return simulatorFallbackCoordinate(for: fallbackAirport)
         }
 #else
         let status = locationManager.authorizationStatus
@@ -133,22 +151,18 @@ final class TravelTimeService: NSObject, CLLocationManagerDelegate {
         continuation.resume(throwing: TravelTimeServiceError.locationUnavailable)
     }
 
-    private func simulatorFallbackCoordinate(for airport: FlowAirport) -> CLLocationCoordinate2D {
-        switch airport {
-        case .atl:
-            return CLLocationCoordinate2D(
-                latitude: 33.7490,
-                longitude: -84.3880
-            ) // Atlanta city centre
-
-        case .lhr:
-            return CLLocationCoordinate2D(
-                latitude: 51.5074,
-                longitude: -0.1278
-            ) // London
-
-        default:
-            return airport.coordinate
+    private func simulatorFallbackCoordinate(for airport: FlowAirport?) -> CLLocationCoordinate2D {
+        if let airport {
+            switch airport {
+            case .atl:
+                return CLLocationCoordinate2D(latitude: 33.7490, longitude: -84.3880)
+            case .lhr:
+                return CLLocationCoordinate2D(latitude: 51.5074, longitude: -0.1278)
+            default:
+                return airport.coordinate
+            }
         }
+
+        return CLLocationCoordinate2D(latitude: 51.4700, longitude: -0.4543)
     }
 }

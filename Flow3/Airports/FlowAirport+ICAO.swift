@@ -11,7 +11,8 @@ extension FlowAirport {
         case .dub: return "EIDW"
         case .ist: return "LTFM"
         case .lga: return "KLGA"
-
+        case .del: return "VIDP"
+            
         case .ham: return "EDDH"
         case .cph: return "EKCH"
         case .dus: return "EDDL"
