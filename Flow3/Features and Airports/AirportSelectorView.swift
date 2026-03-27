@@ -15,7 +15,7 @@ struct AirportSelectorView: View {
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: 12) {
                     headerSection
                     searchSection
 
@@ -23,10 +23,8 @@ struct AirportSelectorView: View {
                         AirportSectionHeader(title: "RECENT")
                             .padding(.top, 6)
 
-                        VStack(spacing: 12) {
-                            ForEach(recentDefinitions) { definition in
-                                airportRow(definition)
-                            }
+                        ForEach(recentDefinitions) { definition in
+                            airportRow(definition)
                         }
                     }
 
@@ -34,10 +32,8 @@ struct AirportSelectorView: View {
                         AirportSectionHeader(title: "FAVOURITES")
                             .padding(.top, 6)
 
-                        VStack(spacing: 12) {
-                            ForEach(pinnedFavouriteDefinitions) { definition in
-                                airportRow(definition)
-                            }
+                        ForEach(pinnedFavouriteDefinitions) { definition in
+                            airportRow(definition)
                         }
                     }
 
@@ -45,10 +41,8 @@ struct AirportSelectorView: View {
                         AirportSectionHeader(title: "AIRPORTS")
                             .padding(.top, 6)
 
-                        VStack(spacing: 12) {
-                            ForEach(remainingAirportDefinitions) { definition in
-                                airportRow(definition)
-                            }
+                        ForEach(remainingAirportDefinitions) { definition in
+                            airportRow(definition)
                         }
                     }
                 }
@@ -206,38 +200,40 @@ private extension AirportSelectorView {
     func feedBadge(for feedType: AirportFeedType) -> some View {
         switch feedType {
         case .live:
-            animatedBadge(
+            staticBadge(
                 text: "LIVE",
                 textColor: .green,
-                dot: AnyView(LiveStatusDot())
+                dotColor: .green
             )
 
         case .highConfidence:
-            animatedBadge(
+            staticBadge(
                 text: "HIGH CONFIDENCE",
                 textColor: Color(hex: "9B6CFF"),
-                dot: AnyView(HighConfidenceStatusDot())
+                dotColor: Color(hex: "9B6CFF")
             )
 
         case .estimated:
-            animatedBadge(
+            staticBadge(
                 text: "ESTIMATED",
                 textColor: .orange,
-                dot: AnyView(EstimatedStatusDot())
+                dotColor: .orange
             )
 
         case .comingSoon:
-            animatedBadge(
+            staticBadge(
                 text: "COMING SOON",
                 textColor: .gray,
-                dot: AnyView(ComingSoonStatusDot())
+                dotColor: .gray
             )
         }
     }
 
-    func animatedBadge(text: String, textColor: Color, dot: AnyView) -> some View {
+    func staticBadge(text: String, textColor: Color, dotColor: Color) -> some View {
         HStack(spacing: 6) {
-            dot
+            Circle()
+                .fill(dotColor)
+                .frame(width: 8, height: 8)
 
             Text(text)
                 .font(.system(size: 11, weight: .bold))
@@ -333,11 +329,12 @@ private extension AirportSelectorView {
     }
 
     var remainingAirportDefinitions: [AirportDefinition] {
-        let recentSet = Set(canonicalRecents)
         let favouriteSet = favourites
+        let recentSet = Set(canonicalRecents)
 
         return filteredDefinitions
-            .filter { !favouriteSet.contains($0.airport) }            .sorted { lhs, rhs in
+            .filter { !favouriteSet.contains($0.airport) && !recentSet.contains($0.airport) }
+            .sorted { lhs, rhs in
                 let lhsPriority = priority(lhs.feedType)
                 let rhsPriority = priority(rhs.feedType)
 
@@ -361,100 +358,6 @@ private extension AirportSelectorView {
             return 2
         case .comingSoon:
             return 3
-        }
-    }
-}
-
-// MARK: - Status Dots
-
-private struct LiveStatusDot: View {
-    @State private var animate = false
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color.green.opacity(0.22))
-                .frame(width: 16, height: 16)
-                .scaleEffect(animate ? 1.35 : 0.85)
-                .opacity(animate ? 0.20 : 0.65)
-
-            Circle()
-                .fill(Color.green)
-                .frame(width: 8, height: 8)
-        }
-        .onAppear {
-            withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
-                animate = true
-            }
-        }
-    }
-}
-
-private struct HighConfidenceStatusDot: View {
-    @State private var animate = false
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color(hex: "9B6CFF").opacity(0.22))
-                .frame(width: 16, height: 16)
-                .scaleEffect(animate ? 1.35 : 0.85)
-                .opacity(animate ? 0.20 : 0.65)
-
-            Circle()
-                .fill(Color(hex: "9B6CFF"))
-                .frame(width: 8, height: 8)
-        }
-        .onAppear {
-            withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
-                animate = true
-            }
-        }
-    }
-}
-
-private struct EstimatedStatusDot: View {
-    @State private var animate = false
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color.orange.opacity(0.22))
-                .frame(width: 16, height: 16)
-                .scaleEffect(animate ? 1.35 : 0.85)
-                .opacity(animate ? 0.20 : 0.65)
-
-            Circle()
-                .fill(Color.orange)
-                .frame(width: 8, height: 8)
-        }
-        .onAppear {
-            withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
-                animate = true
-            }
-        }
-    }
-}
-
-private struct ComingSoonStatusDot: View {
-    @State private var animate = false
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color.gray.opacity(0.18))
-                .frame(width: 16, height: 16)
-                .scaleEffect(animate ? 1.15 : 0.90)
-                .opacity(animate ? 0.18 : 0.45)
-
-            Circle()
-                .fill(Color.gray.opacity(0.85))
-                .frame(width: 8, height: 8)
-        }
-        .onAppear {
-            withAnimation(.easeOut(duration: 1.4).repeatForever(autoreverses: false)) {
-                animate = true
-            }
         }
     }
 }

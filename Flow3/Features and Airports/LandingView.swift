@@ -5,12 +5,11 @@ struct LandingView: View {
     @Binding var selectedTab: FlowRootView.FlowTab
 
     @State private var selectedRowID: String? = nil
-    @State private var now = Date()
     @State private var isShowingTrackingDetail = false
     @State private var otherCheckpointsExpanded = false
+    @State private var hasPerformedInitialLoad = false
 
     private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
-    private let updatedTicker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var displayRows: [AirportDisplayRow] {
         store.displayRowsForSelectedAirport()
@@ -86,7 +85,7 @@ struct LandingView: View {
             return .comingSoon
         }
     }
-    
+
     private var secondaryCheckpointRows: [AirportDisplayRow] {
         guard let primary = selectedRow else {
             return displayRows
@@ -97,6 +96,10 @@ struct LandingView: View {
 
     private var hasTrackedFlight: Bool {
         store.trackedFlight != nil
+    }
+
+    private var isLoadingCurrentAirport: Bool {
+        store.allWaitTimes().filter { $0.airport == store.selectedAirport }.isEmpty
     }
 
     var body: some View {
@@ -141,7 +144,13 @@ struct LandingView: View {
             }
         }
         .task {
-            await refreshNow()
+            guard !hasPerformedInitialLoad else { return }
+            hasPerformedInitialLoad = true
+
+            await refreshNow(
+                prefetchNeighbors: false,
+                shouldRefreshTrackedFlight: false
+            )
         }
         .onAppear {
             Task {
@@ -150,31 +159,39 @@ struct LandingView: View {
         }
         .onReceive(refreshTimer) { _ in
             Task {
-                await refreshNow()
+                await refreshNow(
+                    prefetchNeighbors: false,
+                    shouldRefreshTrackedFlight: store.trackedFlight != nil
+                )
             }
         }
-        .onReceive(updatedTicker) { value in
-            now = value
-        }
-        .onChange(of: store.selectedAirport) { _ in
+        .onChange(of: store.selectedAirport) {
             otherCheckpointsExpanded = false
             Task {
-                await refreshNow()
+                await refreshNow(
+                    prefetchNeighbors: false,
+                    shouldRefreshTrackedFlight: false
+                )
             }
         }
-        .onChange(of: store.trackedFlight?.securityRouteTitle) { _ in
+        .onChange(of: store.trackedFlight?.securityRouteTitle) {
             otherCheckpointsExpanded = false
             syncSelectedRowWithTrackedFlight()
         }
-        .onChange(of: store.trackedFlight?.securityRouteSubtitle) { _ in
+        .onChange(of: store.trackedFlight?.securityRouteSubtitle) {
             otherCheckpointsExpanded = false
             syncSelectedRowWithTrackedFlight()
         }
     }
 
-    private func refreshNow() async {
-        await store.refresh()
-        now = Date()
+    private func refreshNow(
+        prefetchNeighbors: Bool,
+        shouldRefreshTrackedFlight: Bool
+    ) async {
+        await store.refresh(
+            prefetchNeighbors: prefetchNeighbors,
+            shouldRefreshTrackedFlight: shouldRefreshTrackedFlight
+        )
 
         let latestRows = store.displayRowsForSelectedAirport()
 
@@ -400,7 +417,7 @@ private extension LandingView {
 
             heroCard
 
-            if hasTrackedFlight, let row = selectedRow {
+            if hasTrackedFlight, let row = selectedRow, !isLoadingCurrentAirport {
                 trackedCheckpointSummary(for: row)
             }
 
@@ -414,7 +431,10 @@ private extension LandingView {
     var refreshButton: some View {
         Button {
             Task {
-                await store.refresh()
+                await refreshNow(
+                    prefetchNeighbors: true,
+                    shouldRefreshTrackedFlight: store.trackedFlight != nil
+                )
             }
         } label: {
             Image(systemName: "arrow.clockwise")
@@ -473,7 +493,7 @@ private extension LandingView {
                 )
         }
     }
-    
+
     func confidenceBadge(text: String, textColor: Color, dot: AnyView) -> some View {
         HStack(spacing: 6) {
             dot
@@ -514,7 +534,20 @@ private extension LandingView {
 
     @ViewBuilder
     var heroContent: some View {
-        if let row = selectedRow {
+        if isLoadingCurrentAirport {
+            VStack(spacing: 8) {
+                ProgressView()
+                    .tint(.white)
+
+                Text("Loading live airport data")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Text("Please wait a moment")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.72))
+            }
+        } else if let row = selectedRow {
             if row.metrics.count > 1 {
                 VStack {
                     HStack(spacing: 34) {
@@ -575,21 +608,18 @@ private extension LandingView {
                 }
             }
         } else {
-            VStack(spacing: 6) {
-                Text("--")
-                    .font(.system(size: 60, weight: .heavy))
-                    .foregroundColor(.white)
-                    .monospacedDigit()
-
-                if usesAverageWaitPresentation {
-                    Text("Average wait time")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(Color(hex: "9B6CFF").opacity(0.95))
-                }
-
-                Text("No data")
-                    .font(.system(size: 14, weight: .semibold))
+            VStack(spacing: 8) {
+                Image(systemName: "airplane.departure")
+                    .font(.system(size: 24, weight: .semibold))
                     .foregroundColor(.white.opacity(0.75))
+
+                Text("Airport data unavailable")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Text("Refresh and try again shortly")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.72))
             }
         }
     }
@@ -662,6 +692,10 @@ private extension LandingView {
     }
 
     private var updatedRelativeText: String {
+        if isLoadingCurrentAirport {
+            return "Fetching latest airport feed"
+        }
+
         let now = Date()
         let seconds = max(0, Int(now.timeIntervalSince(feedTimestamp)))
         let relative = relativeAgeString(for: seconds)
@@ -692,7 +726,7 @@ private extension LandingView {
             return "Coming soon"
         }
     }
-    
+
     func relativeAgeString(for seconds: Int) -> String {
         if seconds < 60 {
             return "\(seconds)s ago"

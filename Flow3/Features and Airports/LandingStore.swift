@@ -28,6 +28,11 @@ final class LandingStore: ObservableObject {
 
     func setTrackedFlight(_ flight: TrackedFlight) {
         trackedFlight = flight
+
+        if let departureAirport = trackedDepartureAirport(from: flight.route) {
+            selectedAirport = departureAirport
+        }
+
         SavedFlightStore.shared.save(flight)
         FlowWatchConnectivityManager.shared.syncTrackedFlight(flight)
         rebuildAlerts()
@@ -89,10 +94,18 @@ final class LandingStore: ObservableObject {
     ) {
         self.waitTimeService = waitTimeService
         self.weatherService = weatherService
-        self.trackedFlight = SavedFlightStore.shared.load()
-        rebuildAlerts()
 
+        let savedFlight = SavedFlightStore.shared.load()
+        self.trackedFlight = savedFlight
+
+        if let savedFlight,
+           let departureAirport = trackedDepartureAirport(from: savedFlight.route) {
+            self.selectedAirport = departureAirport
+        }
+
+        rebuildAlerts()
     }
+
     deinit {
         autoRefreshTask?.cancel()
         prefetchTask?.cancel()
@@ -100,15 +113,21 @@ final class LandingStore: ObservableObject {
 
     // MARK: - Refresh
 
-    func refresh() async {
+    func refresh(
+        prefetchNeighbors: Bool = true,
+        shouldRefreshTrackedFlight: Bool = true
+    ) async {
         let airport = selectedAirport
         await refreshAirport(airport, updateVisibleState: true)
 
-        if trackedFlight != nil {
+        if shouldRefreshTrackedFlight, trackedFlight != nil {
             await refreshTrackedFlight()
         }
 
-        startPrefetchAroundSelectedAirport()
+        if prefetchNeighbors {
+            startPrefetchAroundSelectedAirport(delay: 0.75)
+        }
+
         rebuildAlerts()
     }
 
@@ -175,7 +194,6 @@ final class LandingStore: ObservableObject {
 
     private func handleSelectedAirportChanged() async {
         applyCachedSnapshotIfAvailable(for: selectedAirport)
-        startPrefetchAroundSelectedAirport()
         rebuildAlerts()
     }
 
@@ -195,13 +213,18 @@ final class LandingStore: ObservableObject {
 
     // MARK: - Prefetch
 
-    private func startPrefetchAroundSelectedAirport() {
+    private func startPrefetchAroundSelectedAirport(delay: TimeInterval = 0) {
         prefetchTask?.cancel()
 
         let airportsToPrefetch = neighboringAirports(around: selectedAirport, limit: 3)
 
         prefetchTask = Task { [weak self] in
             guard let self else { return }
+
+            if delay > 0 {
+                let delayNs = UInt64(delay * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: delayNs)
+            }
 
             for airport in airportsToPrefetch {
                 if Task.isCancelled { return }
@@ -320,6 +343,20 @@ final class LandingStore: ObservableObject {
             .first?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased() ?? selectedAirport.rawValue
+    }
+
+    private func trackedDepartureAirport(from route: String) -> FlowAirport? {
+        let code = route
+            .components(separatedBy: "→")
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+
+        guard let code else { return nil }
+
+        return AirportRegistry.airports
+            .map(\.airport)
+            .first(where: { $0.rawValue.uppercased() == code })
     }
 
     private func flowAirport(from code: String) -> FlowAirport? {
@@ -483,6 +520,11 @@ final class LandingStore: ObservableObject {
             let oldFlight = current
 
             trackedFlight = updated
+
+            if let departureAirport = trackedDepartureAirport(from: updated.route) {
+                selectedAirport = departureAirport
+            }
+
             SavedFlightStore.shared.save(updated)
             FlowWatchConnectivityManager.shared.syncTrackedFlight(updated)
 

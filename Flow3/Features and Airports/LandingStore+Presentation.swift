@@ -26,25 +26,15 @@ extension LandingStore {
         let rows = allWaitTimes()
             .filter { $0.airport == selectedAirport }
 
-        switch selectedAirport {
+        guard !rows.isEmpty else { return [] }
 
-        case .atl, .ist, .slc, .iah, .ham, .dus, .edi, .str, .bru,
-             .arn, .got, .osl, .doh, .zrh, .hel,
-             .yvr, .yyc, .den, .dfw, .hou, .mco, .pit, .phx,
-             .phl, .san, .las, .bos, .sea, .sfo,
-             .bna, .tpa, .dtw, .clt, .ewr, .bwi, .cle, .dca, .pdx,
-             .icn, .mad, .ber, .bcn,
-             .pmi, .agp, .alc, .svq, .bio, .ibz, .vlc, .tfs, .lpa:
+        if selectedAirport.prefersCheckpointPresentation {
             return namedCheckpointRows(from: rows)
-
-        case .jfk, .lhr, .lga, .cph, .yyz,
-             .ams, .cdg, .dxb, .sin, .fra,
-             .lax, .ord, .fco, .hnd, .syd, .msp,
-             .mia, .dub:
+        } else {
             return terminalDisplayRows(from: rows)
         }
     }
-    
+
     private func namedCheckpointRows(from rows: [WaitTimeEstimate]) -> [AirportDisplayRow] {
 
         let grouped = Dictionary(grouping: rows) { row in
@@ -200,8 +190,7 @@ extension LandingStore {
                 )
             }
             .sorted { lhs, rhs in
-                
-                // 🔥 Keep Terminal B at top
+
                 if lhs.title == "Terminal B" { return true }
                 if rhs.title == "Terminal B" { return false }
 
@@ -276,228 +265,5 @@ extension Array {
     func uniqued<T: Hashable>(by key: (Element) -> T) -> [Element] {
         var seen = Set<T>()
         return filter { seen.insert(key($0)).inserted }
-    }
-}
-
-struct GenericAirportBreakdownCard: View {
-
-    @ObservedObject var store: LandingStore
-    @Binding var selectedRowID: String?
-
-    private var rows: [AirportDisplayRow] {
-        store.displayRowsForSelectedAirport()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-
-            Text("\(store.selectedAirport.rawValue) checkpoints")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.white)
-
-            VStack(spacing: 12) {
-                ForEach(rows) { row in
-                    rowView(row)
-                }
-            }
-        }
-        .flowGlassCard()
-        .onAppear {
-            if selectedRowID == nil {
-                selectedRowID = rows.first?.id
-            }
-        }
-    }
-
-    private func rowView(_ row: AirportDisplayRow) -> some View {
-
-        let isSelected = selectedRowID == row.id
-
-        return Button {
-            selectedRowID = row.id
-        } label: {
-
-            VStack(alignment: .leading, spacing: 10) {
-
-                HStack(spacing: 14) {
-
-                    VStack(alignment: .leading, spacing: 4) {
-
-                        Text(row.title)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-
-                        Text(row.subtitle)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.65))
-                    }
-
-                    Spacer()
-
-                    if row.isLive {
-                        liveStatusPill()
-                    } else {
-                        estimatedStatusPill()
-                    }
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.55))
-                }
-
-                HStack(spacing: 10) {
-
-                    if row.isClosed {
-
-                        closedPill(
-                            text: store.selectedAirport == .sea ? "Unavailable" : "Closed"
-                        )
-
-                    } else {
-
-                        ForEach(row.metrics) { metric in
-                            metricPill(metric)
-                        }
-
-                    }
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(isSelected ? Color.white.opacity(0.16) : Color.white.opacity(0.10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18)
-                            .stroke(Color.white.opacity(isSelected ? 0.18 : 0.10), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func liveStatusPill() -> some View {
-        HStack(spacing: 6) {
-            LivePulseDot()
-
-            Text("LIVE")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(.green)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(
-            Capsule()
-                .fill(Color.white.opacity(0.10))
-                .overlay(
-                    Capsule()
-                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                )
-        )
-    }
-
-    private func estimatedStatusPill() -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(Color.orange)
-                .frame(width: 8, height: 8)
-
-            Text("ESTIMATED")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(.orange)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(
-            Capsule()
-                .fill(Color.white.opacity(0.10))
-                .overlay(
-                    Capsule()
-                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                )
-        )
-    }
-
-    private func closedPill(text: String) -> some View {
-
-        Text(text)
-            .font(.system(size: 14, weight: .bold))
-            .foregroundColor(.red)
-            .frame(width: 110, height: 50)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.black.opacity(0.22))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                    )
-            )
-    }
-    
-    private func metricPill(_ metric: AirportMetric, isLive: Bool = false) -> some View {
-
-        VStack(spacing: 4) {
-
-            if isLive {
-
-                HStack(spacing: 6) {
-                    LivePulseDot()
-
-                    Text("\(metric.minutes ?? 0)m")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.green)
-                }
-
-                Text(metric.label)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.75))
-
-            } else if metric.minutes == 0 {
-
-                HStack(spacing: 6) {
-
-                    LivePulseDot()
-
-                    Text("No wait")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.green)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
-
-                Text(metric.label)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.75))
-                    .lineLimit(1)
-
-            } else {
-
-                Text("\(metric.minutes ?? 0)m")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-
-                Text(metric.label)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.75))
-            }
-        }
-        .frame(width: 92, height: 50)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(
-                    isLive
-                    ? Color.green.opacity(0.10)
-                    : Color.black.opacity(0.22)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(
-                            isLive
-                            ? Color.green.opacity(0.22)
-                            : Color.white.opacity(0.10),
-                            lineWidth: 1
-                        )
-                )
-        )
     }
 }
