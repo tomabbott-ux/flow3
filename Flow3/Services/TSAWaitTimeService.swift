@@ -1,54 +1,8 @@
 import Foundation
 
 struct TSAWaitTimeService {
-
-    // Replace with your real TSAWaitTimes key
-    private let apiKey = "VrEVxLfcl7O1TTWYgzU8sxpvW6ZmNbvr"
-
     func fetchWaitTimes(for airportCode: String) async throws -> TSAAirportWaitResponse {
-        guard !apiKey.isEmpty, apiKey != "PASTE_YOUR_REAL_TSA_KEY_HERE" else {
-            throw URLError(.userAuthenticationRequired)
-        }
-
-        let code = airportCode.uppercased()
-
-        guard let url = URL(string: "https://www.tsawaittimes.com/api/airport/\(apiKey)/\(code)/JSON") else {
-            throw URLError(.badURL)
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.timeoutInterval = 15
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = 15
-        configuration.timeoutIntervalForResource = 20
-
-        let session = URLSession(configuration: configuration)
-        let (data, response) = try await session.data(for: request)
-
-        if let http = response as? HTTPURLResponse {
-            print("TSA status:", http.statusCode)
-        }
-        print("TSA raw:", String(data: data, encoding: .utf8) ?? "<non-utf8>")
-
-        guard let http = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
-
-        guard (200...299).contains(http.statusCode) else {
-            let body = String(data: data.prefix(500), encoding: .utf8) ?? "<non-utf8>"
-            print("TSA API failed:", http.statusCode, body)
-            throw URLError(.badServerResponse)
-        }
-
-        do {
-            return try JSONDecoder().decode(TSAAirportWaitResponse.self, from: data)
-        } catch {
-            print("TSA decode failed:", error.localizedDescription)
-            throw error
-        }
+        throw URLError(.unsupportedURL)
     }
 }
 
@@ -85,40 +39,8 @@ struct TSAAirportWaitResponse: Decodable {
         case precheckCheckpoints = "precheck_checkpoints"
     }
 
-    var resolvedGeneralMinutes: Int? {
-        if let rightnow {
-            return rightnow
-        }
-
-        if let currentHour = Calendar.current.dateComponents([.hour], from: Date()).hour,
-           let hourly = estimatedHourlyTimes?.first(where: { $0.hour == currentHour })?.waittime {
-            return Int(hourly.rounded())
-        }
-
-        if let fallbackHourly = estimatedHourlyTimes?.first?.waittime {
-            return Int(fallbackHourly.rounded())
-        }
-
-        return nil
-    }
-
-    var resolvedPrecheckMinutes: Int? {
-        guard precheck == 1 else { return nil }
-
-        let allStatuses = precheckCheckpoints?
-            .flatMap { $0.value.values }
-            .map { $0.lowercased() } ?? []
-
-        let hasOpenPrecheck = allStatuses.contains("open")
-
-        guard hasOpenPrecheck else { return nil }
-
-        if let general = resolvedGeneralMinutes {
-            return max(1, general - 3)
-        }
-
-        return 5
-    }
+    var resolvedGeneralMinutes: Int? { nil }
+    var resolvedPrecheckMinutes: Int? { nil }
 }
 
 struct TSAFAAAlerts: Decodable {

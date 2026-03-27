@@ -5,7 +5,6 @@ struct LandingView: View {
     @Binding var selectedTab: FlowRootView.FlowTab
 
     @State private var selectedRowID: String? = nil
-    @State private var isShowingTrackingDetail = false
     @State private var otherCheckpointsExpanded = false
     @State private var hasPerformedInitialLoad = false
 
@@ -99,6 +98,7 @@ struct LandingView: View {
     }
 
     private var isLoadingCurrentAirport: Bool {
+        store.lastUpdated == nil &&
         store.allWaitTimes().filter { $0.airport == store.selectedAirport }.isEmpty
     }
 
@@ -114,12 +114,7 @@ struct LandingView: View {
                     weatherRow
 
                     if store.trackedFlight != nil {
-                        Button {
-                            isShowingTrackingDetail = true
-                        } label: {
-                            TrackedFlightPill(store: store)
-                        }
-                        .buttonStyle(.plain)
+                        TrackedFlightPill(store: store)
                     }
 
                     securityHero
@@ -133,16 +128,6 @@ struct LandingView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $isShowingTrackingDetail) {
-            if let trackedFlight = store.trackedFlight {
-                NavigationStack {
-                    TrackedFlightDetailView(
-                        flight: trackedFlight,
-                        airport: store.selectedAirport
-                    )
-                }
-            }
-        }
         .task {
             guard !hasPerformedInitialLoad else { return }
             hasPerformedInitialLoad = true

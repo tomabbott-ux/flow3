@@ -3,7 +3,6 @@ import Foundation
 struct ATLStubWaitTimeProvider: WaitTimeProviding {
 
     private let provider = ATLLiveWaitTimeProvider()
-    private let tsaService = TSAWaitTimeService()
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
         guard airport == .atl else { return [] }
@@ -34,87 +33,10 @@ struct ATLStubWaitTimeProvider: WaitTimeProviding {
                 .sorted(by: atlSort)
         }
 
-        // 2. TSA fallback
-        if let tsaRows = try? await fetchTSAFallback(observedAt: now), !tsaRows.isEmpty {
-            return tsaRows.sorted(by: atlSort)
-        }
-
-        // 3. Final hardcoded fallback
+        // 2. Final hardcoded fallback
         return fallbackWaits(observedAt: now).sorted(by: atlSort)
     }
 
-    private func fetchTSAFallback(observedAt: Date) async throws -> [WaitTimeEstimate] {
-        let response = try await tsaService.fetchWaitTimes(for: "ATL")
-
-        guard let general = response.resolvedGeneralMinutes else {
-            return []
-        }
-
-        let precheckMinutes = response.resolvedPrecheckMinutes
-
-        // ✅ DEBUG (SAFE POSITION)
-        print("ATL TSA fallback general:", general)
-        print("ATL TSA fallback precheck:", precheckMinutes as Any)
-
-        return [
-            WaitTimeEstimate(
-                airport: .atl,
-                terminal: nil,
-                queueType: .general,
-                minutes: general,
-                observedAt: observedAt,
-                checkpointName: "MAIN",
-                areaName: "Domestic",
-                sourceType: .estimated,
-                isClosed: false
-            ),
-            WaitTimeEstimate(
-                airport: .atl,
-                terminal: nil,
-                queueType: .general,
-                minutes: max(5, general + 2),
-                observedAt: observedAt,
-                checkpointName: "NORTH",
-                areaName: "Domestic",
-                sourceType: .estimated,
-                isClosed: false
-            ),
-            WaitTimeEstimate(
-                airport: .atl,
-                terminal: nil,
-                queueType: .general,
-                minutes: 0,
-                observedAt: observedAt,
-                checkpointName: "LOWER NORTH",
-                areaName: "Domestic",
-                sourceType: .estimated,
-                isClosed: true
-            ),
-            WaitTimeEstimate(
-                airport: .atl,
-                terminal: nil,
-                queueType: .precheck,
-                minutes: precheckMinutes ?? max(2, general - 3),
-                observedAt: observedAt,
-                checkpointName: "SOUTH",
-                areaName: "Domestic",
-                sourceType: .estimated,
-                isClosed: false
-            ),
-            WaitTimeEstimate(
-                airport: .atl,
-                terminal: nil,
-                queueType: .general,
-                minutes: max(3, general - 1),
-                observedAt: observedAt,
-                checkpointName: "MAIN",
-                areaName: "International",
-                sourceType: .estimated,
-                isClosed: false
-            )
-        ]
-    }
-    
     private func fallbackWaits(observedAt: Date) -> [WaitTimeEstimate] {
         [
             WaitTimeEstimate(
@@ -176,6 +98,13 @@ struct ATLStubWaitTimeProvider: WaitTimeProviding {
     }
 
     private func atlSort(_ lhs: WaitTimeEstimate, _ rhs: WaitTimeEstimate) -> Bool {
+
+        // 1. OPEN first
+        if lhs.isClosed != rhs.isClosed {
+            return !lhs.isClosed
+        }
+
+        // 2. Domestic before International
         let lhsArea = lhs.areaName ?? ""
         let rhsArea = rhs.areaName ?? ""
 
@@ -184,20 +113,16 @@ struct ATLStubWaitTimeProvider: WaitTimeProviding {
             if rhsArea == "Domestic" { return false }
         }
 
+        // 3. Priority order
         let lhsName = lhs.checkpointName ?? ""
         let rhsName = rhs.checkpointName ?? ""
 
-        let order = ["MAIN", "NORTH", "LOWER NORTH", "SOUTH"]
-        if lhsArea == "Domestic", rhsArea == "Domestic" {
-            let lhsIndex = order.firstIndex(of: lhsName) ?? 999
-            let rhsIndex = order.firstIndex(of: rhsName) ?? 999
-            if lhsIndex != rhsIndex { return lhsIndex < rhsIndex }
-        }
+        let order = ["MAIN", "NORTH", "SOUTH", "LOWER NORTH"]
 
-        if lhsArea == "International", rhsArea == "International" {
-            return lhsName < rhsName
-        }
+        let lhsIndex = order.firstIndex(of: lhsName) ?? 999
+        let rhsIndex = order.firstIndex(of: rhsName) ?? 999
 
-        return lhsName < rhsName
+        return lhsIndex < rhsIndex
+   
     }
 }

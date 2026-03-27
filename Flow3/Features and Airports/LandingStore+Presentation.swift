@@ -98,10 +98,38 @@ extension LandingStore {
                 if lhs.id == "SLC-PRECHECK-AVAILABLE" { return false }
                 if rhs.id == "SLC-PRECHECK-AVAILABLE" { return true }
 
-                if selectedAirport == .sea {
-                    if lhs.isClosed != rhs.isClosed {
-                        return rhs.isClosed
+                // Prefer open rows first for all airports
+                if lhs.isClosed != rhs.isClosed {
+                    return !lhs.isClosed
+                }
+
+                // ATL custom order
+                if selectedAirport == .atl {
+                    let lhsArea = lhs.subtitle
+                    let rhsArea = rhs.subtitle
+
+                    if lhsArea != rhsArea {
+                        if lhsArea == "Domestic" { return true }
+                        if rhsArea == "Domestic" { return false }
                     }
+
+                    let order = ["MAIN", "NORTH", "SOUTH", "LOWER NORTH"]
+                    let lhsIndex = order.firstIndex(of: lhs.title) ?? 999
+                    let rhsIndex = order.firstIndex(of: rhs.title) ?? 999
+
+                    if lhsIndex != rhsIndex {
+                        return lhsIndex < rhsIndex
+                    }
+
+                    return lhs.subtitle < rhs.subtitle
+                }
+
+                // SEA special handling
+                if selectedAirport == .sea {
+                    if lhs.title == rhs.title {
+                        return lhs.subtitle < rhs.subtitle
+                    }
+                    return lhs.title < rhs.title
                 }
 
                 if lhs.title == rhs.title {
