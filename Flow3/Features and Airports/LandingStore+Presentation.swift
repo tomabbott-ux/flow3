@@ -28,6 +28,12 @@ extension LandingStore {
 
         guard !rows.isEmpty else { return [] }
 
+        // MSP must be shown by checkpoint, not grouped by terminal,
+        // otherwise T1 North / T1 South collapse into one Terminal 1 row.
+        if selectedAirport == .msp {
+            return namedCheckpointRows(from: rows)
+        }
+
         if selectedAirport.prefersCheckpointPresentation {
             return namedCheckpointRows(from: rows)
         } else {
@@ -122,6 +128,29 @@ extension LandingStore {
                     }
 
                     return lhs.subtitle < rhs.subtitle
+                }
+
+                // MSP custom order
+                if selectedAirport == .msp {
+                    let order = [
+                        "T1 North",
+                        "T1 South",
+                        "T2 Checkpoint 1",
+                        "T2 PreCheck"
+                    ]
+
+                    let lhsIndex = order.firstIndex(of: lhs.title) ?? 999
+                    let rhsIndex = order.firstIndex(of: rhs.title) ?? 999
+
+                    if lhsIndex != rhsIndex {
+                        return lhsIndex < rhsIndex
+                    }
+
+                    if lhs.title == rhs.title {
+                        return lhs.subtitle < rhs.subtitle
+                    }
+
+                    return lhs.title < rhs.title
                 }
 
                 // SEA special handling
@@ -274,7 +303,7 @@ extension LandingStore {
 
         if general != nil {
             return [
-                AirportMetric(label: "Wait", minutes: general)
+                AirportMetric(label: "General", minutes: general)
             ]
         }
 
@@ -284,7 +313,7 @@ extension LandingStore {
             .min()
 
         return [
-            AirportMetric(label: "Wait", minutes: bestMinutes)
+            AirportMetric(label: "General", minutes: bestMinutes)
         ]
     }
 }

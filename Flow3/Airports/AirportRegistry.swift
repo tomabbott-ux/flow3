@@ -164,7 +164,9 @@ struct AirportRegistry {
         AirportDefinition(airport: .bna, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .tpa, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .dtw, feedType: .estimated, providerKind: .estimated),
-        AirportDefinition(airport: .msp, feedType: .comingSoon, providerKind: .none),
+
+        // MSP activated via official website scrape
+        AirportDefinition(airport: .msp, feedType: .highConfidence, providerKind: .tsaWebsite),
 
         AirportDefinition(airport: .cdg, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .dxb, feedType: .estimated, providerKind: .estimated),
