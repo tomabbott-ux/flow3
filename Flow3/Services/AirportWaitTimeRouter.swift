@@ -14,7 +14,8 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
     private let seaProvider = SEALiveWaitTimeProvider()
     private let dubProvider = DUBLiveWaitTimeProvider()
     private let delProvider = DELLiveWaitTimeProvider()
-
+    private let chsProvider = CHSWebsiteWaitTimeProvider()
+    
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
 
         guard let definition = AirportRegistry.definition(for: airport) else {
@@ -44,6 +45,9 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
             case .lhr:
                 results = try await LHRLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+                
+            case .chs:
+                results = try await chsProvider.fetchWaitTimes(for: airport)
 
             case .ist:
                 results = try await ISTLiveWaitTimeProvider().fetchWaitTimes(for: airport)

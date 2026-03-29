@@ -104,12 +104,10 @@ extension LandingStore {
                 if lhs.id == "SLC-PRECHECK-AVAILABLE" { return false }
                 if rhs.id == "SLC-PRECHECK-AVAILABLE" { return true }
 
-                // Prefer open rows first for all airports
                 if lhs.isClosed != rhs.isClosed {
                     return !lhs.isClosed
                 }
 
-                // ATL custom order
                 if selectedAirport == .atl {
                     let lhsArea = lhs.subtitle
                     let rhsArea = rhs.subtitle
@@ -130,7 +128,6 @@ extension LandingStore {
                     return lhs.subtitle < rhs.subtitle
                 }
 
-                // MSP custom order
                 if selectedAirport == .msp {
                     let order = [
                         "T1 North",
@@ -153,7 +150,6 @@ extension LandingStore {
                     return lhs.title < rhs.title
                 }
 
-                // SEA special handling
                 if selectedAirport == .sea {
                     if lhs.title == rhs.title {
                         return lhs.subtitle < rhs.subtitle
@@ -197,7 +193,6 @@ extension LandingStore {
             .compactMap { terminal, items -> AirportDisplayRow? in
 
                 guard terminal >= 0 else { return nil }
-
                 if terminal == 0 { return nil }
 
                 let isTBIT = terminal == 999 && selectedAirport == .lax

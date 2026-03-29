@@ -34,7 +34,8 @@ enum AirportProviderKind: String, Codable, Hashable {
     case ber
     case mia
     case del
-
+    case chs
+    
     case yyz
     case yvr
     case yyc
@@ -155,7 +156,8 @@ struct AirportRegistry {
         AirportDefinition(airport: .bwi, feedType: .live, providerKind: .bwi),
         AirportDefinition(airport: .dca, feedType: .live, providerKind: .dca),
         AirportDefinition(airport: .pdx, feedType: .live, providerKind: .pdx),
-
+        AirportDefinition(airport: .chs, feedType: .live, providerKind: .chs),
+        
         // Changed from broken TSA website high confidence to estimated
         AirportDefinition(airport: .san, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .las, feedType: .estimated, providerKind: .estimated),
@@ -167,7 +169,8 @@ struct AirportRegistry {
 
         // MSP activated via official website scrape
         AirportDefinition(airport: .msp, feedType: .highConfidence, providerKind: .tsaWebsite),
-
+        
+        
         AirportDefinition(airport: .cdg, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .dxb, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .sin, feedType: .estimated, providerKind: .estimated),

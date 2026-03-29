@@ -38,7 +38,8 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
     case pdx = "PDX"
     case cle = "CLE"
     case pit = "PIT"
-
+    case chs = "CHS"
+    
     case yyz = "YYZ"
     case yvr = "YVR"
     case yyc = "YYC"
@@ -118,6 +119,7 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .cle: return "Cleveland"
         case .pit: return "Pittsburgh"
         case .del: return "Delhi"
+        case .chs: return "Charleston"
             
         case .yyz: return "Toronto Pearson"
         case .yvr: return "Vancouver"
@@ -184,6 +186,7 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
         case .zrh: return "Zurich (ZRH)"
         case .hel: return "Helsinki (HEL)"
         case .del: return "Delhi (DEL)"
+        case .chs: return "Charleston (CHS)"
             
         case .phl: return "Philadelphia (PHL)"
         case .mco: return "Orlando (MCO)"
@@ -247,9 +250,9 @@ enum FlowAirport: String, CaseIterable, Identifiable, Codable, Hashable {
     var timeZone: TimeZone {
         switch self {
 
-        case .atl, .jfk, .lga, .phl, .mco, .bos, .mia, .pit, .cle, .yyz, .tpa, .dtw, .clt, .ewr, .bwi, .dca:
+        case .atl, .jfk, .lga, .phl, .mco, .bos, .mia, .pit, .cle, .yyz, .tpa, .dtw, .clt, .ewr, .bwi, .dca, .chs:
             return TimeZone(identifier: "America/New_York")!
-
+            
         case .bna, .dfw, .hou, .ord, .iah, .msp:
             return TimeZone(identifier: "America/Chicago")!
 

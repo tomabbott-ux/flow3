@@ -612,7 +612,7 @@ private extension LandingView {
     @ViewBuilder
     func heroMetric(value: Int?, label: String) -> some View {
         VStack(spacing: 6) {
-            if let minutes = value, minutes == 0 {
+            if let value, value == 0 {
                 HStack(spacing: 6) {
                     LivePulseDot()
 

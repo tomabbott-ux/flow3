@@ -12,7 +12,7 @@ extension FlowAirport {
         case .ist: return "LTFM"
         case .lga: return "KLGA"
         case .del: return "VIDP"
-            
+
         case .ham: return "EDDH"
         case .cph: return "EKCH"
         case .dus: return "EDDL"
@@ -20,7 +20,7 @@ extension FlowAirport {
         case .str: return "EDDS"
         case .bru: return "EBBR"
         case .ber: return "EDDB"
-            
+
         case .phl: return "KPHL"
         case .mco: return "KMCO"
         case .slc: return "KSLC"
@@ -36,7 +36,8 @@ extension FlowAirport {
         case .pdx: return "KPDX"
         case .cle: return "KCLE"
         case .pit: return "KPIT"
-            
+        case .chs: return "KCHS"
+
         case .yyz: return "CYYZ"
         case .yvr: return "CYVR"
         case .yyc: return "CYYC"
@@ -62,6 +63,7 @@ extension FlowAirport {
         case .vlc: return "LEVC"
         case .tfs: return "GCTS"
         case .lpa: return "GCLP"
+
         case .sfo: return "KSFO"
         case .lax: return "KLAX"
         case .ord: return "KORD"
