@@ -35,6 +35,7 @@ enum AirportProviderKind: String, Codable, Hashable {
     case mia
     case del
     case chs
+    case bna
     
     case yyz
     case yvr
@@ -52,6 +53,7 @@ enum AirportProviderKind: String, Codable, Hashable {
     case ams
     case laxTBIT
     case lax
+    case dtw
 
     case clt
     case pit
@@ -133,7 +135,9 @@ struct AirportRegistry {
         AirportDefinition(airport: .icn, feedType: .live, providerKind: .icn),
         AirportDefinition(airport: .mia, feedType: .live, providerKind: .mia),
         AirportDefinition(airport: .sea, feedType: .live, providerKind: .sea),
+        AirportDefinition(airport: .dtw, feedType: .live, providerKind: .dtw),
         AirportDefinition(airport: .del, feedType: .estimated, providerKind: .estimated),
+        
 
         // AENA live
         AirportDefinition(airport: .mad, feedType: .live, providerKind: .aena),
@@ -157,15 +161,15 @@ struct AirportRegistry {
         AirportDefinition(airport: .dca, feedType: .live, providerKind: .dca),
         AirportDefinition(airport: .pdx, feedType: .live, providerKind: .pdx),
         AirportDefinition(airport: .chs, feedType: .live, providerKind: .chs),
+        AirportDefinition(airport: .bna, feedType: .live, providerKind: .bna),
         
         // Changed from broken TSA website high confidence to estimated
         AirportDefinition(airport: .san, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .las, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .bos, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .sfo, feedType: .estimated, providerKind: .estimated),
-        AirportDefinition(airport: .bna, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .tpa, feedType: .estimated, providerKind: .estimated),
-        AirportDefinition(airport: .dtw, feedType: .estimated, providerKind: .estimated),
+        
 
         // MSP activated via official website scrape
         AirportDefinition(airport: .msp, feedType: .highConfidence, providerKind: .tsaWebsite),

@@ -48,7 +48,13 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
                 
             case .chs:
                 results = try await chsProvider.fetchWaitTimes(for: airport)
-
+                
+            case .dtw:   //
+                results = try await DTWLiveWaitTimeProvider().fetchWaitTimes(for: airport)
+                
+            case .bna:
+                results = try await BNAWebsiteWaitTimeProvider().fetchWaitTimes(for: airport)
+                
             case .ist:
                 results = try await ISTLiveWaitTimeProvider().fetchWaitTimes(for: airport)
 
