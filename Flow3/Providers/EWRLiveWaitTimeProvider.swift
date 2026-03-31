@@ -43,25 +43,55 @@ final class EWRLiveWaitTimeProvider: WaitTimeProviding {
         }
 
         let payload = try JSONDecoder().decode([EWRWaitPoint].self, from: data)
-
         let formatter = ISO8601DateFormatter()
 
-        return payload.map { item in
+        return payload.compactMap { item in
             let queueType: QueueType = item.queueType.uppercased().contains("PRE") ? .precheck : .general
             let observedAt = formatter.date(from: item.updateTime) ?? Date()
+
+            let explicitlyClosed = isExplicitlyClosed(item)
+
+            // If the source says the queue is unavailable / N/A but not closed,
+            // do NOT show it as Closed and do NOT fake a wait time.
+            if !explicitlyClosed && !item.isWaitTimeAvailable {
+                return nil
+            }
+
+            let minutes: Int
+            if explicitlyClosed {
+                minutes = 0
+            } else {
+                minutes = max(0, item.timeInMinutes)
+            }
 
             return WaitTimeEstimate(
                 airport: .ewr,
                 terminal: Int(item.terminal),
                 queueType: queueType,
-                minutes: max(0, item.timeInMinutes),
+                minutes: minutes,
                 observedAt: observedAt,
                 checkpointName: item.displayCheckpointTitle,
                 areaName: item.displaySubtitle,
                 sourceType: .live,
-                isClosed: !item.queueOpen || !item.isWaitTimeAvailable
+                isClosed: explicitlyClosed
             )
         }
+    }
+
+    private func isExplicitlyClosed(_ item: EWRWaitPoint) -> Bool {
+        if item.queueOpen == false {
+            return true
+        }
+
+        let normalizedStatus = (item.status ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
+        if normalizedStatus == "closed" {
+            return true
+        }
+
+        return false
     }
 }
 
@@ -95,11 +125,10 @@ private struct EWRWaitPoint: Decodable {
     }
 
     var displaySubtitle: String {
-        let terminalTitle = "Terminal \(terminal)"
         let cleanedGate = (gate ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
 
         if cleanedGate.isEmpty || cleanedGate.uppercased() == "ALL GATES" {
-            return terminalTitle
+            return "EWR"
         }
 
         return "Gates \(cleanedGate)"

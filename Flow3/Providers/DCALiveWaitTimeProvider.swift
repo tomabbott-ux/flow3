@@ -46,7 +46,7 @@ final class DCALiveWaitTimeProvider: WaitTimeProviding {
         let payload = try JSONDecoder().decode(DCAResponse.self, from: data)
         let now = Date()
 
-        return payload.response.res.flatMap { key, item -> [WaitTimeEstimate] in
+        return payload.response.res.flatMap { _, item -> [WaitTimeEstimate] in
             var rows: [WaitTimeEstimate] = []
 
             let title = item.location.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -97,19 +97,96 @@ final class DCALiveWaitTimeProvider: WaitTimeProviding {
     private func parseMinutes(_ value: String?) -> Int? {
         guard let value else { return nil }
 
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
 
         if trimmed.isEmpty {
             return nil
         }
 
-        if trimmed.contains("<") {
-            let digits = trimmed.filter(\.isNumber)
-            return Int(digits)
+        // "Less than 5 minutes" -> 4
+        if let regex = try? NSRegularExpression(
+            pattern: #"less than\s+(\d+)\s+minutes"#,
+            options: [.caseInsensitive]
+        ) {
+            let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+            if let match = regex.firstMatch(in: trimmed, options: [], range: range),
+               let valueRange = Range(match.range(at: 1), in: trimmed),
+               let rawValue = Int(trimmed[valueRange]) {
+                return max(1, rawValue - 1)
+            }
         }
 
-        let digits = trimmed.filter(\.isNumber)
-        return Int(digits)
+        // "4-7 minutes" -> 7
+        if let regex = try? NSRegularExpression(
+            pattern: #"(\d+)\s*-\s*(\d+)\s+minutes"#,
+            options: [.caseInsensitive]
+        ) {
+            let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+            if let match = regex.firstMatch(in: trimmed, options: [], range: range),
+               let upperRange = Range(match.range(at: 2), in: trimmed),
+               let upperValue = Int(trimmed[upperRange]) {
+                return upperValue
+            }
+        }
+
+        // "4 to 7 minutes" -> 7
+        if let regex = try? NSRegularExpression(
+            pattern: #"(\d+)\s+to\s+(\d+)\s+minutes"#,
+            options: [.caseInsensitive]
+        ) {
+            let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+            if let match = regex.firstMatch(in: trimmed, options: [], range: range),
+               let upperRange = Range(match.range(at: 2), in: trimmed),
+               let upperValue = Int(trimmed[upperRange]) {
+                return upperValue
+            }
+        }
+
+        // "< 5 minutes" or "<5 minutes" -> 4
+        if let regex = try? NSRegularExpression(
+            pattern: #"<\s*(\d+)\s+minutes|<\s*(\d+)"#,
+            options: [.caseInsensitive]
+        ) {
+            let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+            if let match = regex.firstMatch(in: trimmed, options: [], range: range) {
+                for captureIndex in 1..<match.numberOfRanges {
+                    if let captureRange = Range(match.range(at: captureIndex), in: trimmed),
+                       let rawValue = Int(trimmed[captureRange]) {
+                        return max(1, rawValue - 1)
+                    }
+                }
+            }
+        }
+
+        // "7 minutes" -> 7
+        if let regex = try? NSRegularExpression(
+            pattern: #"(\d+)\s+minutes"#,
+            options: [.caseInsensitive]
+        ) {
+            let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+            if let match = regex.firstMatch(in: trimmed, options: [], range: range),
+               let valueRange = Range(match.range(at: 1), in: trimmed),
+               let rawValue = Int(trimmed[valueRange]) {
+                return rawValue
+            }
+        }
+
+        // Fallback: single raw number only
+        if let regex = try? NSRegularExpression(
+            pattern: #"^\s*(\d+)\s*$"#,
+            options: [.caseInsensitive]
+        ) {
+            let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+            if let match = regex.firstMatch(in: trimmed, options: [], range: range),
+               let valueRange = Range(match.range(at: 1), in: trimmed),
+               let rawValue = Int(trimmed[valueRange]) {
+                return rawValue
+            }
+        }
+
+        return nil
     }
 
     private func cleanedGates(_ value: String?) -> String {

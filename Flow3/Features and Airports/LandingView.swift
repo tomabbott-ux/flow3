@@ -7,8 +7,11 @@ struct LandingView: View {
     @State private var selectedRowID: String? = nil
     @State private var otherCheckpointsExpanded = false
     @State private var hasPerformedInitialLoad = false
+    @State private var lastRefreshDate: Date? = nil
+    @State private var isRefreshInFlight = false
 
-    private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+    private let refreshTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private let autoRefreshInterval: TimeInterval = 60
 
     private var displayRows: [AirportDisplayRow] {
         store.displayRowsForSelectedAirport()
@@ -142,12 +145,18 @@ struct LandingView: View {
                 await FlowNotificationManager.shared.requestPermission()
             }
         }
-        .onReceive(refreshTimer) { _ in
-            Task {
-                await refreshNow(
-                    prefetchNeighbors: false,
-                    shouldRefreshTrackedFlight: store.trackedFlight != nil
-                )
+        .onReceive(refreshTick) { now in
+            guard hasPerformedInitialLoad else { return }
+            guard !isRefreshInFlight else { return }
+            guard let lastRefreshDate else { return }
+
+            if now.timeIntervalSince(lastRefreshDate) >= autoRefreshInterval {
+                Task {
+                    await refreshNow(
+                        prefetchNeighbors: false,
+                        shouldRefreshTrackedFlight: store.trackedFlight != nil
+                    )
+                }
             }
         }
         .onChange(of: store.selectedAirport) {
@@ -173,10 +182,16 @@ struct LandingView: View {
         prefetchNeighbors: Bool,
         shouldRefreshTrackedFlight: Bool
     ) async {
+        guard !isRefreshInFlight else { return }
+        isRefreshInFlight = true
+        defer { isRefreshInFlight = false }
+
         await store.refresh(
             prefetchNeighbors: prefetchNeighbors,
             shouldRefreshTrackedFlight: shouldRefreshTrackedFlight
         )
+
+        lastRefreshDate = Date()
 
         let latestRows = store.displayRowsForSelectedAirport()
 
@@ -406,11 +421,17 @@ private extension LandingView {
                 trackedCheckpointSummary(for: row)
             }
 
-            Text(updatedRelativeText)
+            updatedRelativeTextView
+        }
+        .flowGlassCard()
+    }
+
+    var updatedRelativeTextView: some View {
+        TimelineView(.periodic(from: Date(), by: 1)) { context in
+            Text(updatedRelativeText(for: context.date))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.white.opacity(0.7))
         }
-        .flowGlassCard()
     }
 
     var refreshButton: some View {
@@ -676,59 +697,47 @@ private extension LandingView {
             .max() ?? Date()
     }
 
-    private var updatedRelativeText: String {
+    private func updatedRelativeText(for now: Date) -> String {
         if isLoadingCurrentAirport {
             return "Fetching latest airport feed"
         }
 
-        let now = Date()
-        let seconds = max(0, Int(now.timeIntervalSince(feedTimestamp)))
-        let relative = relativeAgeString(for: seconds)
+        if isRefreshInFlight {
+            return "Refreshing latest airport feed"
+        }
+
+        let referenceDate = lastRefreshDate ?? feedTimestamp
+        let elapsed = max(0, Int(now.timeIntervalSince(referenceDate)))
+        let elapsedText = relativeAgeString(for: elapsed)
 
         switch confidenceLevel {
         case .live:
-            if seconds >= 900 {
-                return "Live feed · Last update \(relative)"
-            } else {
-                return "Live feed · Updated \(relative)"
-            }
-
+            return "Live feed · Updated \(elapsedText) ago"
         case .highConfidence:
-            if seconds >= 900 {
-                return "High confidence feed · Last check \(relative)"
-            } else {
-                return "High confidence feed · Checked \(relative)"
-            }
-
+            return "High confidence feed · Checked \(elapsedText) ago"
         case .lowConfidence:
-            if seconds >= 900 {
-                return "Estimated feed · Last refresh \(relative)"
-            } else {
-                return "Estimated feed · Refreshed \(relative)"
-            }
-
+            return "Estimated feed · Refreshed \(elapsedText) ago"
         case .comingSoon:
             return "Coming soon"
         }
     }
-
     func relativeAgeString(for seconds: Int) -> String {
         if seconds < 60 {
-            return "\(seconds)s ago"
+            return "\(seconds)s"
         }
 
         let minutes = seconds / 60
         if minutes < 60 {
-            return "\(minutes)m ago"
+            return "\(minutes)m"
         }
 
         let hours = minutes / 60
         if hours < 24 {
-            return "\(hours)h ago"
+            return "\(hours)h"
         }
 
         let days = hours / 24
-        return "\(days)d ago"
+        return "\(days)d"
     }
 }
 
