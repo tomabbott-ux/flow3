@@ -5,6 +5,7 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
     private let estimatedProvider = EstimatedWaitTimeProvider()
     private let tsaWebsiteProvider = TSAWebsiteWaitTimeProvider()
+    private let deltaNewsHubProvider = DeltaNewsHubWaitTimeProvider()
     private let cltProvider = CLTLiveWaitTimeProvider()
     private let ewrProvider = EWRLiveWaitTimeProvider()
     private let bwiProvider = BWILiveWaitTimeProvider()
@@ -15,7 +16,7 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
     private let dubProvider = DUBLiveWaitTimeProvider()
     private let delProvider = DELLiveWaitTimeProvider()
     private let chsProvider = CHSWebsiteWaitTimeProvider()
-    
+
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
 
         guard let definition = AirportRegistry.definition(for: airport) else {
@@ -29,6 +30,9 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
             case .atl:
                 results = try await ATLStubWaitTimeProvider().fetchWaitTimes(for: airport)
+
+            case .deltaNewsHub:
+                results = try await deltaNewsHubProvider.fetchWaitTimes(for: airport)
 
             case .ams:
                 results = try await AMSWaitTimeProvider(trackedFlight: trackedFlight)
@@ -45,16 +49,16 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
             case .lhr:
                 results = try await LHRLiveWaitTimeProvider().fetchWaitTimes(for: airport)
-                
+
             case .chs:
                 results = try await chsProvider.fetchWaitTimes(for: airport)
-                
-            case .dtw:   //
+
+            case .dtw:
                 results = try await DTWLiveWaitTimeProvider().fetchWaitTimes(for: airport)
-                
+
             case .bna:
                 results = try await BNAWebsiteWaitTimeProvider().fetchWaitTimes(for: airport)
-                
+
             case .ist:
                 results = try await ISTLiveWaitTimeProvider().fetchWaitTimes(for: airport)
 
@@ -205,7 +209,6 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
                 return fallbackEstimate(for: airport)
             case .live:
                 throw error
-
             case .highConfidence:
                 return fallbackEstimate(for: airport)
             }

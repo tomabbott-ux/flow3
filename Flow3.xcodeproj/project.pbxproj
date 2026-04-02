@@ -107,6 +107,7 @@
 		F8B5C97A2F79B8A00083071D /* CHSWebsiteWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B5C9792F79B8A00083071D /* CHSWebsiteWaitTimeProvider.swift */; };
 		F8B5C97C2F79CCD00083071D /* DTWLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B5C97B2F79CCD00083071D /* DTWLiveWaitTimeProvider.swift */; };
 		F8B5C97E2F79D5D00083071D /* BNAWebsiteWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B5C97D2F79D5D00083071D /* BNAWebsiteWaitTimeProvider.swift */; };
+		F8B5C9842F7F188C0083071D /* DeltaNewsHubWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B5C9832F7F188C0083071D /* DeltaNewsHubWaitTimeProvider.swift */; };
 		F8BD8FD92F62ADD0000EE425 /* DOHLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FD82F62ADD0000EE425 /* DOHLiveWaitTimeProvider.swift */; };
 		F8BD8FDB2F62ADF2000EE425 /* ZRHLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FDA2F62ADF2000EE425 /* ZRHLiveWaitTimeProvider.swift */; };
 		F8BD8FDD2F62AE13000EE425 /* HELLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BD8FDC2F62AE13000EE425 /* HELLiveWaitTimeProvider.swift */; };
@@ -299,6 +300,7 @@
 		F8B5C9792F79B8A00083071D /* CHSWebsiteWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CHSWebsiteWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8B5C97B2F79CCD00083071D /* DTWLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DTWLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8B5C97D2F79D5D00083071D /* BNAWebsiteWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BNAWebsiteWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F8B5C9832F7F188C0083071D /* DeltaNewsHubWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeltaNewsHubWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FD82F62ADD0000EE425 /* DOHLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOHLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FDA2F62ADF2000EE425 /* ZRHLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZRHLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F8BD8FDC2F62AE13000EE425 /* HELLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HELLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
@@ -512,6 +514,7 @@
 				F8B5C9792F79B8A00083071D /* CHSWebsiteWaitTimeProvider.swift */,
 				F8B5C97B2F79CCD00083071D /* DTWLiveWaitTimeProvider.swift */,
 				F8B5C97D2F79D5D00083071D /* BNAWebsiteWaitTimeProvider.swift */,
+				F8B5C9832F7F188C0083071D /* DeltaNewsHubWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -961,6 +964,7 @@
 				F80599D32F5AD36B00146BF1 /* LandingStore+Presentation.swift in Sources */,
 				F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */,
 				F8DBD88F2F65639600246968 /* DeparturePlan.swift in Sources */,
+				F8B5C9842F7F188C0083071D /* DeltaNewsHubWaitTimeProvider.swift in Sources */,
 				F8DBD89E2F662EE900246968 /* SavedFlightStore.swift in Sources */,
 				F880517F2F60E64F005CF24F /* FavouriteAirports.swift in Sources */,
 				F822A8D62F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift in Sources */,

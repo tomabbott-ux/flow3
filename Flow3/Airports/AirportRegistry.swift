@@ -36,7 +36,7 @@ enum AirportProviderKind: String, Codable, Hashable {
     case del
     case chs
     case bna
-    
+
     case yyz
     case yvr
     case yyc
@@ -63,6 +63,7 @@ enum AirportProviderKind: String, Codable, Hashable {
     case dca
     case pdx
     case tsaWebsite
+    case deltaNewsHub
     case estimated
     case none
 }
@@ -96,7 +97,7 @@ struct AirportRegistry {
 
     private static let baseAirports: [AirportDefinition] = [
 
-        AirportDefinition(airport: .atl, feedType: .estimated, providerKind: .atl),
+        AirportDefinition(airport: .atl, feedType: .live, providerKind: .deltaNewsHub),
         AirportDefinition(airport: .jfk, feedType: .live, providerKind: .jfk),
         AirportDefinition(airport: .lhr, feedType: .live, providerKind: .lhr),
         AirportDefinition(airport: .ist, feedType: .live, providerKind: .ist),
@@ -137,9 +138,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .sea, feedType: .live, providerKind: .sea),
         AirportDefinition(airport: .dtw, feedType: .live, providerKind: .dtw),
         AirportDefinition(airport: .del, feedType: .estimated, providerKind: .estimated),
-        
 
-        // AENA live
         AirportDefinition(airport: .mad, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .bcn, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .pmi, feedType: .live, providerKind: .aena),
@@ -149,7 +148,6 @@ struct AirportRegistry {
         AirportDefinition(airport: .lpa, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .lax, feedType: .highConfidence, providerKind: .estimated),
 
-        // AENA coming soon
         AirportDefinition(airport: .svq, feedType: .comingSoon, providerKind: .none),
         AirportDefinition(airport: .bio, feedType: .comingSoon, providerKind: .none),
         AirportDefinition(airport: .ibz, feedType: .comingSoon, providerKind: .none),
@@ -162,19 +160,15 @@ struct AirportRegistry {
         AirportDefinition(airport: .pdx, feedType: .live, providerKind: .pdx),
         AirportDefinition(airport: .chs, feedType: .live, providerKind: .chs),
         AirportDefinition(airport: .bna, feedType: .live, providerKind: .bna),
-        
-        // Changed from broken TSA website high confidence to estimated
+
         AirportDefinition(airport: .san, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .las, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .bos, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .sfo, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .tpa, feedType: .estimated, providerKind: .estimated),
-        
 
-        // MSP activated via official website scrape
-        AirportDefinition(airport: .msp, feedType: .highConfidence, providerKind: .tsaWebsite),
-        
-        
+        AirportDefinition(airport: .msp, feedType: .live, providerKind: .deltaNewsHub),
+
         AirportDefinition(airport: .cdg, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .dxb, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .sin, feedType: .estimated, providerKind: .estimated),
