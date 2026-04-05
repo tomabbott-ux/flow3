@@ -3,6 +3,7 @@ import SwiftUI
 struct LandingView: View {
     @ObservedObject var store: LandingStore
     @Binding var selectedTab: FlowRootView.FlowTab
+    @EnvironmentObject private var subscriptionManager: SubscriptionManager
 
     @State private var selectedRowID: String? = nil
     @State private var otherCheckpointsExpanded = false
@@ -15,6 +16,13 @@ struct LandingView: View {
 
     private var displayRows: [AirportDisplayRow] {
         store.displayRowsForSelectedAirport()
+    }
+
+    private var isSelectedAirportUnlocked: Bool {
+        FlowEntitlements.canAccessAirport(
+            airportCode: store.selectedAirport.rawValue,
+            subscriptionTier: subscriptionManager.tier
+        )
     }
 
     private var preferredTrackedFlightRowID: String? {
@@ -105,7 +113,7 @@ struct LandingView: View {
             .filter { $0.airport == store.selectedAirport }
             .isEmpty
     }
-    
+
     var body: some View {
         ZStack {
             FlowBrand.backgroundGradient
@@ -115,15 +123,20 @@ struct LandingView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     airportSelectorPill
                     headerSection
-                    weatherRow
 
-                    if store.trackedFlight != nil {
-                        TrackedFlightPill(store: store)
+                    if isSelectedAirportUnlocked {
+                        weatherRow
+
+                        if store.trackedFlight != nil {
+                            TrackedFlightPill(store: store)
+                        }
+
+                        securityHero
+                        checkpointsSection
+                        errorSection
+                    } else {
+                        lockedAirportView
                     }
-
-                    securityHero
-                    checkpointsSection
-                    errorSection
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
@@ -136,7 +149,8 @@ struct LandingView: View {
             guard !hasPerformedInitialLoad else { return }
             hasPerformedInitialLoad = true
 
-            // 🔥 DO NOT await (non-blocking)
+            guard isSelectedAirportUnlocked else { return }
+
             Task {
                 await refreshNow(
                     prefetchNeighbors: false,
@@ -150,6 +164,7 @@ struct LandingView: View {
             }
         }
         .onReceive(refreshTick) { now in
+            guard isSelectedAirportUnlocked else { return }
             guard hasPerformedInitialLoad else { return }
             guard !isRefreshInFlight else { return }
             guard let lastRefreshDate else { return }
@@ -165,6 +180,10 @@ struct LandingView: View {
         }
         .onChange(of: store.selectedAirport) {
             otherCheckpointsExpanded = false
+            selectedRowID = nil
+
+            guard isSelectedAirportUnlocked else { return }
+
             Task {
                 await refreshNow(
                     prefetchNeighbors: false,
@@ -173,12 +192,24 @@ struct LandingView: View {
             }
         }
         .onChange(of: store.trackedFlight?.securityRouteTitle) {
+            guard isSelectedAirportUnlocked else { return }
             otherCheckpointsExpanded = false
             syncSelectedRowWithTrackedFlight()
         }
         .onChange(of: store.trackedFlight?.securityRouteSubtitle) {
+            guard isSelectedAirportUnlocked else { return }
             otherCheckpointsExpanded = false
             syncSelectedRowWithTrackedFlight()
+        }
+        .onChange(of: subscriptionManager.tier) { _, _ in
+            guard isSelectedAirportUnlocked else { return }
+
+            Task {
+                await refreshNow(
+                    prefetchNeighbors: false,
+                    shouldRefreshTrackedFlight: false
+                )
+            }
         }
     }
 
@@ -186,7 +217,9 @@ struct LandingView: View {
         prefetchNeighbors: Bool,
         shouldRefreshTrackedFlight: Bool
     ) async {
+        guard isSelectedAirportUnlocked else { return }
         guard !isRefreshInFlight else { return }
+
         isRefreshInFlight = true
         defer { isRefreshInFlight = false }
 
@@ -260,14 +293,198 @@ private extension LandingView {
 
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(store.selectedAirport.rawValue)
-                .font(.system(size: 34, weight: .heavy))
-                .foregroundColor(.white)
+            HStack(alignment: .center, spacing: 10) {
+                Text(store.selectedAirport.rawValue)
+                    .font(.system(size: 34, weight: .heavy))
+                    .foregroundColor(.white)
+
+                if !isSelectedAirportUnlocked {
+                    premiumPill
+                }
+            }
 
             Text(store.selectedAirport.displayName)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.white.opacity(0.75))
         }
+    }
+
+    var premiumPill: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 10, weight: .bold))
+
+            Text("PRO")
+                .font(.system(size: 11, weight: .heavy))
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color(hex: "9B6CFF").opacity(0.92))
+        )
+    }
+}
+
+// MARK: - Locked Airport View
+
+private extension LandingView {
+
+    var lockedAirportView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            lockedHeroCard
+            lockedFeatureCard
+            unlockButton
+        }
+    }
+
+    var lockedHeroCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Flow Pro required")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                HStack(spacing: 6) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text("LOCKED")
+                        .font(.system(size: 11, weight: .heavy))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .fill(Color(hex: "9B6CFF").opacity(0.22))
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        )
+                )
+            }
+
+            Text("Unlock live airport intelligence for \(store.selectedAirport.rawValue), plus full airport access, flight tracking, and smarter alerts.")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(.white.opacity(0.76))
+                .fixedSize(horizontal: false, vertical: true)
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(Color.black.opacity(0.25))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+
+                Text(store.selectedAirport.rawValue)
+                    .font(.system(size: 84, weight: .heavy))
+                    .foregroundColor(.white.opacity(0.06))
+
+                VStack(spacing: 8) {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(Color(hex: "DAB8FF"))
+
+                    Text("Upgrade to view this airport")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text("Premium airport access is included with Flow Pro.")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.72))
+                }
+            }
+            .frame(height: 180)
+        }
+        .flowGlassCard()
+    }
+
+    var lockedFeatureCard: some View {
+        VStack(spacing: 14) {
+            lockedFeatureRow(
+                icon: "globe",
+                title: "Full airport access",
+                subtitle: "Unlock all premium airports across Flow."
+            )
+
+            lockedFeatureRow(
+                icon: "airplane.departure",
+                title: "Flight tracking",
+                subtitle: "Track flights and keep leave times in sync."
+            )
+
+            lockedFeatureRow(
+                icon: "bell.badge.fill",
+                title: "Smarter alerts",
+                subtitle: "Get premium reminders and travel updates."
+            )
+        }
+        .flowGlassCard()
+    }
+
+    func lockedFeatureRow(icon: String, title: String, subtitle: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(hex: "9B6CFF").opacity(0.18))
+                    .frame(width: 42, height: 42)
+
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color(hex: "CBA8FF"))
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+
+                Text(subtitle)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.68))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    var unlockButton: some View {
+        Button {
+            NotificationCenter.default.post(
+                name: .showProPaywall,
+                object: PaywallView.PaywallSource.lockedAirport(code: store.selectedAirport.rawValue)
+            )
+        } label: {
+            HStack {
+                Spacer()
+
+                Text("Unlock \(store.selectedAirport.rawValue)")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white)
+
+                Spacer()
+            }
+            .frame(height: 56)
+            .background(
+                LinearGradient(
+                    colors: [
+                        Color(hex: "9B6CFF"),
+                        Color(hex: "C45CFF")
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -725,6 +942,7 @@ private extension LandingView {
             return "Coming soon"
         }
     }
+
     func relativeAgeString(for seconds: Int) -> String {
         if seconds < 60 {
             return "\(seconds)s"

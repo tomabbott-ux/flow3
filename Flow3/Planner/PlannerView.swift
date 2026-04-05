@@ -5,6 +5,8 @@ struct PlannerView: View {
     @ObservedObject var store: LandingStore
     @Binding var selectedTab: FlowRootView.FlowTab
 
+    @EnvironmentObject private var subscriptionManager: SubscriptionManager
+
     @State private var departureTime: Date = Calendar.current.date(
         byAdding: .hour,
         value: 3,
@@ -175,6 +177,13 @@ private extension PlannerView {
             inputTitle("Airport")
             valueLine(airportDisplayLine)
 
+            if !isSelectedAirportUnlocked {
+                proUpsellInlineCard(
+                    title: "This airport is part of Flow Pro",
+                    message: "Upgrade to use premium airports, flight tracking, and smarter alerts."
+                )
+            }
+
             inputTitle("Departure")
 
             DatePicker(
@@ -229,6 +238,13 @@ private extension PlannerView {
                 VStack(alignment: .leading, spacing: 8) {
                     inputTitle("Airport")
                     valueLine("\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)")
+
+                    if !isSelectedAirportUnlocked {
+                        proUpsellInlineCard(
+                            title: "This flight uses a Pro airport",
+                            message: "Upgrade to continue with premium airport access and full flight tools."
+                        )
+                    }
                 }
             }
 
@@ -300,6 +316,13 @@ private extension PlannerView {
             }
 
             infoRow("Departure", flightDateTimeString(flight.departureTime))
+
+            if !isSelectedAirportUnlocked {
+                proUpsellInlineCard(
+                    title: "Upgrade to continue",
+                    message: "This airport is available with Flow Pro."
+                )
+            }
         }
         .flowGlassCard()
     }
@@ -438,9 +461,14 @@ private extension PlannerView {
             HStack {
                 Spacer()
 
-                Text("Track This Flight")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.open.fill")
+                        .font(.system(size: 13, weight: .bold))
+
+                    Text("Track This Flight")
+                        .font(.system(size: 16, weight: .bold))
+                }
+                .foregroundColor(.white)
 
                 Spacer()
             }
@@ -455,6 +483,59 @@ private extension PlannerView {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    func proUpsellInlineCard(title: String, message: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Color(hex: "D8C4FF"))
+
+                Text(title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+            }
+
+            Text(message)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white.opacity(0.74))
+
+            Button {
+                NotificationCenter.default.post(
+                    name: .showProPaywall,
+                    object: PaywallView.PaywallSource.general
+                )
+            } label: {
+                Text("Upgrade to Flow Pro")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(Color(hex: "9B6CFF").opacity(0.90))
+                    )
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 2)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color(hex: "9B6CFF").opacity(0.16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
+        )
+    }
+
+    var isSelectedAirportUnlocked: Bool {
+        FlowEntitlements.canAccessAirport(
+            airportCode: store.selectedAirport.rawValue,
+            subscriptionTier: subscriptionManager.tier
+        )
     }
 }
 
@@ -496,8 +577,21 @@ private extension PlannerView {
                 date: flightDate,
                 airportIATA: nil
             )
-            
+
             if let matchedAirport = flowAirport(from: result.originIATA) {
+                let isUnlocked = FlowEntitlements.canAccessAirport(
+                    airportCode: matchedAirport.rawValue,
+                    subscriptionTier: subscriptionManager.tier
+                )
+
+                guard isUnlocked else {
+                    NotificationCenter.default.post(
+                        name: .showProPaywall,
+                        object: PaywallView.PaywallSource.lockedAirport(code: matchedAirport.rawValue.uppercased())
+                    )
+                    return
+                }
+
                 store.selectedAirport = matchedAirport
             }
 
@@ -511,6 +605,15 @@ private extension PlannerView {
 
     func calculate() async {
         errorText = nil
+
+        if !isSelectedAirportUnlocked {
+            NotificationCenter.default.post(
+                name: .showProPaywall,
+                object: PaywallView.PaywallSource.lockedAirport(code: store.selectedAirport.rawValue.uppercased())
+            )
+            return
+        }
+
         isCalculating = true
         defer { isCalculating = false }
 
@@ -545,6 +648,16 @@ private extension PlannerView {
 
     func trackThisFlight() {
         errorText = nil
+
+        guard FlowEntitlements.canUseFlightTracking(
+            subscriptionTier: subscriptionManager.tier
+        ) else {
+            NotificationCenter.default.post(
+                name: .showProPaywall,
+                object: PaywallView.PaywallSource.flightTracking
+            )
+            return
+        }
 
         guard let flight = flightLookupResult, let plan else {
             errorText = "Look up a flight and calculate leave time first."

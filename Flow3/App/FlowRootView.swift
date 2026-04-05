@@ -12,6 +12,7 @@ struct FlowRootView: View {
     }
 
     @ObservedObject var store: LandingStore
+    @EnvironmentObject private var subscriptionManager: SubscriptionManager
 
     @AppStorage("flow_default_airport")
     private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
@@ -19,15 +20,18 @@ struct FlowRootView: View {
     @State private var selectedTab: FlowTab = .flight
     @State private var hasAppliedStartupAirport = false
 
+    @State private var isShowingPaywall = false
+    @State private var paywallSource: PaywallView.PaywallSource = .general
+
     init(store: LandingStore) {
         self.store = store
 
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
         appearance.backgroundColor = UIColor(
-            red: 20/255,
-            green: 6/255,
-            blue: 47/255,
+            red: 20 / 255,
+            green: 6 / 255,
+            blue: 47 / 255,
             alpha: 0.96
         )
 
@@ -37,17 +41,17 @@ struct FlowRootView: View {
         ]
 
         appearance.stackedLayoutAppearance.selected.iconColor = UIColor(
-            red: 155/255,
-            green: 108/255,
-            blue: 255/255,
+            red: 155 / 255,
+            green: 108 / 255,
+            blue: 255 / 255,
             alpha: 1.0
         )
 
         appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
             .foregroundColor: UIColor(
-                red: 155/255,
-                green: 108/255,
-                blue: 255/255,
+                red: 155 / 255,
+                green: 108 / 255,
+                blue: 255 / 255,
                 alpha: 1.0
             )
         ]
@@ -116,12 +120,22 @@ struct FlowRootView: View {
             .tag(FlowTab.settings)
         }
         .tint(Color(hex: "9B6CFF"))
+        .fullScreenCover(isPresented: $isShowingPaywall) {
+            PaywallView(
+                source: paywallSource,
+                isPresented: $isShowingPaywall
+            )
+            .environmentObject(subscriptionManager)
+        }
         .task {
             guard !hasAppliedStartupAirport else { return }
             hasAppliedStartupAirport = true
             applyDefaultAirportFromSettings()
         }
         .onChange(of: defaultAirportRawValue) { _, _ in
+            applyDefaultAirportFromSettings()
+        }
+        .onChange(of: subscriptionManager.tier) { _, _ in
             applyDefaultAirportFromSettings()
         }
         .onReceive(NotificationCenter.default.publisher(for: .openSearchTab)) { _ in
@@ -133,18 +147,63 @@ struct FlowRootView: View {
         .onReceive(NotificationCenter.default.publisher(for: .openFlightTab)) { _ in
             selectedTab = .flight
         }
+        .onReceive(NotificationCenter.default.publisher(for: .showProPaywall)) { notification in
+            if let source = notification.object as? PaywallView.PaywallSource {
+                presentPaywall(source: source)
+            } else {
+                presentPaywall(source: .general)
+            }
+        }
     }
 
     private func applyDefaultAirportFromSettings() {
-        guard let airport = AirportRegistry.airports
+        let requestedAirport = AirportRegistry.airports
             .map(\.airport)
-            .first(where: { $0.rawValue == defaultAirportRawValue }) else {
-            store.selectedAirport = .atl
-            return
+            .first(where: { $0.rawValue == defaultAirportRawValue })
+
+        let airportToApply: FlowAirport
+
+        if let requestedAirport,
+           FlowEntitlements.canAccessAirport(
+                airportCode: requestedAirport.rawValue,
+                subscriptionTier: subscriptionManager.tier
+           ) {
+            airportToApply = requestedAirport
+        } else {
+            airportToApply = fallbackAirport()
         }
 
-        if store.selectedAirport != airport {
-            store.selectedAirport = airport
+        if store.selectedAirport != airportToApply {
+            store.selectedAirport = airportToApply
         }
     }
+
+    private func fallbackAirport() -> FlowAirport {
+        if let matched = AirportRegistry.airports
+            .map(\.airport)
+            .first(where: {
+                $0.rawValue.caseInsensitiveCompare(FreeAirportConfig.fallbackFreeAirportCode) == .orderedSame
+            }) {
+            return matched
+        }
+
+        if let firstFreeAirport = AirportRegistry.airports
+            .map(\.airport)
+            .first(where: {
+                FreeAirportConfig.isFreeAirport(code: $0.rawValue)
+            }) {
+            return firstFreeAirport
+        }
+
+        return .lax
+    }
+
+    private func presentPaywall(source: PaywallView.PaywallSource) {
+        paywallSource = source
+        isShowingPaywall = true
+    }
+}
+
+extension Notification.Name {
+    static let showProPaywall = Notification.Name("showProPaywall")
 }

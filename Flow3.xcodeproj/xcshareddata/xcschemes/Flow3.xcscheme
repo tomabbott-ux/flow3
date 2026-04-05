@@ -50,6 +50,9 @@
             ReferencedContainer = "container:Flow3.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <StoreKitConfigurationFileReference
+         identifier = "../../Flow3/Subscriptions/FlowSubscriptions.storekit">
+      </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

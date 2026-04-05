@@ -56,6 +56,12 @@
 		F828EF3B2F5A006C00EC53EC /* LHRCheckpointCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF3A2F5A006C00EC53EC /* LHRCheckpointCard.swift */; };
 		F828EF3D2F5A03FC00EC53EC /* LandingStore+LHR.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF3C2F5A03FC00EC53EC /* LandingStore+LHR.swift */; };
 		F828EF3F2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F828EF3E2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift */; };
+		F846E0872F82F11500997E61 /* FreeAirportConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0862F82F11500997E61 /* FreeAirportConfig.swift */; };
+		F846E0892F82F14800997E61 /* SubscriptionTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0882F82F14800997E61 /* SubscriptionTier.swift */; };
+		F846E08B2F82F17800997E61 /* FlowEntitlements.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E08A2F82F17800997E61 /* FlowEntitlements.swift */; };
+		F846E08D2F82F2B700997E61 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E08C2F82F2B700997E61 /* SubscriptionManager.swift */; };
+		F846E08F2F82F48E00997E61 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E08E2F82F48E00997E61 /* PaywallView.swift */; };
+		F846E0912F83021D00997E61 /* FlowSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = F846E0902F83021D00997E61 /* FlowSubscriptions.storekit */; };
 		F855A3402F75D80B00302569 /* DUBLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F855A33F2F75D80B00302569 /* DUBLiveWaitTimeProvider.swift */; };
 		F862F1A32F583923001666F2 /* Flow3App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1A22F583923001666F2 /* Flow3App.swift */; };
 		F862F1A72F583927001666F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F862F1A62F583927001666F2 /* Assets.xcassets */; };
@@ -247,6 +253,12 @@
 		F828EF3A2F5A006C00EC53EC /* LHRCheckpointCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LHRCheckpointCard.swift; sourceTree = "<group>"; };
 		F828EF3C2F5A03FC00EC53EC /* LandingStore+LHR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+LHR.swift"; sourceTree = "<group>"; };
 		F828EF3E2F5A057800EC53EC /* LHRLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LHRLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F846E0862F82F11500997E61 /* FreeAirportConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeAirportConfig.swift; sourceTree = "<group>"; };
+		F846E0882F82F14800997E61 /* SubscriptionTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
+		F846E08A2F82F17800997E61 /* FlowEntitlements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowEntitlements.swift; sourceTree = "<group>"; };
+		F846E08C2F82F2B700997E61 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
+		F846E08E2F82F48E00997E61 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		F846E0902F83021D00997E61 /* FlowSubscriptions.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = FlowSubscriptions.storekit; sourceTree = "<group>"; };
 		F855A33F2F75D80B00302569 /* DUBLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DUBLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F862F19F2F583923001666F2 /* Flow3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Flow3.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F862F1A22F583923001666F2 /* Flow3App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flow3App.swift; sourceTree = "<group>"; };
@@ -390,6 +402,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F846E0852F82F0D500997E61 /* Subscriptions */ = {
+			isa = PBXGroup;
+			children = (
+				F846E0862F82F11500997E61 /* FreeAirportConfig.swift */,
+				F846E0882F82F14800997E61 /* SubscriptionTier.swift */,
+				F846E08A2F82F17800997E61 /* FlowEntitlements.swift */,
+				F846E08C2F82F2B700997E61 /* SubscriptionManager.swift */,
+				F846E08E2F82F48E00997E61 /* PaywallView.swift */,
+				F846E0902F83021D00997E61 /* FlowSubscriptions.storekit */,
+			);
+			path = Subscriptions;
+			sourceTree = "<group>";
+		};
 		F862F1962F583923001666F2 = {
 			isa = PBXGroup;
 			children = (
@@ -415,6 +440,7 @@
 		F862F1A12F583923001666F2 /* Flow3 */ = {
 			isa = PBXGroup;
 			children = (
+				F846E0852F82F0D500997E61 /* Subscriptions */,
 				F80C80A92F77471E00C4DABC /* FlowWatchConnectivityManager.swift */,
 				F8CD3ED72F71FB4D00490E20 /* AMS */,
 				F8A1AB6C2F69F8160093D0B6 /* Extensions */,
@@ -842,6 +868,7 @@
 			files = (
 				F862F1AA2F583927001666F2 /* Preview Assets.xcassets in Resources */,
 				F862F1A72F583927001666F2 /* Assets.xcassets in Resources */,
+				F846E0912F83021D00997E61 /* FlowSubscriptions.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -898,6 +925,7 @@
 				F822A8DC2F5CF81B009F6107 /* SANAverageWaitTimeProvider.swift in Sources */,
 				F80599CF2F5ACFE200146BF1 /* AMSWaitTimeProvider.swift in Sources */,
 				F862F1E82F583B0C001666F2 /* LandingStore.swift in Sources */,
+				F846E0892F82F14800997E61 /* SubscriptionTier.swift in Sources */,
 				F8DBD8932F6563C200246968 /* DeparturePlanner.swift in Sources */,
 				F880516B2F60091F005CF24F /* TSAWebsiteWaitTimeProvider.swift in Sources */,
 				F8B5C97E2F79D5D00083071D /* BNAWebsiteWaitTimeProvider.swift in Sources */,
@@ -917,6 +945,7 @@
 				F862F1A32F583923001666F2 /* Flow3App.swift in Sources */,
 				F828EF372F59CE1300EC53EC /* ATLCheckpointCard.swift in Sources */,
 				F8BD8FDB2F62ADF2000EE425 /* ZRHLiveWaitTimeProvider.swift in Sources */,
+				F846E08D2F82F2B700997E61 /* SubscriptionManager.swift in Sources */,
 				F80599DB2F5AEC8F00146BF1 /* AirportSelectorView.swift in Sources */,
 				F80C80A82F7738F600C4DABC /* AirportTerminalFormat.swift in Sources */,
 				F80829DC2F5A4554000D5664 /* LandingStore+JFK.swift in Sources */,
@@ -960,6 +989,7 @@
 				F80599DD2F5AECB200146BF1 /* LivePulseDot.swift in Sources */,
 				F880517B2F60D163005CF24F /* AviationWeatherMETARProvider.swift in Sources */,
 				F862F1DB2F583A3A001666F2 /* WaitTimeService.swift in Sources */,
+				F846E08B2F82F17800997E61 /* FlowEntitlements.swift in Sources */,
 				F8796C312F6BFEA800040769 /* AppDelegate.swift in Sources */,
 				F80599D32F5AD36B00146BF1 /* LandingStore+Presentation.swift in Sources */,
 				F80599E92F5B2A5500146BF1 /* YYCLiveWaitTimeProvider.swift in Sources */,
@@ -975,6 +1005,8 @@
 				F80599DF2F5AEDFA00146BF1 /* EstimatedAirportWaitTimeProvider.swift in Sources */,
 				F8A1AB712F6A0B210093D0B6 /* PITLiveWaitTimeProvider.swift in Sources */,
 				F8BD8FDD2F62AE13000EE425 /* HELLiveWaitTimeProvider.swift in Sources */,
+				F846E0872F82F11500997E61 /* FreeAirportConfig.swift in Sources */,
+				F846E08F2F82F48E00997E61 /* PaywallView.swift in Sources */,
 				F80599F52F5B815600146BF1 /* PHLLiveWaitTimeProvider.swift in Sources */,
 				F822A8EA2F5DD1D5009F6107 /* DUSLiveWaitTimeProvider.swift in Sources */,
 				F8DBD8B02F68135C00246968 /* PlannerSecurityModels.swift in Sources */,

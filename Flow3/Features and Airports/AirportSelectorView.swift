@@ -5,6 +5,8 @@ struct AirportSelectorView: View {
     @ObservedObject var store: LandingStore
     let onAirportSelected: () -> Void
 
+    @EnvironmentObject private var subscriptionManager: SubscriptionManager
+
     @State private var searchText: String = ""
     @State private var favourites: Set<FlowAirport> = FavouriteAirports.shared.load()
     @State private var recents: [FlowAirport] = RecentAirports.shared.load()
@@ -116,12 +118,13 @@ private extension AirportSelectorView {
     func airportRow(_ definition: AirportDefinition) -> some View {
         let airport = definition.airport
         let isFavourite = favourites.contains(airport)
+        let isUnlocked = FlowEntitlements.canAccessAirport(
+            airportCode: airport.rawValue,
+            subscriptionTier: subscriptionManager.tier
+        )
 
         return Button {
-            store.selectedAirport = airport
-            RecentAirports.shared.add(airport)
-            recents = RecentAirports.shared.load()
-            onAirportSelected()
+            handleAirportTapped(airport: airport, isUnlocked: isUnlocked)
         } label: {
             HStack(spacing: 12) {
                 Button {
@@ -147,18 +150,29 @@ private extension AirportSelectorView {
                 .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(airport.rawValue)
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
+                    HStack(spacing: 8) {
+                        Text(airport.rawValue)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+
+                        if !isUnlocked {
+                            premiumLockBadge
+                        }
+                    }
 
                     Text(airport.displayName)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white.opacity(0.75))
+                        .lineLimit(1)
                 }
 
                 Spacer(minLength: 12)
 
-                feedBadge(for: definition.feedType)
+                if isUnlocked {
+                    feedBadge(for: definition.feedType)
+                } else {
+                    lockedBadge
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -171,8 +185,63 @@ private extension AirportSelectorView {
                     )
             )
             .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 6)
+            .opacity(isUnlocked ? 1.0 : 0.92)
         }
         .buttonStyle(.plain)
+    }
+
+    func handleAirportTapped(airport: FlowAirport, isUnlocked: Bool) {
+        guard isUnlocked else {
+            NotificationCenter.default.post(
+                name: .showProPaywall,
+                object: PaywallView.PaywallSource.lockedAirport(code: airport.rawValue.uppercased())
+            )
+            return
+        }
+
+        store.selectedAirport = airport
+        RecentAirports.shared.add(airport)
+        recents = RecentAirports.shared.load()
+        onAirportSelected()
+    }
+
+    var premiumLockBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 9, weight: .bold))
+
+            Text("PRO")
+                .font(.system(size: 10, weight: .heavy))
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(Color(hex: "9B6CFF").opacity(0.95))
+        )
+    }
+
+    var lockedBadge: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.white.opacity(0.92))
+
+            Text("PRO")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.white.opacity(0.92))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color(hex: "9B6CFF").opacity(0.22))
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
+        )
     }
 }
 
