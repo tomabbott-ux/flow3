@@ -101,10 +101,11 @@ struct LandingView: View {
     }
 
     private var isLoadingCurrentAirport: Bool {
-        store.lastUpdated == nil &&
-        store.allWaitTimes().filter { $0.airport == store.selectedAirport }.isEmpty
+        store.allWaitTimes()
+            .filter { $0.airport == store.selectedAirport }
+            .isEmpty
     }
-
+    
     var body: some View {
         ZStack {
             FlowBrand.backgroundGradient
@@ -135,10 +136,13 @@ struct LandingView: View {
             guard !hasPerformedInitialLoad else { return }
             hasPerformedInitialLoad = true
 
-            await refreshNow(
-                prefetchNeighbors: false,
-                shouldRefreshTrackedFlight: false
-            )
+            // 🔥 DO NOT await (non-blocking)
+            Task {
+                await refreshNow(
+                    prefetchNeighbors: false,
+                    shouldRefreshTrackedFlight: false
+                )
+            }
         }
         .onAppear {
             Task {

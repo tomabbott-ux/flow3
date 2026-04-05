@@ -4,11 +4,21 @@ import Combine
 @MainActor
 final class LandingStore: ObservableObject {
 
+    private enum PreferenceKeys {
+        static let defaultAirportCode = "flow_default_airport"
+        static let lastSelectedAirportCode = "lastSelectedAirportCode"
+    }
+
     // MARK: - Published state
 
     @Published var selectedAirport: FlowAirport = .atl {
         didSet {
             guard oldValue != selectedAirport else { return }
+
+            UserDefaults.standard.set(
+                selectedAirport.rawValue,
+                forKey: PreferenceKeys.lastSelectedAirportCode
+            )
 
             Task { [weak self] in
                 await self?.handleSelectedAirportChanged()
@@ -95,12 +105,21 @@ final class LandingStore: ObservableObject {
         self.waitTimeService = waitTimeService
         self.weatherService = weatherService
 
-        let savedFlight = SavedFlightStore.shared.load()
-        self.trackedFlight = savedFlight
+        self.trackedFlight = SavedFlightStore.shared.load()
 
-        if let savedFlight,
-           let departureAirport = trackedDepartureAirport(from: savedFlight.route) {
-            self.selectedAirport = departureAirport
+        // Default airport should control startup airport.
+        if let defaultAirportCode = UserDefaults.standard.string(forKey: PreferenceKeys.defaultAirportCode),
+           let airport = AirportRegistry.airports
+            .map(\.airport)
+            .first(where: { $0.rawValue == defaultAirportCode }) {
+            self.selectedAirport = airport
+        } else if let lastAirportCode = UserDefaults.standard.string(forKey: PreferenceKeys.lastSelectedAirportCode),
+                  let airport = AirportRegistry.airports
+            .map(\.airport)
+            .first(where: { $0.rawValue == lastAirportCode }) {
+            self.selectedAirport = airport
+        } else {
+            self.selectedAirport = .atl
         }
 
         rebuildAlerts()
@@ -520,10 +539,6 @@ final class LandingStore: ObservableObject {
             let oldFlight = current
 
             trackedFlight = updated
-
-            if let departureAirport = trackedDepartureAirport(from: updated.route) {
-                selectedAirport = departureAirport
-            }
 
             SavedFlightStore.shared.save(updated)
             FlowWatchConnectivityManager.shared.syncTrackedFlight(updated)

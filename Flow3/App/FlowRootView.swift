@@ -12,6 +12,10 @@ struct FlowRootView: View {
     }
 
     @ObservedObject var store: LandingStore
+
+    @AppStorage("flow_default_airport")
+    private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
+
     @State private var selectedTab: FlowTab = .flight
     @State private var hasAppliedStartupAirport = false
 
@@ -115,7 +119,10 @@ struct FlowRootView: View {
         .task {
             guard !hasAppliedStartupAirport else { return }
             hasAppliedStartupAirport = true
-            await store.applyStartupAirportSelectionIfNeeded()
+            applyDefaultAirportFromSettings()
+        }
+        .onChange(of: defaultAirportRawValue) { _, _ in
+            applyDefaultAirportFromSettings()
         }
         .onReceive(NotificationCenter.default.publisher(for: .openSearchTab)) { _ in
             selectedTab = .planner
@@ -125,6 +132,19 @@ struct FlowRootView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .openFlightTab)) { _ in
             selectedTab = .flight
+        }
+    }
+
+    private func applyDefaultAirportFromSettings() {
+        guard let airport = AirportRegistry.airports
+            .map(\.airport)
+            .first(where: { $0.rawValue == defaultAirportRawValue }) else {
+            store.selectedAirport = .atl
+            return
+        }
+
+        if store.selectedAirport != airport {
+            store.selectedAirport = airport
         }
     }
 }
