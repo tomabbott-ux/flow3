@@ -36,6 +36,11 @@ struct PaywallView: View {
         }
     }
 
+    enum Plan {
+        case yearly
+        case monthly
+    }
+
     @EnvironmentObject private var subscriptionManager: SubscriptionManager
     @Environment(\.dismiss) private var dismiss
 
@@ -45,10 +50,8 @@ struct PaywallView: View {
     @State private var selectedPlan: Plan = .yearly
     @State private var isRestoring = false
 
-    enum Plan {
-        case yearly
-        case monthly
-    }
+    private let termsURL = URL(string: "https://www.flowairport.com/terms-and-conditions")!
+    private let privacyURL = URL(string: "https://www.flowairport.com/privacy-policy")!
 
     private var productsReady: Bool {
         subscriptionManager.yearlyProduct != nil && subscriptionManager.monthlyProduct != nil
@@ -75,7 +78,7 @@ struct PaywallView: View {
                     benefitCard
                     planPicker
                     actionArea
-                    footer
+                    legalFooter
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
@@ -86,6 +89,7 @@ struct PaywallView: View {
             if !subscriptionManager.hasLoadedProducts() {
                 await subscriptionManager.loadProducts()
             }
+
             if subscriptionManager.isPro {
                 dismissPaywall()
             }
@@ -113,8 +117,13 @@ struct PaywallView: View {
             Text(subscriptionManager.lastErrorMessage ?? "")
         }
     }
+}
 
-    private var topBar: some View {
+// MARK: - Sections
+
+private extension PaywallView {
+
+    var topBar: some View {
         HStack {
             Spacer()
 
@@ -135,7 +144,7 @@ struct PaywallView: View {
         }
     }
 
-    private var hero: some View {
+    var hero: some View {
         VStack(spacing: 16) {
             ZStack {
                 Circle()
@@ -173,7 +182,7 @@ struct PaywallView: View {
         .padding(.top, 4)
     }
 
-    private var benefitCard: some View {
+    var benefitCard: some View {
         VStack(spacing: 14) {
             benefitRow(
                 icon: "globe",
@@ -204,7 +213,7 @@ struct PaywallView: View {
         )
     }
 
-    private func benefitRow(icon: String, title: String, subtitle: String) -> some View {
+    func benefitRow(icon: String, title: String, subtitle: String) -> some View {
         HStack(alignment: .top, spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -231,7 +240,7 @@ struct PaywallView: View {
         }
     }
 
-    private var planPicker: some View {
+    var planPicker: some View {
         VStack(spacing: 12) {
             planCard(
                 plan: .yearly,
@@ -251,7 +260,7 @@ struct PaywallView: View {
         }
     }
 
-    private func planCard(
+    func planCard(
         plan: Plan,
         title: String,
         subtitle: String,
@@ -320,7 +329,7 @@ struct PaywallView: View {
         .buttonStyle(.plain)
     }
 
-    private var actionArea: some View {
+    var actionArea: some View {
         VStack(spacing: 12) {
             Button {
                 Task {
@@ -395,14 +404,24 @@ struct PaywallView: View {
         }
     }
 
-    private var footer: some View {
+    var legalFooter: some View {
         VStack(spacing: 10) {
+            HStack(spacing: 16) {
+                Link("Terms of Use", destination: termsURL)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+
+                Link("Privacy Policy", destination: privacyURL)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+            }
+
             Text("Payment will be charged to your Apple Account at confirmation of purchase. Subscription renews automatically unless cancelled at least 24 hours before the end of the current period.")
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.white.opacity(0.48))
                 .multilineTextAlignment(.center)
 
-            Text("Manage your subscription in your Apple Account settings.")
+            Text("Manage your subscription in your Apple Account settings. Restore Purchases is available above.")
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.white.opacity(0.48))
                 .multilineTextAlignment(.center)
@@ -411,21 +430,21 @@ struct PaywallView: View {
         .padding(.top, 4)
     }
 
-    private var yearlySubtitle: String {
+    var yearlySubtitle: String {
         if let product = subscriptionManager.yearlyProduct {
             return "\(product.displayPrice) / year"
         }
         return "Price unavailable"
     }
 
-    private var monthlySubtitle: String {
+    var monthlySubtitle: String {
         if let product = subscriptionManager.monthlyProduct {
             return "\(product.displayPrice) / month"
         }
         return "Price unavailable"
     }
 
-    private var primaryButtonTitle: String {
+    var primaryButtonTitle: String {
         switch selectedPlan {
         case .yearly:
             if let product = subscriptionManager.yearlyProduct {
@@ -439,8 +458,13 @@ struct PaywallView: View {
             return "Continue"
         }
     }
+}
 
-    private func handlePurchaseTapped() async {
+// MARK: - Actions
+
+private extension PaywallView {
+
+    func handlePurchaseTapped() async {
         guard productsReady else {
             subscriptionManager.clearLastError()
             return
@@ -460,7 +484,7 @@ struct PaywallView: View {
         }
     }
 
-    private func handleRestoreTapped() async {
+    func handleRestoreTapped() async {
         isRestoring = true
         defer { isRestoring = false }
 
@@ -471,7 +495,7 @@ struct PaywallView: View {
         }
     }
 
-    private func dismissPaywall() {
+    func dismissPaywall() {
         isPresented = false
         dismiss()
     }

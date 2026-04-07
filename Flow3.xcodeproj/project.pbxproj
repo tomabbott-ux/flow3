@@ -62,6 +62,7 @@
 		F846E08D2F82F2B700997E61 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E08C2F82F2B700997E61 /* SubscriptionManager.swift */; };
 		F846E08F2F82F48E00997E61 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E08E2F82F48E00997E61 /* PaywallView.swift */; };
 		F846E0912F83021D00997E61 /* FlowSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = F846E0902F83021D00997E61 /* FlowSubscriptions.storekit */; };
+		F854035D2F850055001A4969 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F854035C2F850055001A4969 /* AppEnvironment.swift */; };
 		F855A3402F75D80B00302569 /* DUBLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F855A33F2F75D80B00302569 /* DUBLiveWaitTimeProvider.swift */; };
 		F862F1A32F583923001666F2 /* Flow3App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1A22F583923001666F2 /* Flow3App.swift */; };
 		F862F1A72F583927001666F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F862F1A62F583927001666F2 /* Assets.xcassets */; };
@@ -259,6 +260,7 @@
 		F846E08C2F82F2B700997E61 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		F846E08E2F82F48E00997E61 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		F846E0902F83021D00997E61 /* FlowSubscriptions.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = FlowSubscriptions.storekit; sourceTree = "<group>"; };
+		F854035C2F850055001A4969 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		F855A33F2F75D80B00302569 /* DUBLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DUBLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F862F19F2F583923001666F2 /* Flow3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Flow3.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F862F1A22F583923001666F2 /* Flow3App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flow3App.swift; sourceTree = "<group>"; };
@@ -411,6 +413,7 @@
 				F846E08C2F82F2B700997E61 /* SubscriptionManager.swift */,
 				F846E08E2F82F48E00997E61 /* PaywallView.swift */,
 				F846E0902F83021D00997E61 /* FlowSubscriptions.storekit */,
+				F854035C2F850055001A4969 /* AppEnvironment.swift */,
 			);
 			path = Subscriptions;
 			sourceTree = "<group>";
@@ -984,6 +987,7 @@
 				F822A8EC2F5DD203009F6107 /* EDILiveWaitTimeProvider.swift in Sources */,
 				F8DBD8A42F669D9700246968 /* TrackedFlight.swift in Sources */,
 				F822A8CE2F5C9FF0009F6107 /* ORDLiveWaitTimeProvider.swift in Sources */,
+				F854035D2F850055001A4969 /* AppEnvironment.swift in Sources */,
 				F88051752F606BFA005CF24F /* PDXLiveWaitTimeProvider.swift in Sources */,
 				F8796C2F2F6B8CB100040769 /* TSAWaitTimeService.swift in Sources */,
 				F80599DD2F5AECB200146BF1 /* LivePulseDot.swift in Sources */,
@@ -1205,7 +1209,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = QQ6KGT3TQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1239,7 +1243,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = QQ6KGT3TQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

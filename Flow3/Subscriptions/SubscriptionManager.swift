@@ -43,6 +43,13 @@ final class SubscriptionManager: ObservableObject {
         tier == .pro
     }
 
+    var isTestFlight: Bool {
+        guard let receiptURL = Bundle.main.appStoreReceiptURL else {
+            return false
+        }
+        return receiptURL.lastPathComponent == "sandboxReceipt"
+    }
+
     private init() {
         loadCachedState()
         startTransactionListenerIfNeeded()
@@ -99,6 +106,19 @@ final class SubscriptionManager: ObservableObject {
 
         defer {
             isRefreshingEntitlements = false
+        }
+
+        // 🔥 Auto-unlock Pro for all TestFlight users
+        if isTestFlight {
+            print("🚀 TestFlight detected — Pro unlocked automatically")
+
+            applyEntitlementState(
+                hasPro: true,
+                productID: Constants.yearlyProductID,
+                expirationDate: .distantFuture
+            )
+
+            return
         }
 
         var hasActivePro = false
@@ -203,6 +223,12 @@ final class SubscriptionManager: ObservableObject {
 
     func restorePurchases() async {
         lastErrorMessage = nil
+
+        // 🔥 For TestFlight, restore is effectively instant because Pro is auto-unlocked
+        if isTestFlight {
+            await refreshEntitlements()
+            return
+        }
 
         do {
             try await AppStore.sync()
