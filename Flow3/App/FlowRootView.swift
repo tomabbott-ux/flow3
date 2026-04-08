@@ -157,17 +157,21 @@ struct FlowRootView: View {
     }
 
     private func applyDefaultAirportFromSettings() {
+        let trackedAirport = trackedFlightDepartureAirport()
+
         let requestedAirport = AirportRegistry.airports
             .map(\.airport)
             .first(where: { $0.rawValue == defaultAirportRawValue })
 
         let airportToApply: FlowAirport
 
-        if let requestedAirport,
-           FlowEntitlements.canAccessAirport(
-                airportCode: requestedAirport.rawValue,
-                subscriptionTier: subscriptionManager.tier
-           ) {
+        if let trackedAirport {
+            airportToApply = trackedAirport
+        } else if let requestedAirport,
+                  FlowEntitlements.canAccessAirport(
+                    airportCode: requestedAirport.rawValue,
+                    subscriptionTier: subscriptionManager.tier
+                  ) {
             airportToApply = requestedAirport
         } else {
             airportToApply = fallbackAirport()
@@ -176,6 +180,26 @@ struct FlowRootView: View {
         if store.selectedAirport != airportToApply {
             store.selectedAirport = airportToApply
         }
+    }
+
+    private func trackedFlightDepartureAirport() -> FlowAirport? {
+        guard let trackedFlight = store.trackedFlight else { return nil }
+
+        let route = trackedFlight.route.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !route.isEmpty else { return nil }
+
+        let parts = route.components(separatedBy: "→")
+        guard let originPart = parts.first?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !originPart.isEmpty else {
+            return nil
+        }
+
+        return AirportRegistry.airports
+            .map(\.airport)
+            .first {
+                $0.rawValue.caseInsensitiveCompare(originPart) == .orderedSame
+            }
     }
 
     private func fallbackAirport() -> FlowAirport {

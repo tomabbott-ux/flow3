@@ -29,6 +29,23 @@ struct LandingView: View {
         guard let trackedFlight = store.trackedFlight else { return nil }
         guard store.selectedAirport == trackedAirportIfKnown else { return nil }
 
+        if let routeID = trackedFlight.securityRouteID,
+           let matchedByID = displayRows.first(where: { $0.id == routeID })?.id {
+            return matchedByID
+        }
+
+        let terminalText = trackedFlight.terminal
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !terminalText.isEmpty {
+            if let matchedByTerminal = displayRows.first(where: { row in
+                row.title.localizedCaseInsensitiveContains("Terminal \(terminalText)") ||
+                row.subtitle.localizedCaseInsensitiveContains("Terminal \(terminalText)")
+            })?.id {
+                return matchedByTerminal
+            }
+        }
+
         let title = trackedFlight.securityRouteTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         let subtitle = trackedFlight.securityRouteSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -45,23 +62,49 @@ struct LandingView: View {
             $0.subtitle.caseInsensitiveCompare(subtitle) == .orderedSame
         })?.id
     }
-
     private var trackedAirportIfKnown: FlowAirport? {
         store.trackedFlight == nil ? nil : store.selectedAirport
     }
 
     private var selectedRow: AirportDisplayRow? {
+
+        if let tracked = store.trackedFlight {
+            print("🛬 LandingView selectedRow: tracked flight exists")
+            print("   routeID:", tracked.securityRouteID ?? "nil")
+            print("   title:", tracked.securityRouteTitle)
+            print("   subtitle:", tracked.securityRouteSubtitle)
+            print("   selectedAirport:", store.selectedAirport.rawValue)
+            print("   displayRows:", displayRows.map { "\($0.id) | \($0.title) | \($0.subtitle)" })
+        } else {
+            print("🛬 LandingView selectedRow: no tracked flight")
+        }
+
+        if let tracked = store.trackedFlight,
+           let routeID = tracked.securityRouteID,
+           let row = displayRows.first(where: { $0.id == routeID }) {
+            print("✅ selectedRow matched by routeID:", routeID, "->", row.title, "|", row.subtitle)
+            return row
+        }
+
         if let preferredTrackedFlightRowID,
            let trackedRow = displayRows.first(where: { $0.id == preferredTrackedFlightRowID }) {
+            print("✅ selectedRow matched by preferredTrackedFlightRowID:", preferredTrackedFlightRowID, "->", trackedRow.title, "|", trackedRow.subtitle)
             return trackedRow
         }
 
         if let selectedRowID,
            let row = displayRows.first(where: { $0.id == selectedRowID }) {
+            print("⚠️ selectedRow fell back to selectedRowID:", selectedRowID, "->", row.title, "|", row.subtitle)
             return row
         }
 
-        return displayRows.first
+        if let first = displayRows.first {
+            print("⚠️ selectedRow fell back to FIRST row:", first.id, "->", first.title, "|", first.subtitle)
+            return first
+        }
+
+        print("❌ selectedRow found no row")
+        return nil
     }
 
     private var usesAverageWaitPresentation: Bool {
@@ -159,10 +202,20 @@ struct LandingView: View {
             }
         }
         .onAppear {
+            print("👀 LandingView onAppear")
+            print("   selectedAirport:", store.selectedAirport.rawValue)
+            print("   trackedFlight routeID:", store.trackedFlight?.securityRouteID ?? "nil")
+            print("   trackedFlight title:", store.trackedFlight?.securityRouteTitle ?? "nil")
+            print("   trackedFlight subtitle:", store.trackedFlight?.securityRouteSubtitle ?? "nil")
+            print("   displayRows at appear:", displayRows.map { "\($0.id) | \($0.title) | \($0.subtitle)" })
+
+            syncSelectedRowWithTrackedFlight()
+
             Task {
                 await FlowNotificationManager.shared.requestPermission()
             }
         }
+        
         .onReceive(refreshTick) { now in
             guard isSelectedAirportUnlocked else { return }
             guard hasPerformedInitialLoad else { return }
@@ -190,6 +243,11 @@ struct LandingView: View {
                     shouldRefreshTrackedFlight: false
                 )
             }
+        }
+        .onChange(of: store.trackedFlight?.securityRouteID) {
+            guard isSelectedAirportUnlocked else { return }
+            otherCheckpointsExpanded = false
+            syncSelectedRowWithTrackedFlight()
         }
         .onChange(of: store.trackedFlight?.securityRouteTitle) {
             guard isSelectedAirportUnlocked else { return }
@@ -231,7 +289,11 @@ struct LandingView: View {
         lastRefreshDate = Date()
 
         let latestRows = store.displayRowsForSelectedAirport()
-
+        print("🔁 refreshNow completed")
+        print("   selectedAirport:", store.selectedAirport.rawValue)
+        print("   tracked routeID:", store.trackedFlight?.securityRouteID ?? "nil")
+        print("   latestRows:", latestRows.map { "\($0.id) | \($0.title) | \($0.subtitle)" })
+        
         if let preferredTrackedFlightRowID,
            latestRows.contains(where: { $0.id == preferredTrackedFlightRowID }) {
             selectedRowID = preferredTrackedFlightRowID
@@ -249,10 +311,24 @@ struct LandingView: View {
     private func syncSelectedRowWithTrackedFlight() {
         if let preferredTrackedFlightRowID {
             selectedRowID = preferredTrackedFlightRowID
+            return
+        }
+
+        guard let trackedFlight = store.trackedFlight else { return }
+
+        let terminalText = trackedFlight.terminal
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !terminalText.isEmpty else { return }
+
+        if let matchedTerminalRow = displayRows.first(where: { row in
+            row.title.localizedCaseInsensitiveContains("Terminal \(terminalText)") ||
+            row.subtitle.localizedCaseInsensitiveContains("Terminal \(terminalText)")
+        }) {
+            selectedRowID = matchedTerminalRow.id
         }
     }
 }
-
 // MARK: - Top Pill
 
 private extension LandingView {
@@ -737,7 +813,7 @@ private extension LandingView {
                 .overlay(
                     Capsule()
                         .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                )
+                    )
         )
     }
 
@@ -1075,8 +1151,8 @@ private extension LandingView {
                         RoundedRectangle(cornerRadius: 22)
                             .stroke(
                                 isSelected
-                                ? Color(hex: "9B6CFF").opacity(0.95)
-                                : Color.white.opacity(0.10),
+                                    ? Color(hex: "9B6CFF").opacity(0.95)
+                                    : Color.white.opacity(0.10),
                                 lineWidth: isSelected ? 1.4 : 1
                             )
                     )

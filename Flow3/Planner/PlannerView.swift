@@ -659,13 +659,24 @@ private extension PlannerView {
             return
         }
 
-        guard let flight = flightLookupResult, let plan else {
-            errorText = "Look up a flight and calculate leave time first."
+        guard let plan else {
+            errorText = "Create a departure plan before tracking this flight."
             return
         }
 
+        guard let flight = flightLookupResult else {
+            errorText = "Look up a flight before tracking it."
+            return
+        }
+
+        let departureAirport = flowAirport(from: flight.originIATA) ?? store.selectedAirport
+
+        if store.selectedAirport != departureAirport {
+            store.selectedAirport = departureAirport
+        }
+
         let securitySelection = store.plannerSecuritySelection(
-            for: store.selectedAirport,
+            for: departureAirport,
             flightTerminal: flight.terminal,
             preferredRouteID: nil
         )
@@ -681,10 +692,10 @@ private extension PlannerView {
             leaveTime: plan.recommendedLeaveTime,
             gateTargetTime: plan.gateTargetTime,
             travelMinutes: plan.travelMinutes,
-            securityMinutes: plan.securityMinutes,
+            securityMinutes: max(0, securitySelection.option.minutes),
             airportBufferMinutes: plan.airportBufferMinutes,
             bagBufferMinutes: plan.bagBufferMinutes,
-            leaveTimeTrend: LeaveTimeTrend.unchanged,
+            leaveTimeTrend: .unchanged,
             securityRouteMode: securitySelection.mode,
             securityRouteID: securitySelection.option.id,
             securityRouteTitle: securitySelection.option.title,
@@ -696,7 +707,6 @@ private extension PlannerView {
         store.setTrackedFlight(tracked)
         selectedTab = .flight
     }
-
     func flowAirport(from code: String) -> FlowAirport? {
         AirportRegistry.airports
             .map(\.airport)

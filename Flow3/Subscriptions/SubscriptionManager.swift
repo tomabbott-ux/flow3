@@ -50,6 +50,14 @@ final class SubscriptionManager: ObservableObject {
         return receiptURL.lastPathComponent == "sandboxReceipt"
     }
 
+    var isSimulator: Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return false
+        #endif
+    }
+
     private init() {
         loadCachedState()
         startTransactionListenerIfNeeded()
@@ -108,7 +116,20 @@ final class SubscriptionManager: ObservableObject {
             isRefreshingEntitlements = false
         }
 
-        // 🔥 Auto-unlock Pro for all TestFlight users
+        // Simulator unlock for local Xcode testing
+        if isSimulator {
+            print("🧪 Simulator detected — Pro unlocked automatically")
+
+            applyEntitlementState(
+                hasPro: true,
+                productID: Constants.yearlyProductID,
+                expirationDate: .distantFuture
+            )
+
+            return
+        }
+
+        // TestFlight unlock for testers
         if isTestFlight {
             print("🚀 TestFlight detected — Pro unlocked automatically")
 
@@ -224,8 +245,7 @@ final class SubscriptionManager: ObservableObject {
     func restorePurchases() async {
         lastErrorMessage = nil
 
-        // 🔥 For TestFlight, restore is effectively instant because Pro is auto-unlocked
-        if isTestFlight {
+        if isSimulator || isTestFlight {
             await refreshEntitlements()
             return
         }
