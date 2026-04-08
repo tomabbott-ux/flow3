@@ -2,6 +2,8 @@ import SwiftUI
 
 struct SettingsView: View {
 
+    @EnvironmentObject var store: LandingStore
+
     @AppStorage("flow_default_airport") private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
     @AppStorage("flow_use_24h_time") private var use24HourTime: Bool = true
     @AppStorage("flow_use_celsius") private var useCelsius: Bool = true
@@ -144,6 +146,9 @@ private extension SettingsView {
                 }
             }
             .tint(Color(hex: "9B6CFF"))
+            .onChange(of: preferPreCheck) { _, _ in
+                store.refreshTrackedFlightSecurityIfNeeded()
+            }
         }
         .flowSettingsCard()
     }

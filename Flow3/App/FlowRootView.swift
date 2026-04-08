@@ -112,6 +112,7 @@ struct FlowRootView: View {
 
             NavigationStack {
                 SettingsView()
+                    .environmentObject(store)
             }
             .tabItem {
                 Image(systemName: "gear")

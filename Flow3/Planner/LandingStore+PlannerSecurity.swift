@@ -133,6 +133,51 @@ extension LandingStore {
         
         rebuildAlerts()
     }
+    
+    func refreshTrackedFlightSecurityIfNeeded() {
+        guard let current = trackedFlight else { return }
+        
+        let selection = plannerSecuritySelection(
+            for: selectedAirport,
+            flightTerminal: current.terminal,
+            preferredRouteID: current.securityRouteMode == .manual ? current.securityRouteID : nil
+        )
+        
+        let updated = TrackedFlight(
+            flightNumber: current.flightNumber,
+            route: current.route,
+            airline: current.airline,
+            terminal: current.terminal,
+            gate: current.gate,
+            status: current.status,
+            departureTime: current.departureTime,
+            leaveTime: current.leaveTime,
+            gateTargetTime: current.gateTargetTime,
+            travelMinutes: current.travelMinutes,
+            securityMinutes: max(0, selection.option.minutes),
+            airportBufferMinutes: current.airportBufferMinutes,
+            bagBufferMinutes: current.bagBufferMinutes,
+            leaveTimeTrend: current.leaveTimeTrend,
+            securityRouteMode: current.securityRouteMode,
+            securityRouteID: selection.option.id,
+            securityRouteTitle: selection.option.title,
+            securityRouteSubtitle: selection.option.subtitle,
+            securityRouteDetail: selection.option.detail,
+            securityRouteIsPreCheckOnly: selection.option.isPreCheckOnly
+        )
+        
+        trackedFlight = updated
+        SavedFlightStore.shared.save(updated)
+        FlowWatchConnectivityManager.shared.syncTrackedFlight(updated)
+        
+        Task {
+            await FlowLiveActivityManager.shared.update(for: updated)
+        }
+        
+        rebuildAlerts()
+        
+        print("🔁 Auto-refreshed tracked flight security route")
+    }
 }
 
 // MARK: - Helpers
