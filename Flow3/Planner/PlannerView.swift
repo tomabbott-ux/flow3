@@ -27,6 +27,7 @@ struct PlannerView: View {
 
     @State private var useManualTravelTime = false
     @State private var manualTravelMinutes = 20
+    @State private var hasConsumedPendingCalendarFlight = false
 
     private let travelTimeService = TravelTimeService()
     private let flightLookupService = LiveFlightService()
@@ -86,11 +87,24 @@ struct PlannerView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             resetPlanner()
+
+            Task {
+                await consumePendingCalendarFlightIfNeeded(force: true)
+            }
         }
+        
         .onChange(of: useFlightNumber) { _ in
             errorText = nil
             plan = nil
             flightLookupResult = nil
+        }
+        .onChange(of: store.pendingCalendarFlight) { _, _ in
+            Task {
+                await consumePendingCalendarFlightIfNeeded(force: true)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("foundCalendarFlight"))) { _ in
+            consumePendingCalendarFlightIfNeeded(force: true)
         }
     }
 }
@@ -558,8 +572,32 @@ private extension PlannerView {
         ) ?? Date()
         flightDate = Date()
         useFlightNumber = true
+        hasConsumedPendingCalendarFlight = false
     }
 
+    func consumePendingCalendarFlightIfNeeded(force: Bool = false) {
+        guard let pending = store.pendingCalendarFlight else { return }
+
+        if hasConsumedPendingCalendarFlight && !force { return }
+
+        hasConsumedPendingCalendarFlight = true
+        errorText = nil
+        plan = nil
+        flightLookupResult = nil
+        useFlightNumber = true
+        flightNumber = pending.flightNumber
+        flightDate = pending.departureDate
+        departureTime = pending.departureDate
+
+        if let code = pending.departureAirportCode,
+           let matchedAirport = flowAirport(from: code) {
+            store.selectedAirport = matchedAirport
+        }
+
+        Task {
+            await lookupFlight()
+        }
+    }
     func lookupFlight() async {
         errorText = nil
         plan = nil
@@ -597,6 +635,10 @@ private extension PlannerView {
 
             flightLookupResult = result
             departureTime = result.departureTime
+
+            if plan == nil {
+                await calculate()
+            }
 
         } catch {
             errorText = error.localizedDescription
@@ -707,6 +749,7 @@ private extension PlannerView {
         store.setTrackedFlight(tracked)
         selectedTab = .flight
     }
+
     func flowAirport(from code: String) -> FlowAirport? {
         AirportRegistry.airports
             .map(\.airport)

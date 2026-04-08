@@ -32,12 +32,69 @@ final class LandingStore: ObservableObject {
     @Published private(set) var waitTimes: [WaitTimeEstimate] = []
     @Published private(set) var alerts: [FlowAlert] = []
 
+    // MARK: - Calendar Flights
+
+    @Published var pendingCalendarFlights: [PendingCalendarFlight] = [] {
+        didSet {
+            rebuildAlerts()
+        }
+    }
+
+    @Published var selectedPendingCalendarFlightID: String?
+
+    var pendingCalendarFlight: PendingCalendarFlight? {
+        if let selectedPendingCalendarFlightID,
+           let matched = pendingCalendarFlights.first(where: { $0.id == selectedPendingCalendarFlightID }) {
+            return matched
+        }
+
+        return pendingCalendarFlights.first
+    }
+
+    func dismissPendingCalendarFlight() {
+        selectedPendingCalendarFlightID = nil
+    }
+
+    func setPendingCalendarFlights(_ flights: [PendingCalendarFlight]) {
+        let unique = Array(Set(flights)).sorted { $0.departureDate < $1.departureDate }
+        pendingCalendarFlights = unique
+
+        if let selectedPendingCalendarFlightID,
+           !unique.contains(where: { $0.id == selectedPendingCalendarFlightID }) {
+            self.selectedPendingCalendarFlightID = nil
+        }
+    }
+
+    func addPendingCalendarFlight(_ flight: PendingCalendarFlight) {
+        guard !pendingCalendarFlights.contains(flight) else { return }
+        pendingCalendarFlights.append(flight)
+        pendingCalendarFlights.sort { $0.departureDate < $1.departureDate }
+    }
+
+    func removePendingCalendarFlight(_ flight: PendingCalendarFlight) {
+        pendingCalendarFlights.removeAll { $0.id == flight.id }
+
+        if selectedPendingCalendarFlightID == flight.id {
+            selectedPendingCalendarFlightID = nil
+        }
+    }
+
     // MARK: - Tracked Flight
 
     @Published var trackedFlight: TrackedFlight?
 
     func setTrackedFlight(_ flight: TrackedFlight) {
         trackedFlight = flight
+
+        if let matchedPending = pendingCalendarFlights.first(where: {
+            $0.flightNumber.caseInsensitiveCompare(flight.flightNumber) == .orderedSame
+        }) {
+            pendingCalendarFlights.removeAll { $0.id == matchedPending.id }
+
+            if selectedPendingCalendarFlightID == matchedPending.id {
+                selectedPendingCalendarFlightID = nil
+            }
+        }
 
         if let departureAirport = trackedDepartureAirport(from: flight.route) {
             selectedAirport = departureAirport
@@ -107,7 +164,6 @@ final class LandingStore: ObservableObject {
 
         self.trackedFlight = SavedFlightStore.shared.load()
 
-        // Default airport should control startup airport.
         if let defaultAirportCode = UserDefaults.standard.string(forKey: PreferenceKeys.defaultAirportCode),
            let airport = AirportRegistry.airports
             .map(\.airport)
@@ -537,7 +593,6 @@ final class LandingStore: ObservableObject {
             )
 
             let oldFlight = current
-
             trackedFlight = updated
 
             SavedFlightStore.shared.save(updated)
@@ -570,6 +625,19 @@ final class LandingStore: ObservableObject {
 
     func rebuildAlerts() {
         var items: [FlowAlert] = []
+
+        for pending in pendingCalendarFlights.sorted(by: { $0.departureDate < $1.departureDate }) {
+            items.append(
+                FlowAlert(
+                    kind: .calendarFlightDetected,
+                    severity: .info,
+                    title: "Upcoming flight found",
+                    message: "We found \(pending.flightNumber) in your calendar. Tap to review it in Search.",
+                    airportCode: pending.departureAirportCode ?? selectedAirport.rawValue,
+                    relatedFlightID: pending.id
+                )
+            )
+        }
 
         if let flight = trackedFlight {
             let secondsUntilLeave = flight.leaveTime.timeIntervalSinceNow
@@ -665,18 +733,20 @@ final class LandingStore: ObservableObject {
             return 0
         case .leaveSoon:
             return 1
-        case .securityHigh:
+        case .calendarFlightDetected:
             return 2
-        case .securityRising:
+        case .securityHigh:
             return 3
-        case .checkpointClosed:
+        case .securityRising:
             return 4
-        case .weatherImpact:
+        case .checkpointClosed:
             return 5
-        case .trackedFlight:
+        case .weatherImpact:
             return 6
-        case .onTrack:
+        case .trackedFlight:
             return 7
+        case .onTrack:
+            return 8
         }
     }
 }

@@ -17,6 +17,9 @@ struct FlowRootView: View {
     @AppStorage("flow_default_airport")
     private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
 
+    @AppStorage("flow_calendar_flight_detection")
+    private var calendarFlightDetectionEnabled: Bool = true
+
     @State private var selectedTab: FlowTab = .flight
     @State private var hasAppliedStartupAirport = false
 
@@ -102,7 +105,10 @@ struct FlowRootView: View {
             .tag(FlowTab.flight)
 
             NavigationStack {
-                AlertsView(store: store)
+                AlertsView(
+                    store: store,
+                    selectedTab: $selectedTab
+                )
             }
             .tabItem {
                 Image(systemName: "bell.fill")
@@ -132,12 +138,36 @@ struct FlowRootView: View {
             guard !hasAppliedStartupAirport else { return }
             hasAppliedStartupAirport = true
             applyDefaultAirportFromSettings()
+            await runCalendarFlightScanIfNeeded(force: false)
         }
         .onChange(of: defaultAirportRawValue) { _, _ in
             applyDefaultAirportFromSettings()
         }
         .onChange(of: subscriptionManager.tier) { _, _ in
             applyDefaultAirportFromSettings()
+        }
+        .onChange(of: selectedTab) { _, newValue in
+            guard newValue == .flight else { return }
+
+            Task {
+                await runCalendarFlightScanIfNeeded(force: false)
+            }
+        }
+        .onChange(of: store.trackedFlight?.id) { oldValue, newValue in
+            if oldValue != nil && newValue == nil {
+                Task {
+                    await runCalendarFlightScanIfNeeded(force: true)
+                }
+            }
+        }
+        .onChange(of: calendarFlightDetectionEnabled) { _, isEnabled in
+            if isEnabled {
+                Task {
+                    await runCalendarFlightScanIfNeeded(force: true)
+                }
+            } else {
+                store.dismissPendingCalendarFlight()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .openSearchTab)) { _ in
             selectedTab = .planner
@@ -155,6 +185,16 @@ struct FlowRootView: View {
                 presentPaywall(source: .general)
             }
         }
+    }
+
+    private func runCalendarFlightScanIfNeeded(force: Bool) async {
+        guard calendarFlightDetectionEnabled else {
+            print("📆 Calendar scan skipped: toggle off")
+            return
+        }
+
+        print("📆 Calendar scan requested")
+        await store.scanCalendarForFlightsIfNeeded(force: force)
     }
 
     private func applyDefaultAirportFromSettings() {

@@ -2,14 +2,14 @@ import SwiftUI
 
 struct SettingsView: View {
 
-    @EnvironmentObject var store: LandingStore
+    @EnvironmentObject private var store: LandingStore
 
     @AppStorage("flow_default_airport") private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
-    @AppStorage("flow_airport_sort_mode") private var airportSortModeRawValue: String = AirportSortMode.default.rawValue
     @AppStorage("flow_use_24h_time") private var use24HourTime: Bool = true
     @AppStorage("flow_use_celsius") private var useCelsius: Bool = true
     @AppStorage("flow_auto_select_fastest_checkpoint") private var autoSelectFastestCheckpoint: Bool = true
     @AppStorage("flow_prefer_precheck") private var preferPreCheck: Bool = false
+    @AppStorage("flow_calendar_flight_detection_enabled") private var calendarFlightDetectionEnabled: Bool = true
 
     @AppStorage("flow_notify_30") private var notify30Minutes: Bool = true
     @AppStorage("flow_notify_15") private var notify15Minutes: Bool = true
@@ -91,24 +91,6 @@ private extension SettingsView {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                settingLabel("Airport list order")
-
-                Picker("", selection: $airportSortModeRawValue) {
-                    ForEach(AirportSortMode.allCases, id: \.rawValue) { mode in
-                        Text(mode.title)
-                            .tag(mode.rawValue)
-                    }
-                }
-                .pickerStyle(.menu)
-                .tint(.white)
-
-                Text("Changes how airports are sorted in Select Airport. Recent and favourites stay pinned.")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.68))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
                 settingLabel("Time format")
 
                 Picker("", selection: $use24HourTime) {
@@ -168,6 +150,19 @@ private extension SettingsView {
             .onChange(of: preferPreCheck) { _, _ in
                 store.refreshTrackedFlightSecurityIfNeeded()
             }
+
+            Toggle(isOn: $calendarFlightDetectionEnabled) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Calendar flight detection")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text("Let Flow detect upcoming flights in Calendar and offer to track them.")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.68))
+                }
+            }
+            .tint(Color(hex: "9B6CFF"))
         }
         .flowSettingsCard()
     }
@@ -234,7 +229,6 @@ private extension SettingsView {
             }
 
             Button {
-                // Future upgrade / manage subscription action
             } label: {
                 HStack {
                     Text("Manage subscription")
