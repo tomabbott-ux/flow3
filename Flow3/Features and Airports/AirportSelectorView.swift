@@ -7,6 +7,9 @@ struct AirportSelectorView: View {
 
     @EnvironmentObject private var subscriptionManager: SubscriptionManager
 
+    @AppStorage("flow_airport_sort_mode")
+    private var airportSortModeRawValue: String = AirportSortMode.default.rawValue
+
     @State private var searchText: String = ""
     @State private var favourites: Set<FlowAirport> = FavouriteAirports.shared.load()
     @State private var recents: [FlowAirport] = RecentAirports.shared.load()
@@ -325,6 +328,10 @@ private extension AirportSelectorView {
 
 private extension AirportSelectorView {
 
+    var airportSortMode: AirportSortMode {
+        AirportSortMode(rawValue: airportSortModeRawValue) ?? .default
+    }
+
     var uniqueDefinitions: [AirportDefinition] {
         var seen: Set<FlowAirport> = []
         var unique: [AirportDefinition] = []
@@ -401,9 +408,12 @@ private extension AirportSelectorView {
         let favouriteSet = favourites
         let recentSet = Set(canonicalRecents)
 
-        return filteredDefinitions
+        let remaining = filteredDefinitions
             .filter { !favouriteSet.contains($0.airport) && !recentSet.contains($0.airport) }
-            .sorted { lhs, rhs in
+
+        switch airportSortMode {
+        case .default:
+            return remaining.sorted { lhs, rhs in
                 let lhsPriority = priority(lhs.feedType)
                 let rhsPriority = priority(rhs.feedType)
 
@@ -415,6 +425,21 @@ private extension AirportSelectorView {
                     rhs.airport.displayName
                 ) == .orderedAscending
             }
+
+        case .code:
+            return remaining.sorted { lhs, rhs in
+                lhs.airport.rawValue.localizedCaseInsensitiveCompare(
+                    rhs.airport.rawValue
+                ) == .orderedAscending
+            }
+
+        case .name:
+            return remaining.sorted { lhs, rhs in
+                lhs.airport.displayName.localizedCaseInsensitiveCompare(
+                    rhs.airport.displayName
+                ) == .orderedAscending
+            }
+        }
     }
 
     func priority(_ feedType: AirportFeedType) -> Int {
