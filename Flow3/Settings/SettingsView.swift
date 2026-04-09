@@ -10,7 +10,9 @@ struct SettingsView: View {
     @AppStorage("flow_auto_select_fastest_checkpoint") private var autoSelectFastestCheckpoint: Bool = true
     @AppStorage("flow_prefer_precheck") private var preferPreCheck: Bool = false
     @AppStorage("flow_calendar_flight_detection_enabled") private var calendarFlightDetectionEnabled: Bool = true
-
+    @AppStorage("flow_airport_sort_mode")
+    private var airportSortMode: String = "code"
+    
     @AppStorage("flow_notify_30") private var notify30Minutes: Bool = true
     @AppStorage("flow_notify_15") private var notify15Minutes: Bool = true
     @AppStorage("flow_notify_leave_now") private var notifyLeaveNow: Bool = true
@@ -109,11 +111,20 @@ private extension SettingsView {
                 }
                 .pickerStyle(.segmented)
             }
+
+            VStack(alignment: .leading, spacing: 8) {
+                settingLabel("Airport sorting")
+
+                Picker("", selection: $airportSortMode) {
+                    Text("Airport code").tag("code")
+                    Text("Airport name").tag("name")
+                }
+                .pickerStyle(.segmented)
+            }
         }
         .flowSettingsCard()
     }
 }
-
 // MARK: - Planning
 
 private extension SettingsView {

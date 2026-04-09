@@ -4,7 +4,9 @@ struct LandingView: View {
     @ObservedObject var store: LandingStore
     @Binding var selectedTab: FlowRootView.FlowTab
     @EnvironmentObject private var subscriptionManager: SubscriptionManager
-
+    @AppStorage("flow_use_celsius")
+    private var useCelsius: Bool = true
+    
     @State private var selectedRowID: String? = nil
     @State private var otherCheckpointsExpanded = false
     @State private var hasPerformedInitialLoad = false
@@ -657,10 +659,15 @@ private extension LandingView {
     }
 
     var weatherTemperatureLine: String {
-        guard let weather = store.weather else { return "--" }
-        return "\(weather.temperatureC)°C"
-    }
+        guard let weather = store.weather else { return "—" }
 
+        if useCelsius {
+            return "\(weather.temperatureC)°C"
+        } else {
+            let fahrenheit = Int(round((Double(weather.temperatureC) * 9.0 / 5.0) + 32.0))
+            return "\(fahrenheit)°F"
+        }
+    }
     var weatherConditionLine: String {
         guard let weather = store.weather else { return "--" }
 

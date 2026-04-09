@@ -8,7 +8,7 @@ struct AirportSelectorView: View {
     @EnvironmentObject private var subscriptionManager: SubscriptionManager
 
     @AppStorage("flow_airport_sort_mode")
-    private var airportSortModeRawValue: String = AirportSortMode.default.rawValue
+    private var airportSortModeRawValue: String = AirportSortMode.code.rawValue
 
     @State private var searchText: String = ""
     @State private var favourites: Set<FlowAirport> = FavouriteAirports.shared.load()
@@ -42,12 +42,18 @@ struct AirportSelectorView: View {
                         }
                     }
 
-                    if !remainingAirportDefinitions.isEmpty {
-                        AirportSectionHeader(title: "AIRPORTS")
-                            .padding(.top, 6)
+                    if !groupedRemainingAirportDefinitions.isEmpty {
+                        AirportSectionHeader(
+                            title: airportSortMode == .name ? "AIRPORTS BY NAME" : "AIRPORTS BY CODE"
+                        )
+                        .padding(.top, 6)
 
-                        ForEach(remainingAirportDefinitions) { definition in
-                            airportRow(definition)
+                        ForEach(groupedRemainingAirportDefinitions) { group in
+                            AirportLetterHeader(title: group.title)
+
+                            ForEach(group.items) { definition in
+                                airportRow(definition)
+                            }
                         }
                     }
                 }
@@ -329,7 +335,7 @@ private extension AirportSelectorView {
 private extension AirportSelectorView {
 
     var airportSortMode: AirportSortMode {
-        AirportSortMode(rawValue: airportSortModeRawValue) ?? .default
+        AirportSortMode(rawValue: airportSortModeRawValue) ?? .code
     }
 
     var uniqueDefinitions: [AirportDefinition] {
@@ -395,13 +401,24 @@ private extension AirportSelectorView {
     var pinnedFavouriteDefinitions: [AirportDefinition] {
         let recentSet = Set(canonicalRecents)
 
-        return filteredDefinitions
+        let favouritesOnly = filteredDefinitions
             .filter { favourites.contains($0.airport) && !recentSet.contains($0.airport) }
-            .sorted { lhs, rhs in
+
+        switch airportSortMode {
+        case .code:
+            return favouritesOnly.sorted { lhs, rhs in
+                lhs.airport.rawValue.localizedCaseInsensitiveCompare(
+                    rhs.airport.rawValue
+                ) == .orderedAscending
+            }
+
+        case .name:
+            return favouritesOnly.sorted { lhs, rhs in
                 lhs.airport.displayName.localizedCaseInsensitiveCompare(
                     rhs.airport.displayName
                 ) == .orderedAscending
             }
+        }
     }
 
     var remainingAirportDefinitions: [AirportDefinition] {
@@ -412,20 +429,6 @@ private extension AirportSelectorView {
             .filter { !favouriteSet.contains($0.airport) && !recentSet.contains($0.airport) }
 
         switch airportSortMode {
-        case .default:
-            return remaining.sorted { lhs, rhs in
-                let lhsPriority = priority(lhs.feedType)
-                let rhsPriority = priority(rhs.feedType)
-
-                if lhsPriority != rhsPriority {
-                    return lhsPriority < rhsPriority
-                }
-
-                return lhs.airport.displayName.localizedCaseInsensitiveCompare(
-                    rhs.airport.displayName
-                ) == .orderedAscending
-            }
-
         case .code:
             return remaining.sorted { lhs, rhs in
                 lhs.airport.rawValue.localizedCaseInsensitiveCompare(
@@ -442,17 +445,54 @@ private extension AirportSelectorView {
         }
     }
 
-    func priority(_ feedType: AirportFeedType) -> Int {
-        switch feedType {
-        case .live:
-            return 0
-        case .highConfidence:
-            return 1
-        case .estimated:
-            return 2
-        case .comingSoon:
-            return 3
+    var groupedRemainingAirportDefinitions: [AirportLetterGroup] {
+        let grouped = Dictionary(grouping: remainingAirportDefinitions) { definition in
+            groupTitle(for: definition)
         }
+
+        return grouped
+            .map { key, value in
+                AirportLetterGroup(title: key, items: value)
+            }
+            .sorted { lhs, rhs in
+                lhs.sortKey < rhs.sortKey
+            }
+    }
+
+    func groupTitle(for definition: AirportDefinition) -> String {
+        let value: String
+
+        switch airportSortMode {
+        case .code:
+            value = definition.airport.rawValue
+        case .name:
+            value = definition.airport.displayName
+        }
+
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let first = trimmed.first else { return "#" }
+
+        if first.isLetter {
+            return String(first).uppercased()
+        } else if first.isNumber {
+            return "#"
+        } else {
+            return "#"
+        }
+    }
+}
+
+// MARK: - Models
+
+private struct AirportLetterGroup: Identifiable {
+    let title: String
+    let items: [AirportDefinition]
+
+    var id: String { title }
+
+    var sortKey: String {
+        title == "#" ? "ZZZ" : title
     }
 }
 
@@ -474,6 +514,25 @@ private struct AirportSectionHeader: View {
                 .frame(height: 1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct AirportLetterHeader: View {
+
+    let title: String
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 14, weight: .heavy))
+                .foregroundColor(.white.opacity(0.82))
+                .tracking(0.8)
+
+            Spacer()
+        }
+        .padding(.horizontal, 4)
+        .padding(.top, 8)
+        .padding(.bottom, 2)
     }
 }
 
