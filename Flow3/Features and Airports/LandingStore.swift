@@ -32,51 +32,42 @@ final class LandingStore: ObservableObject {
     @Published private(set) var waitTimes: [WaitTimeEstimate] = []
     @Published private(set) var alerts: [FlowAlert] = []
 
+    // MARK: - Calendar Review Target
+
+    @Published var reviewCalendarFlight: PendingCalendarFlight?
+
     // MARK: - Calendar Flights
 
     @Published var pendingCalendarFlights: [PendingCalendarFlight] = [] {
         didSet {
             rebuildAlerts()
+
+            if let reviewCalendarFlight,
+               !pendingCalendarFlights.contains(where: { $0.id == reviewCalendarFlight.id }) {
+                self.reviewCalendarFlight = nil
+            }
         }
     }
 
+    // Legacy selection support
     @Published var selectedPendingCalendarFlightID: String?
 
     var pendingCalendarFlight: PendingCalendarFlight? {
-        if let selectedPendingCalendarFlightID,
-           let matched = pendingCalendarFlights.first(where: { $0.id == selectedPendingCalendarFlightID }) {
-            return matched
-        }
-
-        return pendingCalendarFlights.first
+        reviewCalendarFlight
     }
-
     func dismissPendingCalendarFlight() {
+        reviewCalendarFlight = nil
         selectedPendingCalendarFlightID = nil
     }
 
     func setPendingCalendarFlights(_ flights: [PendingCalendarFlight]) {
-        let unique = Array(Set(flights)).sorted { $0.departureDate < $1.departureDate }
-        pendingCalendarFlights = unique
-
-        if let selectedPendingCalendarFlightID,
-           !unique.contains(where: { $0.id == selectedPendingCalendarFlightID }) {
-            self.selectedPendingCalendarFlightID = nil
-        }
+        pendingCalendarFlights = flights.sorted { $0.departureDate < $1.departureDate }
     }
 
     func addPendingCalendarFlight(_ flight: PendingCalendarFlight) {
-        guard !pendingCalendarFlights.contains(flight) else { return }
+        guard !pendingCalendarFlights.contains(where: { $0.id == flight.id }) else { return }
         pendingCalendarFlights.append(flight)
         pendingCalendarFlights.sort { $0.departureDate < $1.departureDate }
-    }
-
-    func removePendingCalendarFlight(_ flight: PendingCalendarFlight) {
-        pendingCalendarFlights.removeAll { $0.id == flight.id }
-
-        if selectedPendingCalendarFlightID == flight.id {
-            selectedPendingCalendarFlightID = nil
-        }
     }
 
     // MARK: - Tracked Flight
@@ -93,6 +84,10 @@ final class LandingStore: ObservableObject {
 
             if selectedPendingCalendarFlightID == matchedPending.id {
                 selectedPendingCalendarFlightID = nil
+            }
+
+            if reviewCalendarFlight?.id == matchedPending.id {
+                reviewCalendarFlight = nil
             }
         }
 
@@ -486,7 +481,7 @@ final class LandingStore: ObservableObject {
                 travelMinutes = current.travelMinutes
             }
 
-            let preferredRouteID: String? = current.securityRouteMode == SecurityRouteMode.manual
+            let preferredRouteID: String? = current.securityRouteMode == .manual
                 ? current.securityRouteID
                 : nil
 
@@ -497,7 +492,7 @@ final class LandingStore: ObservableObject {
             )
 
             let routeClosed =
-                current.securityRouteMode == SecurityRouteMode.manual &&
+                current.securityRouteMode == .manual &&
                 preferredRouteID != nil &&
                 securitySelection.option.id != preferredRouteID
 
@@ -520,12 +515,12 @@ final class LandingStore: ObservableObject {
             } else {
                 securityMinutes = max(0, securitySelection.option.minutes)
                 securityRouteMode = securitySelection.mode
-                securityRouteID = securitySelection.mode == SecurityRouteMode.manual
+                securityRouteID = securitySelection.mode == .manual
                     ? securitySelection.option.id
                     : nil
                 securityRouteTitle = securitySelection.option.title
                 securityRouteSubtitle = securitySelection.option.subtitle
-                securityRouteDetail = securitySelection.mode == SecurityRouteMode.manual
+                securityRouteDetail = securitySelection.mode == .manual
                     ? "\(securitySelection.option.detail) · Chosen by you"
                     : securitySelection.option.detail
                 securityRouteIsPreCheckOnly = securitySelection.option.isPreCheckOnly

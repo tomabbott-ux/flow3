@@ -35,32 +35,32 @@ struct PlannerView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 18) {
-
+                
                 plannerIntroCard
                 plannerModePicker
-
+                
                 if useFlightNumber {
                     flightLookupCard
                 } else {
                     inputsCard
                 }
-
+                
                 if let flight = flightLookupResult, useFlightNumber {
                     flightFoundCard(flight)
                 }
-
+                
                 bagToggleCard
                 travelTimeCard
                 actionButton
-
+                
                 if let plan {
                     resultCard(plan)
                 }
-
+                
                 if canTrackFlight {
                     trackFlightButton
                 }
-
+                
                 if let errorText, !errorText.isEmpty {
                     Text(errorText)
                         .font(.system(size: 13, weight: .medium))
@@ -87,7 +87,7 @@ struct PlannerView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             resetPlanner()
-
+            
             Task {
                 await consumePendingCalendarFlightIfNeeded(force: true)
             }
@@ -98,15 +98,12 @@ struct PlannerView: View {
             plan = nil
             flightLookupResult = nil
         }
-        .onChange(of: store.pendingCalendarFlight) { _, _ in
+        
+        .onChange(of: store.reviewCalendarFlight?.id) { _, _ in
             Task {
                 await consumePendingCalendarFlightIfNeeded(force: true)
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("foundCalendarFlight"))) { _ in
-            consumePendingCalendarFlightIfNeeded(force: true)
-        }
-    }
+        }    }
 }
 
 // MARK: - UI
@@ -574,13 +571,30 @@ private extension PlannerView {
         useFlightNumber = true
         hasConsumedPendingCalendarFlight = false
     }
+    func consumePendingCalendarFlightIfNeeded(force: Bool = false) async {
+        print("🔵 consumePendingCalendarFlightIfNeeded called")
+        print("🔵 force =", force)
+        print("🔵 hasConsumedPendingCalendarFlight =", hasConsumedPendingCalendarFlight)
+        print("🔵 store.reviewCalendarFlight =", store.reviewCalendarFlight?.flightNumber ?? "nil")
+        print("🔵 store.reviewCalendarFlight id =", store.reviewCalendarFlight?.id ?? "nil")
 
-    func consumePendingCalendarFlightIfNeeded(force: Bool = false) {
-        guard let pending = store.pendingCalendarFlight else { return }
+        guard let pending = store.reviewCalendarFlight else {
+            print("🔵 No reviewCalendarFlight available")
+            return
+        }
 
-        if hasConsumedPendingCalendarFlight && !force { return }
+        if hasConsumedPendingCalendarFlight && !force {
+            print("🔵 Already consumed, returning")
+            return
+        }
 
         hasConsumedPendingCalendarFlight = true
+
+        print("🔵 Consuming flight =", pending.flightNumber)
+        print("🔵 Consuming id =", pending.id)
+        print("🔵 Consuming title =", pending.title)
+        print("🔵 Consuming route =", pending.routeText ?? "nil")
+
         errorText = nil
         plan = nil
         flightLookupResult = nil
@@ -591,8 +605,14 @@ private extension PlannerView {
 
         if let code = pending.departureAirportCode,
            let matchedAirport = flowAirport(from: code) {
+            print("🔵 Setting selected airport to", matchedAirport.rawValue)
             store.selectedAirport = matchedAirport
         }
+
+        print("🔵 Planner fields now set to flightNumber =", flightNumber)
+
+        store.reviewCalendarFlight = nil
+        print("🔵 Cleared store.reviewCalendarFlight after consume")
 
         Task {
             await lookupFlight()

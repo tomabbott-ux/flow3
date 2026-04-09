@@ -27,7 +27,33 @@ struct PendingCalendarFlight: Identifiable, Equatable, Hashable {
         self.location = location
         self.notes = notes
 
-        let airportPart = departureAirportCode ?? "UNKNOWN"
-        self.id = "\(flightNumber)|\(departureDate.timeIntervalSince1970)|\(airportPart)"
+        let normalizedFlight = flightNumber
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+
+        let normalizedTitle = title
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
+        let normalizedRoute = (routeText ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+
+        let normalizedAirport = (departureAirportCode ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+
+        let normalizedLocation = (location ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
+        self.id = [
+            normalizedFlight,
+            String(Int(departureDate.timeIntervalSince1970)),
+            normalizedAirport,
+            normalizedRoute,
+            normalizedTitle,
+            normalizedLocation
+        ].joined(separator: "|")
     }
 }
