@@ -5,56 +5,57 @@ import EventKit
 extension LandingStore {
 
     func scanCalendarForFlightsIfNeeded(force: Bool = false) async {
-        if trackedFlight != nil && pendingCalendarFlights.isEmpty && !force {
-            print("📆 Calendar scan skipped: already tracking flight and no pending list refresh needed")
-            return
-        }
-
-        print("📆 LandingStore scanning calendar for flights")
+        Swift.print("📆 LandingStore scanning calendar for flights")
 
         let granted = await CalendarFlightScanner.shared.requestAccess()
+
         guard granted else {
-            print("📆 Calendar scan stopped: access denied")
+            Swift.print("📆 Calendar scan stopped: access denied")
+            pendingCalendarFlights = []
             return
         }
 
         let matches = CalendarFlightScanner.shared.upcomingFlightCandidates(withinDays: 30)
 
         guard !matches.isEmpty else {
-            print("📆 Calendar scan found no flight candidates")
+            Swift.print("📆 Calendar scan found no flight candidates")
             pendingCalendarFlights = []
             return
         }
 
-        let pendingFlights = matches.compactMap { pendingCalendarFlight(from: $0) }
+        let parsedFlights = matches.compactMap { event in
+            pendingCalendarFlight(from: event)
+        }
 
-        guard !pendingFlights.isEmpty else {
-            print("📆 Calendar scan could not convert candidates into pending flights")
+        guard !parsedFlights.isEmpty else {
+            Swift.print("📆 Calendar scan could not convert candidates into pending flights")
             pendingCalendarFlights = []
             return
         }
 
-        let deduped = deduplicatePendingFlights(pendingFlights)
+        let deduplicated = deduplicatePendingFlights(parsedFlights)
 
-        // ✅ IMPORTANT:
-        // Never show the currently tracked flight again as a pending calendar flight.
-        let filtered = deduped.filter { pending in
+        let filtered = deduplicated.filter { pending in
             guard let trackedFlight else { return true }
-
             return pending.flightNumber.caseInsensitiveCompare(trackedFlight.flightNumber) != .orderedSame
         }
 
-        pendingCalendarFlights = filtered
+        pendingCalendarFlights = filtered.sorted { $0.departureDate < $1.departureDate }
 
-        print("📆 Pending calendar flights set:", filtered.map(\.flightNumber))
+        Swift.print("📆 Calendar scan complete")
+        Swift.print("📆 pendingCalendarFlights count =", pendingCalendarFlights.count)
+        Swift.print("📆 trackedFlight =", trackedFlight?.flightNumber ?? "nil")
     }
 
     func pendingCalendarFlight(withID id: String?) -> PendingCalendarFlight? {
         guard let id else { return nil }
         return pendingCalendarFlights.first(where: { $0.id == id })
     }
+}
 
-    private func deduplicatePendingFlights(_ flights: [PendingCalendarFlight]) -> [PendingCalendarFlight] {
+private extension LandingStore {
+
+    func deduplicatePendingFlights(_ flights: [PendingCalendarFlight]) -> [PendingCalendarFlight] {
         var seen: Set<String> = []
         var result: [PendingCalendarFlight] = []
 
@@ -68,7 +69,7 @@ extension LandingStore {
         return result
     }
 
-    private func pendingCalendarFlight(from event: EKEvent) -> PendingCalendarFlight? {
+    func pendingCalendarFlight(from event: EKEvent) -> PendingCalendarFlight? {
         let fullText = [
             event.title,
             event.location,
@@ -78,11 +79,11 @@ extension LandingStore {
         .joined(separator: " ")
 
         guard let flightNumber = extractFlightNumber(from: fullText) else {
-            print("📆 Could not extract flight number from event:", event.title ?? "(no title)")
+            Swift.print("📆 Could not extract flight number from event:", event.title ?? "(no title)")
             return nil
         }
 
-        let airportCode = extractDepartureAirportCode(from: fullText)
+        let departureAirportCode = extractDepartureAirportCode(from: fullText)
         let routeText = extractRouteText(from: fullText)
 
         return PendingCalendarFlight(
@@ -90,13 +91,13 @@ extension LandingStore {
             title: event.title ?? flightNumber,
             routeText: routeText,
             departureDate: event.startDate,
-            departureAirportCode: airportCode,
+            departureAirportCode: departureAirportCode,
             location: event.location,
             notes: event.notes
         )
     }
 
-    private func extractFlightNumber(from text: String) -> String? {
+    func extractFlightNumber(from text: String) -> String? {
         let upper = text.uppercased()
         let pattern = #"\b[A-Z]{2,3}\s?\d{1,4}\b"#
 
@@ -114,6 +115,7 @@ extension LandingStore {
                 .uppercased()
 
             if isLikelyRealFlightNumber(candidate), !looksLikeAirportRoomCode(candidate) {
+                Swift.print("🔎 Flight number candidate:", candidate)
                 return candidate
             }
         }
@@ -121,55 +123,34 @@ extension LandingStore {
         return nil
     }
 
-    private func extractDepartureAirportCode(from text: String) -> String? {
-        let upper = text.uppercased()
+    func extractDepartureAirportCode(from text: String) -> String? {
+        if let route = extractRouteText(from: text) {
+            let parts = route.components(separatedBy: "→").map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
 
-        let routePatterns = [
-            #"\b([A-Z]{3})\s?(?:->|→|-|/)\s?([A-Z]{3})\b"#,
-            #"\b([A-Z]{3})\s+TO\s+([A-Z]{3})\b"#
-        ]
-
-        for pattern in routePatterns {
-            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
-
-            let nsText = upper as NSString
-            let range = NSRange(location: 0, length: nsText.length)
-
-            if let match = regex.firstMatch(in: upper, options: [], range: range),
-               match.numberOfRanges >= 3 {
-                return nsText.substring(with: match.range(at: 1))
+            if let origin = parts.first, isSupportedAirportCode(origin) {
+                return origin
             }
         }
 
-        let supportedCodes = Set(AirportRegistry.airports.map { $0.airport.rawValue.uppercased() })
+        let supportedCodes = extractSupportedAirportCodes(from: text)
 
-        for code in supportedCodes {
-            if upper.contains(code) {
-                return code
-            }
+        if let first = supportedCodes.first {
+            return first
         }
 
         return nil
     }
 
-    private func extractRouteText(from text: String) -> String? {
-        let upper = text.uppercased()
+    func extractRouteText(from text: String) -> String? {
+        let supportedCodes = extractSupportedAirportCodes(from: text)
 
-        let routePatterns = [
-            #"\b([A-Z]{3})\s?(?:->|→|-|/)\s?([A-Z]{3})\b"#,
-            #"\b([A-Z]{3})\s+TO\s+([A-Z]{3})\b"#
-        ]
+        if supportedCodes.count >= 2 {
+            let origin = supportedCodes[0]
+            let destination = supportedCodes[1]
 
-        for pattern in routePatterns {
-            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
-
-            let nsText = upper as NSString
-            let range = NSRange(location: 0, length: nsText.length)
-
-            if let match = regex.firstMatch(in: upper, options: [], range: range),
-               match.numberOfRanges >= 3 {
-                let origin = nsText.substring(with: match.range(at: 1))
-                let destination = nsText.substring(with: match.range(at: 2))
+            if origin != destination {
                 return "\(origin) → \(destination)"
             }
         }
@@ -177,7 +158,47 @@ extension LandingStore {
         return nil
     }
 
-    private func isLikelyRealFlightNumber(_ value: String) -> Bool {
+    func extractSupportedAirportCodes(from text: String) -> [String] {
+        let upper = text.uppercased()
+
+        let supportedCodes = Set(
+            AirportRegistry.airports.map { $0.airport.rawValue.uppercased() }
+        )
+
+        let pattern = #"\b[A-Z]{3}\b"#
+
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return []
+        }
+
+        let nsText = upper as NSString
+        let range = NSRange(location: 0, length: nsText.length)
+        let matches = regex.matches(in: upper, options: [], range: range)
+
+        var ordered: [String] = []
+        var seen: Set<String> = []
+
+        for match in matches {
+            let token = nsText.substring(with: match.range).uppercased()
+
+            guard supportedCodes.contains(token) else { continue }
+            guard !seen.contains(token) else { continue }
+
+            seen.insert(token)
+            ordered.append(token)
+        }
+
+        return ordered
+    }
+
+    func isSupportedAirportCode(_ value: String) -> Bool {
+        let supportedCodes = Set(
+            AirportRegistry.airports.map { $0.airport.rawValue.uppercased() }
+        )
+        return supportedCodes.contains(value.uppercased())
+    }
+
+    func isLikelyRealFlightNumber(_ value: String) -> Bool {
         let cleaned = value
             .replacingOccurrences(of: " ", with: "")
             .uppercased()
@@ -195,9 +216,11 @@ extension LandingStore {
         return true
     }
 
-    private func looksLikeAirportRoomCode(_ value: String) -> Bool {
+    func looksLikeAirportRoomCode(_ value: String) -> Bool {
         let cleaned = value.uppercased()
-        let supportedCodes = Set(AirportRegistry.airports.map { $0.airport.rawValue.uppercased() })
+        let supportedCodes = Set(
+            AirportRegistry.airports.map { $0.airport.rawValue.uppercased() }
+        )
 
         for code in supportedCodes {
             if cleaned.hasPrefix(code) {

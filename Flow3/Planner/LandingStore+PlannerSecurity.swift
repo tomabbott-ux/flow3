@@ -43,10 +43,18 @@ extension LandingStore {
                 atlRouteMatch(for: terminalText, in: [route]) != nil
             }
         } else if let terminalText {
-            terminalMatches = allRoutes.filter {
-                $0.title.localizedCaseInsensitiveContains("Terminal \(terminalText)") ||
-                $0.subtitle.localizedCaseInsensitiveContains("Terminal \(terminalText)") ||
-                $0.detail.localizedCaseInsensitiveContains("Terminal \(terminalText)")
+            let terminalVariants = [
+                "Terminal \(terminalText)",
+                "Terminal T\(terminalText)",
+                "T\(terminalText)"
+            ]
+
+            terminalMatches = allRoutes.filter { route in
+                terminalVariants.contains(where: { variant in
+                    route.title.localizedCaseInsensitiveContains(variant) ||
+                    route.subtitle.localizedCaseInsensitiveContains(variant) ||
+                    route.detail.localizedCaseInsensitiveContains(variant)
+                })
             }
         } else {
             terminalMatches = []

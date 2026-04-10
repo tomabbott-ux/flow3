@@ -116,11 +116,11 @@ private extension PlannerView {
     }
 
     var airportTitle: String {
-        "Flight plan"
+        "Plan your journey"
     }
 
     var airportDescription: String {
-        "Find your flight automatically, or build a manual airport timing plan."
+        "Find a flight or build a manual airport timing plan."
     }
 
     var airportDisplayLine: String {
@@ -146,7 +146,7 @@ private extension PlannerView {
                 useFlightNumber = false
             }
 
-            modeButton(title: "Flight Number", selected: useFlightNumber) {
+            modeButton(title: "Flight", selected: useFlightNumber) {
                 useFlightNumber = true
             }
         }
@@ -212,7 +212,7 @@ private extension PlannerView {
         VStack(alignment: .leading, spacing: 16) {
 
             VStack(alignment: .leading, spacing: 8) {
-                inputTitle("Flight number")
+                inputTitle("Flight")
 
                 TextField("e.g. BA216", text: $flightNumber)
                     .textInputAutocapitalization(.characters)
@@ -232,7 +232,7 @@ private extension PlannerView {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                inputTitle("Flight date")
+                inputTitle("Date")
 
                 DatePicker(
                     "",
@@ -299,7 +299,7 @@ private extension PlannerView {
     func flightFoundCard(_ flight: FlightLookupResult) -> some View {
         VStack(alignment: .leading, spacing: 12) {
 
-            Text("Flight found")
+            Text("Flight details")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
 
@@ -339,7 +339,7 @@ private extension PlannerView {
 
     var bagToggleCard: some View {
         Toggle(isOn: $checkedBags) {
-            Text("Checked bags")
+            Text("Checked bag")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
         }
@@ -351,7 +351,7 @@ private extension PlannerView {
         VStack(alignment: .leading, spacing: 14) {
 
             Toggle(isOn: $useManualTravelTime) {
-                Text("Enter travel time manually")
+                Text("Use your own travel time")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
             }
@@ -374,7 +374,7 @@ private extension PlannerView {
                 }
                 .tint(.white)
             } else {
-                Text("Flow will use live travel time from your location.")
+                Text("Flow uses live travel time from your location.")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white.opacity(0.68))
             }
@@ -395,7 +395,7 @@ private extension PlannerView {
                     ProgressView()
                         .tint(.white)
                 } else {
-                    Text("Calculate leave time")
+                    Text("Build leave plan")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
                 }
@@ -475,7 +475,7 @@ private extension PlannerView {
                     Image(systemName: "lock.open.fill")
                         .font(.system(size: 13, weight: .bold))
 
-                    Text("Track This Flight")
+                    Text("Track flight")
                         .font(.system(size: 16, weight: .bold))
                 }
                 .foregroundColor(.white)

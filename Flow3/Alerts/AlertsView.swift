@@ -127,7 +127,7 @@ private extension AlertsView {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
 
-            Text("Flow will show important flight, security, and tracking updates here.")
+            Text("Upcoming flights, tracking updates, and important changes will appear here.")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.72))
         }
@@ -349,31 +349,26 @@ private extension AlertsView {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Upcoming flight")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
-
-                Text(pendingPrimaryLine(for: pending))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.90))
                     .lineLimit(1)
 
-                Text(formattedCalendarAlertDate(pending?.departureDate ?? alert.createdAt))
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.82))
-
-                if let terminal = extractedTerminal(from: pending) {
-                    Text(terminal)
+                if let pending {
+                    VStack(alignment: .leading, spacing: 6) {
+                        pendingPrimaryLine(for: pending)
+                        pendingSecondaryLine(for: pending)
+                    }
+                } else {
+                    Text("Tap to review this flight in Plan.")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white.opacity(0.82))
-                        .lineLimit(1)
+                        .foregroundColor(.white.opacity(0.86))
                 }
 
                 Text(relativeUpdateText(from: alert.createdAt))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white.opacity(0.60))
             }
-
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .bold))
@@ -400,48 +395,118 @@ private extension AlertsView {
         )
     }
 
-    func pendingPrimaryLine(for pending: PendingCalendarFlight?) -> String {
-        guard let pending else {
-            return "Flight details available"
-        }
+    @ViewBuilder
+    func pendingPrimaryLine(for pending: PendingCalendarFlight) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(pending.flightNumber)
+                .font(.system(size: 17, weight: .bold))
+                .foregroundColor(.white.opacity(0.96))
+                .lineLimit(1)
 
-        if let route = cleanedText(pending.routeText) {
-            return "\(pending.flightNumber) · \(route)"
+            if let route = pendingRouteLine(for: pending) {
+                Text(route)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.88))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
         }
-
-        return pending.flightNumber
     }
 
-    func formattedCalendarAlertDate(_ date: Date) -> String {
+    @ViewBuilder
+    func pendingSecondaryLine(for pending: PendingCalendarFlight) -> some View {
+        let dateText = pendingDateLine(for: pending)
+        let timeText = pendingDepartureTimeLine(for: pending)
+        let terminalText = pendingTerminalLine(for: pending)
+
+        if let terminalText {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    pendingCompactMeta(icon: "calendar", text: dateText)
+                    pendingCompactMeta(icon: "airplane.departure", text: timeText)
+                    pendingCompactMeta(icon: "rectangle.split.2x1", text: terminalText)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 12) {
+                        pendingCompactMeta(icon: "calendar", text: dateText)
+                        pendingCompactMeta(icon: "airplane.departure", text: timeText)
+                    }
+
+                    pendingCompactMeta(icon: "rectangle.split.2x1", text: terminalText)
+                }
+            }
+        } else {
+            HStack(spacing: 12) {
+                pendingCompactMeta(icon: "calendar", text: dateText)
+                pendingCompactMeta(icon: "airplane.departure", text: timeText)
+            }
+        }
+    }
+
+    func pendingRouteLine(for pending: PendingCalendarFlight) -> String? {
+        cleanedText(pending.routeText)
+    }
+
+    func pendingDateLine(for pending: PendingCalendarFlight) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEE d MMM · HH:mm"
-        return formatter.string(from: date)
+        formatter.dateFormat = "EEE d MMM"
+        return formatter.string(from: pending.departureDate)
     }
 
-    func extractedTerminal(from pending: PendingCalendarFlight?) -> String? {
-        guard let pending else { return nil }
+    func pendingDepartureTimeLine(for pending: PendingCalendarFlight) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: pending.departureDate)
+    }
 
+    func pendingTerminalLine(for pending: PendingCalendarFlight) -> String? {
         let sources = [
             pending.location,
             pending.title,
             pending.notes
         ]
+        .compactMap { $0 }
+
+        let pattern = #"(?i)\bterminal\s*([A-Z0-9]+)\b|\bT([0-9A-Z]+)\b"#
+
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return nil
+        }
 
         for source in sources {
-            guard let source = cleanedText(source) else { continue }
+            let nsText = source as NSString
+            let range = NSRange(location: 0, length: nsText.length)
 
-            if let range = source.range(
-                of: #"terminal\s*[a-z0-9]+"#,
-                options: [.regularExpression, .caseInsensitive]
-            ) {
-                let value = String(source[range])
-                    .replacingOccurrences(of: "terminal", with: "Terminal", options: .caseInsensitive)
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                return value
+            guard let match = regex.firstMatch(in: source, options: [], range: range) else {
+                continue
+            }
+
+            if match.range(at: 1).location != NSNotFound {
+                let value = nsText.substring(with: match.range(at: 1))
+                return "Terminal \(value.uppercased())"
+            }
+
+            if match.range(at: 2).location != NSNotFound {
+                let value = nsText.substring(with: match.range(at: 2))
+                return "Terminal \(value.uppercased())"
             }
         }
 
         return nil
+    }
+
+    func pendingCompactMeta(icon: String, text: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.white.opacity(0.72))
+
+            Text(text)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.white.opacity(0.88))
+                .fixedSize(horizontal: true, vertical: false)
+        }
     }
 }
 
@@ -579,7 +644,7 @@ private extension AlertsView {
                     Button {
                         selectedCalendarFlight = nil
                     } label: {
-                        Text("Not now")
+                        Text("Dismiss")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
