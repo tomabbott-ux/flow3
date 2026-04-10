@@ -114,7 +114,7 @@ private extension AlertsView {
                 .font(.system(size: 22, weight: .bold))
                 .foregroundColor(.white)
 
-            Text("A calm, useful summary of what matters now.")
+            Text("Flights, tracking, and timing updates in one place.")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.78))
         }
@@ -347,14 +347,26 @@ private extension AlertsView {
                     .foregroundColor(Color(hex: "C9B6FF"))
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Flight found in Calendar")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Upcoming flight")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.white)
 
-                Text(pendingFlightSummary(for: pending))
+                Text(pendingPrimaryLine(for: pending))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.90))
+                    .lineLimit(1)
+
+                Text(formattedCalendarAlertDate(pending?.departureDate ?? alert.createdAt))
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.86))
+                    .foregroundColor(.white.opacity(0.82))
+
+                if let terminal = extractedTerminal(from: pending) {
+                    Text(terminal)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.82))
+                        .lineLimit(1)
+                }
 
                 Text(relativeUpdateText(from: alert.createdAt))
                     .font(.system(size: 13, weight: .medium))
@@ -388,16 +400,48 @@ private extension AlertsView {
         )
     }
 
-    func pendingFlightSummary(for pending: PendingCalendarFlight?) -> String {
+    func pendingPrimaryLine(for pending: PendingCalendarFlight?) -> String {
         guard let pending else {
-            return "Tap to review it in Search."
+            return "Flight details available"
         }
 
         if let route = cleanedText(pending.routeText) {
-            return "We found \(pending.flightNumber) · \(route). Tap to review it in Search."
-        } else {
-            return "We found \(pending.flightNumber) in your calendar. Tap to review it in Search."
+            return "\(pending.flightNumber) · \(route)"
         }
+
+        return pending.flightNumber
+    }
+
+    func formattedCalendarAlertDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE d MMM · HH:mm"
+        return formatter.string(from: date)
+    }
+
+    func extractedTerminal(from pending: PendingCalendarFlight?) -> String? {
+        guard let pending else { return nil }
+
+        let sources = [
+            pending.location,
+            pending.title,
+            pending.notes
+        ]
+
+        for source in sources {
+            guard let source = cleanedText(source) else { continue }
+
+            if let range = source.range(
+                of: #"terminal\s*[a-z0-9]+"#,
+                options: [.regularExpression, .caseInsensitive]
+            ) {
+                let value = String(source[range])
+                    .replacingOccurrences(of: "terminal", with: "Terminal", options: .caseInsensitive)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                return value
+            }
+        }
+
+        return nil
     }
 }
 
@@ -552,25 +596,14 @@ private extension AlertsView {
                     .buttonStyle(.plain)
 
                     Button {
-                        print("🟣 ALERTS Review tapped")
-                        print("🟣 pending.id =", pending.id)
-                        print("🟣 pending.flightNumber =", pending.flightNumber)
-                        print("🟣 pending.title =", pending.title)
-                        print("🟣 pending.routeText =", pending.routeText ?? "nil")
-
                         store.reviewCalendarFlight = pending
-
-                        print("🟣 store.reviewCalendarFlight set to =", store.reviewCalendarFlight?.flightNumber ?? "nil")
-                        print("🟣 store.reviewCalendarFlight id =", store.reviewCalendarFlight?.id ?? "nil")
-
                         selectedCalendarFlight = nil
 
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                            print("🟣 Navigating to planner with reviewCalendarFlight =", store.reviewCalendarFlight?.flightNumber ?? "nil")
                             selectedTab = .planner
                         }
                     } label: {
-                        Text("Review in Search")
+                        Text("Review in Plan")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)

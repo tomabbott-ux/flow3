@@ -88,7 +88,7 @@ struct FlowRootView: View {
             }
             .tabItem {
                 Image(systemName: "magnifyingglass")
-                Text("Search")
+                Text("Plan")
             }
             .tag(FlowTab.planner)
 
@@ -167,6 +167,7 @@ struct FlowRootView: View {
                 }
             } else {
                 store.dismissPendingCalendarFlight()
+                store.reviewCalendarFlight = nil
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .openSearchTab)) { _ in

@@ -35,32 +35,32 @@ struct PlannerView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 18) {
-                
+
                 plannerIntroCard
                 plannerModePicker
-                
+
                 if useFlightNumber {
                     flightLookupCard
                 } else {
                     inputsCard
                 }
-                
+
                 if let flight = flightLookupResult, useFlightNumber {
                     flightFoundCard(flight)
                 }
-                
+
                 bagToggleCard
                 travelTimeCard
                 actionButton
-                
+
                 if let plan {
                     resultCard(plan)
                 }
-                
+
                 if canTrackFlight {
                     trackFlightButton
                 }
-                
+
                 if let errorText, !errorText.isEmpty {
                     Text(errorText)
                         .font(.system(size: 13, weight: .medium))
@@ -83,27 +83,26 @@ struct PlannerView: View {
             )
             .ignoresSafeArea()
         )
-        .navigationTitle("Search")
+        .navigationTitle("Plan")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             resetPlanner()
-            
+
             Task {
                 await consumePendingCalendarFlightIfNeeded(force: true)
             }
         }
-        
         .onChange(of: useFlightNumber) { _ in
             errorText = nil
             plan = nil
             flightLookupResult = nil
         }
-        
         .onChange(of: store.reviewCalendarFlight?.id) { _, _ in
             Task {
                 await consumePendingCalendarFlightIfNeeded(force: true)
             }
-        }    }
+        }
+    }
 }
 
 // MARK: - UI
@@ -117,11 +116,11 @@ private extension PlannerView {
     }
 
     var airportTitle: String {
-        "Flight search"
+        "Flight plan"
     }
 
     var airportDescription: String {
-        "Search by flight number and Flow will find the airport automatically, or build a manual airport timing plan."
+        "Find your flight automatically, or build a manual airport timing plan."
     }
 
     var airportDisplayLine: String {
@@ -323,7 +322,7 @@ private extension PlannerView {
 
             if let status = flight.status,
                !status.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                infoRow("Status", status)
+                infoRow("Status", flight.statusDisplayText)
             }
 
             infoRow("Departure", flightDateTimeString(flight.departureTime))
@@ -571,29 +570,17 @@ private extension PlannerView {
         useFlightNumber = true
         hasConsumedPendingCalendarFlight = false
     }
-    func consumePendingCalendarFlightIfNeeded(force: Bool = false) async {
-        print("🔵 consumePendingCalendarFlightIfNeeded called")
-        print("🔵 force =", force)
-        print("🔵 hasConsumedPendingCalendarFlight =", hasConsumedPendingCalendarFlight)
-        print("🔵 store.reviewCalendarFlight =", store.reviewCalendarFlight?.flightNumber ?? "nil")
-        print("🔵 store.reviewCalendarFlight id =", store.reviewCalendarFlight?.id ?? "nil")
 
+    func consumePendingCalendarFlightIfNeeded(force: Bool = false) async {
         guard let pending = store.reviewCalendarFlight else {
-            print("🔵 No reviewCalendarFlight available")
             return
         }
 
         if hasConsumedPendingCalendarFlight && !force {
-            print("🔵 Already consumed, returning")
             return
         }
 
         hasConsumedPendingCalendarFlight = true
-
-        print("🔵 Consuming flight =", pending.flightNumber)
-        print("🔵 Consuming id =", pending.id)
-        print("🔵 Consuming title =", pending.title)
-        print("🔵 Consuming route =", pending.routeText ?? "nil")
 
         errorText = nil
         plan = nil
@@ -605,19 +592,16 @@ private extension PlannerView {
 
         if let code = pending.departureAirportCode,
            let matchedAirport = flowAirport(from: code) {
-            print("🔵 Setting selected airport to", matchedAirport.rawValue)
             store.selectedAirport = matchedAirport
         }
 
-        print("🔵 Planner fields now set to flightNumber =", flightNumber)
-
         store.reviewCalendarFlight = nil
-        print("🔵 Cleared store.reviewCalendarFlight after consume")
 
         Task {
             await lookupFlight()
         }
     }
+
     func lookupFlight() async {
         errorText = nil
         plan = nil
@@ -868,5 +852,20 @@ private extension PlannerView {
         leaveTime.timeIntervalSinceNow <= 0
             ? .red.opacity(0.95)
             : .white.opacity(0.82)
+    }
+}
+
+private extension FlightLookupResult {
+    var statusDisplayText: String {
+        guard let status = status?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !status.isEmpty else {
+            return "—"
+        }
+
+        if status.caseInsensitiveCompare("expected") == .orderedSame {
+            return "On Time"
+        }
+
+        return status
     }
 }
