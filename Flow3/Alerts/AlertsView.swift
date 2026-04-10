@@ -10,29 +10,52 @@ struct AlertsView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 20) {
                 headerCard
 
                 if let trackedFlight = store.trackedFlight {
+                    sectionHeader(
+                        title: "Tracked flight",
+                        subtitle: "Your active journey and leave-time status"
+                    )
+
                     trackedFlightCard(trackedFlight)
                 }
 
-                ForEach(calendarFlightAlerts) { alert in
-                    Button {
-                        handleTap(on: alert)
-                    } label: {
-                        pendingCalendarCard(alert)
+                if !calendarFlightAlerts.isEmpty {
+                    sectionHeader(
+                        title: "Upcoming flights",
+                        subtitle: "Flights detected from your calendar"
+                    )
+
+                    VStack(spacing: 14) {
+                        ForEach(calendarFlightAlerts) { alert in
+                            Button {
+                                handleTap(on: alert)
+                            } label: {
+                                pendingCalendarCard(alert)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
 
-                ForEach(operationalAlerts) { alert in
-                    Button {
-                        handleTap(on: alert)
-                    } label: {
-                        standardAlertCard(alert)
+                if !operationalAlerts.isEmpty {
+                    sectionHeader(
+                        title: "Updates",
+                        subtitle: "Operational alerts and important changes"
+                    )
+
+                    VStack(spacing: 14) {
+                        ForEach(operationalAlerts) { alert in
+                            Button {
+                                handleTap(on: alert)
+                            } label: {
+                                standardAlertCard(alert)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
 
                 if store.trackedFlight == nil && calendarFlightAlerts.isEmpty && operationalAlerts.isEmpty {
@@ -67,6 +90,7 @@ struct AlertsView: View {
             store.rebuildAlerts()
         }
         .onChange(of: store.trackedFlight?.flightNumber) { _, _ in
+            trackedFlightExpanded = false
             store.rebuildAlerts()
         }
         .onChange(of: store.lastUpdated) { _, _ in
@@ -88,8 +112,13 @@ struct AlertsView: View {
 
 private extension AlertsView {
 
+    var isCalendarFlightDetectionEnabled: Bool {
+        UserDefaults.standard.object(forKey: "flow_calendar_flight_detection_enabled") as? Bool ?? true
+    }
+
     var calendarFlightAlerts: [FlowAlert] {
-        store.alerts.filter { $0.kind == .calendarFlightDetected }
+        guard isCalendarFlightDetectionEnabled else { return [] }
+        return store.alerts.filter { $0.kind == .calendarFlightDetected }
     }
 
     var operationalAlerts: [FlowAlert] {
@@ -109,9 +138,9 @@ private extension AlertsView {
 private extension AlertsView {
 
     var headerCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Flow alerts")
-                .font(.system(size: 22, weight: .bold))
+                .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.white)
 
             Text("Flights, tracking, and timing updates in one place.")
@@ -121,11 +150,36 @@ private extension AlertsView {
         .flowGlassCard()
     }
 
-    var emptyStateCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("No alerts right now")
-                .font(.system(size: 18, weight: .semibold))
+    func sectionHeader(title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.white)
+
+            Text(subtitle)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white.opacity(0.62))
+        }
+        .padding(.horizontal, 2)
+    }
+
+    var emptyStateCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.08))
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: "bell.slash")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.white.opacity(0.9))
+                }
+
+                Text("No alerts right now")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+            }
 
             Text("Upcoming flights, tracking updates, and important changes will appear here.")
                 .font(.system(size: 14, weight: .medium))
@@ -143,12 +197,12 @@ private extension AlertsView {
         Button {
             trackedFlightExpanded.toggle()
         } label: {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top, spacing: 14) {
                     ZStack {
                         Circle()
                             .fill(Color.green.opacity(0.16))
-                            .frame(width: 42, height: 42)
+                            .frame(width: 44, height: 44)
 
                         Image(systemName: "airplane")
                             .font(.system(size: 18, weight: .bold))
@@ -179,6 +233,25 @@ private extension AlertsView {
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.white.opacity(0.45))
                         .padding(.top, 4)
+                }
+
+                HStack(spacing: 10) {
+                    trackedMetaPill(
+                        icon: "clock.fill",
+                        text: "Leave \(formattedTime(flight.leaveTime))"
+                    )
+
+                    trackedMetaPill(
+                        icon: "airplane.departure",
+                        text: "Depart \(formattedTime(flight.departureTime))"
+                    )
+
+                    if let terminal = cleanedText(flight.terminal) {
+                        trackedMetaPill(
+                            icon: "rectangle.split.2x1",
+                            text: "T\(terminal)"
+                        )
+                    }
                 }
 
                 if trackedFlightExpanded {
@@ -327,6 +400,29 @@ private extension AlertsView {
             return .green.opacity(0.9)
         }
     }
+
+    func trackedMetaPill(icon: String, text: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.white.opacity(0.72))
+
+            Text(text)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.90))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.08))
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
 }
 
 // MARK: - Pending Calendar Flight Cards
@@ -340,21 +436,21 @@ private extension AlertsView {
             ZStack {
                 Circle()
                     .fill(Color(hex: "C9B6FF").opacity(0.16))
-                    .frame(width: 42, height: 42)
+                    .frame(width: 44, height: 44)
 
                 Image(systemName: "calendar.badge.clock")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(Color(hex: "C9B6FF"))
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text("Upcoming flight")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .lineLimit(1)
 
                 if let pending {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 10) {
                         pendingPrimaryLine(for: pending)
                         pendingSecondaryLine(for: pending)
                     }
@@ -397,11 +493,17 @@ private extension AlertsView {
 
     @ViewBuilder
     func pendingPrimaryLine(for pending: PendingCalendarFlight) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(pending.flightNumber)
-                .font(.system(size: 17, weight: .bold))
-                .foregroundColor(.white.opacity(0.96))
-                .lineLimit(1)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                Image(systemName: "airplane")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white.opacity(0.68))
+
+                Text(pending.flightNumber)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(.white.opacity(0.96))
+                    .lineLimit(1)
+            }
 
             if let route = pendingRouteLine(for: pending) {
                 Text(route)
@@ -421,25 +523,25 @@ private extension AlertsView {
 
         if let terminalText {
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 12) {
-                    pendingCompactMeta(icon: "calendar", text: dateText)
-                    pendingCompactMeta(icon: "airplane.departure", text: timeText)
-                    pendingCompactMeta(icon: "rectangle.split.2x1", text: terminalText)
+                HStack(spacing: 10) {
+                    pendingMetaPill(icon: "calendar", text: dateText)
+                    pendingMetaPill(icon: "airplane.departure", text: timeText)
+                    pendingMetaPill(icon: "rectangle.split.2x1", text: terminalText)
                 }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 12) {
-                        pendingCompactMeta(icon: "calendar", text: dateText)
-                        pendingCompactMeta(icon: "airplane.departure", text: timeText)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 10) {
+                        pendingMetaPill(icon: "calendar", text: dateText)
+                        pendingMetaPill(icon: "airplane.departure", text: timeText)
                     }
 
-                    pendingCompactMeta(icon: "rectangle.split.2x1", text: terminalText)
+                    pendingMetaPill(icon: "rectangle.split.2x1", text: terminalText)
                 }
             }
         } else {
-            HStack(spacing: 12) {
-                pendingCompactMeta(icon: "calendar", text: dateText)
-                pendingCompactMeta(icon: "airplane.departure", text: timeText)
+            HStack(spacing: 10) {
+                pendingMetaPill(icon: "calendar", text: dateText)
+                pendingMetaPill(icon: "airplane.departure", text: timeText)
             }
         }
     }
@@ -496,17 +598,27 @@ private extension AlertsView {
         return nil
     }
 
-    func pendingCompactMeta(icon: String, text: String) -> some View {
-        HStack(spacing: 5) {
+    func pendingMetaPill(icon: String, text: String) -> some View {
+        HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.white.opacity(0.72))
 
             Text(text)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.white.opacity(0.88))
-                .fixedSize(horizontal: true, vertical: false)
+                .lineLimit(1)
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.08))
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -707,6 +819,8 @@ private extension AlertsView {
     func handleTap(on alert: FlowAlert) {
         switch alert.kind {
         case .calendarFlightDetected:
+            guard isCalendarFlightDetectionEnabled else { return }
+
             if let pending = store.pendingCalendarFlight(withID: alert.relatedFlightID) {
                 selectedCalendarFlight = pending
             }
