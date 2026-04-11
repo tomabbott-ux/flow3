@@ -10,7 +10,6 @@ final class LiveFlightService {
 
         var errorDescription: String? {
             switch self {
-
             case .invalidFlightNumber:
                 return "Enter a flight number to continue."
 
@@ -25,6 +24,7 @@ final class LiveFlightService {
             }
         }
     }
+
     private struct CachedLookupPayload: Codable {
         let flightNumber: String
         let airline: String
@@ -71,10 +71,6 @@ final class LiveFlightService {
             Date().timeIntervalSince(storedAt) <= ttl
         }
     }
-
-    // MARK: - Keys
-
-    private let aeroDataBoxAPIKey = "326a347895msh7460adc2983b80cp19f5e1jsn6e51a9fd6172"
 
     // MARK: - Storage
 
@@ -170,7 +166,7 @@ final class LiveFlightService {
     ) async throws -> FlightLookupResult {
 
         let urlString =
-            "https://aerodatabox.p.rapidapi.com/flights/number/\(flightNumber)/\(dateString)"
+            "https://\(APIConfig.aeroDataBoxHost)/flights/number/\(flightNumber)/\(dateString)"
 
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
@@ -180,8 +176,8 @@ final class LiveFlightService {
         request.httpMethod = "GET"
         request.timeoutInterval = 15
         request.cachePolicy = .reloadIgnoringLocalCacheData
-        request.setValue(aeroDataBoxAPIKey, forHTTPHeaderField: "X-RapidAPI-Key")
-        request.setValue("aerodatabox.p.rapidapi.com", forHTTPHeaderField: "X-RapidAPI-Host")
+        request.setValue(APIConfig.aeroDataBoxAPIKey, forHTTPHeaderField: "X-RapidAPI-Key")
+        request.setValue(APIConfig.aeroDataBoxHost, forHTTPHeaderField: "X-RapidAPI-Host")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         await MainActor.run {
@@ -368,13 +364,14 @@ final class LiveFlightService {
 
         return false
     }
+
     private func setFailureBackoff() {
         let until = Date().addingTimeInterval(FlightAPIConfig.failureBackoffInterval)
         defaults.set(until, forKey: failureBackoffUntilKey)
 
         print("⛔️ Flight API backoff set until:", until)
     }
-    
+
     private func clearFailureBackoff() {
         defaults.removeObject(forKey: failureBackoffUntilKey)
     }
