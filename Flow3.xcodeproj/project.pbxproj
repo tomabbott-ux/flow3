@@ -62,6 +62,10 @@
 		F84605E02F86DEB8005E5B03 /* LandingStore+CalendarFlights.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605DF2F86DEB8005E5B03 /* LandingStore+CalendarFlights.swift */; };
 		F84605E22F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605E12F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift */; };
 		F84605E52F8A4233005E5B03 /* DebugFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605E42F8A4233005E5B03 /* DebugFlags.swift */; };
+		F84605E72F8A929C005E5B03 /* FlightAPIUsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605E62F8A929C005E5B03 /* FlightAPIUsageTracker.swift */; };
+		F84605E92F8A92CB005E5B03 /* CachedFlightLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605E82F8A92CB005E5B03 /* CachedFlightLookup.swift */; };
+		F84605EB2F8A9316005E5B03 /* FlightAPIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605EA2F8A9316005E5B03 /* FlightAPIConfig.swift */; };
+		F84605ED2F8AAFAC005E5B03 /* SubscriptionSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605EC2F8AAFAC005E5B03 /* SubscriptionSheetView.swift */; };
 		F846E0872F82F11500997E61 /* FreeAirportConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0862F82F11500997E61 /* FreeAirportConfig.swift */; };
 		F846E0892F82F14800997E61 /* SubscriptionTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0882F82F14800997E61 /* SubscriptionTier.swift */; };
 		F846E08B2F82F17800997E61 /* FlowEntitlements.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E08A2F82F17800997E61 /* FlowEntitlements.swift */; };
@@ -143,7 +147,6 @@
 		F8DBD8932F6563C200246968 /* DeparturePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8922F6563C200246968 /* DeparturePlanner.swift */; };
 		F8DBD8952F6563DF00246968 /* DeparturePlannerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8942F6563DF00246968 /* DeparturePlannerSheet.swift */; };
 		F8DBD8982F6625D000246968 /* FlightLookupResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8972F6625D000246968 /* FlightLookupResult.swift */; };
-		F8DBD89A2F6625F600246968 /* FlightLookupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD8992F6625F600246968 /* FlightLookupService.swift */; };
 		F8DBD89C2F662EB200246968 /* SavedFlightPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD89B2F662EB200246968 /* SavedFlightPlan.swift */; };
 		F8DBD89E2F662EE900246968 /* SavedFlightStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD89D2F662EE900246968 /* SavedFlightStore.swift */; };
 		F8DBD8A02F662F1000246968 /* DepartureMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DBD89F2F662F1000246968 /* DepartureMonitor.swift */; };
@@ -266,6 +269,10 @@
 		F84605DF2F86DEB8005E5B03 /* LandingStore+CalendarFlights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+CalendarFlights.swift"; sourceTree = "<group>"; };
 		F84605E12F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SYDLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F84605E42F8A4233005E5B03 /* DebugFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugFlags.swift; sourceTree = "<group>"; };
+		F84605E62F8A929C005E5B03 /* FlightAPIUsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAPIUsageTracker.swift; sourceTree = "<group>"; };
+		F84605E82F8A92CB005E5B03 /* CachedFlightLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedFlightLookup.swift; sourceTree = "<group>"; };
+		F84605EA2F8A9316005E5B03 /* FlightAPIConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAPIConfig.swift; sourceTree = "<group>"; };
+		F84605EC2F8AAFAC005E5B03 /* SubscriptionSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionSheetView.swift; sourceTree = "<group>"; };
 		F846E0862F82F11500997E61 /* FreeAirportConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeAirportConfig.swift; sourceTree = "<group>"; };
 		F846E0882F82F14800997E61 /* SubscriptionTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
 		F846E08A2F82F17800997E61 /* FlowEntitlements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowEntitlements.swift; sourceTree = "<group>"; };
@@ -349,7 +356,6 @@
 		F8DBD8922F6563C200246968 /* DeparturePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturePlanner.swift; sourceTree = "<group>"; };
 		F8DBD8942F6563DF00246968 /* DeparturePlannerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturePlannerSheet.swift; sourceTree = "<group>"; };
 		F8DBD8972F6625D000246968 /* FlightLookupResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightLookupResult.swift; sourceTree = "<group>"; };
-		F8DBD8992F6625F600246968 /* FlightLookupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightLookupService.swift; sourceTree = "<group>"; };
 		F8DBD89B2F662EB200246968 /* SavedFlightPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFlightPlan.swift; sourceTree = "<group>"; };
 		F8DBD89D2F662EE900246968 /* SavedFlightStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFlightStore.swift; sourceTree = "<group>"; };
 		F8DBD89F2F662F1000246968 /* DepartureMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartureMonitor.swift; sourceTree = "<group>"; };
@@ -444,6 +450,7 @@
 				F846E08E2F82F48E00997E61 /* PaywallView.swift */,
 				F846E0902F83021D00997E61 /* FlowSubscriptions.storekit */,
 				F854035C2F850055001A4969 /* AppEnvironment.swift */,
+				F84605EC2F8AAFAC005E5B03 /* SubscriptionSheetView.swift */,
 			);
 			path = Subscriptions;
 			sourceTree = "<group>";
@@ -618,8 +625,10 @@
 				F8DBD89B2F662EB200246968 /* SavedFlightPlan.swift */,
 				F8DBD89D2F662EE900246968 /* SavedFlightStore.swift */,
 				F8DBD89F2F662F1000246968 /* DepartureMonitor.swift */,
-				F8DBD8992F6625F600246968 /* FlightLookupService.swift */,
 				F8796CA02F6D935500040769 /* FlightLookupResult+Boarding.swift */,
+				F84605E62F8A929C005E5B03 /* FlightAPIUsageTracker.swift */,
+				F84605E82F8A92CB005E5B03 /* CachedFlightLookup.swift */,
+				F84605EA2F8A9316005E5B03 /* FlightAPIConfig.swift */,
 			);
 			path = Flight;
 			sourceTree = "<group>";
@@ -947,6 +956,7 @@
 				F8DBD8A22F663F4D00246968 /* TrackedFlightPill.swift in Sources */,
 				F8DBD8952F6563DF00246968 /* DeparturePlannerSheet.swift in Sources */,
 				F8BD8FE52F634A5A000EE425 /* AenaLiveWaitTimeProvider.swift in Sources */,
+				F84605E72F8A929C005E5B03 /* FlightAPIUsageTracker.swift in Sources */,
 				F862F1EA2F583B20001666F2 /* LandingView.swift in Sources */,
 				F862F1ED2F583B45001666F2 /* ContentView.swift in Sources */,
 				F80599E32F5AFED300146BF1 /* YYZLiveWaitTimeProvider.swift in Sources */,
@@ -986,7 +996,9 @@
 				F80599DB2F5AEC8F00146BF1 /* AirportSelectorView.swift in Sources */,
 				F80C80A82F7738F600C4DABC /* AirportTerminalFormat.swift in Sources */,
 				F80829DC2F5A4554000D5664 /* LandingStore+JFK.swift in Sources */,
+				F84605E92F8A92CB005E5B03 /* CachedFlightLookup.swift in Sources */,
 				F862F1E02F583A94001666F2 /* ATLStubWaitTimeProvider.swift in Sources */,
+				F84605EB2F8A9316005E5B03 /* FlightAPIConfig.swift in Sources */,
 				F880516D2F602286005CF24F /* CLTLiveWaitTimeProvider.swift in Sources */,
 				F80599EF2F5B679F00146BF1 /* HOULiveWaitTimeProvider.swift in Sources */,
 				F8796CA12F6D935500040769 /* FlightLookupResult+Boarding.swift in Sources */,
@@ -1009,6 +1021,7 @@
 				F8DBD8A82F66B77C00246968 /* FlowNotificationManager.swift in Sources */,
 				F88051812F60E732005CF24F /* RecentAirports.swift in Sources */,
 				F822A8E42F5D1206009F6107 /* LGALiveWaitTimeProvider.swift in Sources */,
+				F84605ED2F8AAFAC005E5B03 /* SubscriptionSheetView.swift in Sources */,
 				F822A8E62F5DB9E4009F6107 /* HAMLiveWaitProvider.swift in Sources */,
 				F828EF332F59BC9200EC53EC /* ATLLiveWaitTimeProvider.swift in Sources */,
 				F8C4FFAE2F76A3EA005A55C2 /* DELLiveWaitTimeProvider.swift in Sources */,
@@ -1063,7 +1076,6 @@
 				F80599C72F5AC48E00146BF1 /* WelcomeView.swift in Sources */,
 				F862F1F42F5844CE001666F2 /* StubWeatherProvider.swift in Sources */,
 				F8DBD8A62F66A07D00246968 /* KeyboardHelpers.swift in Sources */,
-				F8DBD89A2F6625F600246968 /* FlightLookupService.swift in Sources */,
 				F88051712F605C64005CF24F /* BWILiveWaitTimeProvider.swift in Sources */,
 				F80599F82F5B95DB00146BF1 /* EstimatedAirportProfiles.swift in Sources */,
 				F8B5C97C2F79CCD00083071D /* DTWLiveWaitTimeProvider.swift in Sources */,

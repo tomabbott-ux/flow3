@@ -2,9 +2,92 @@ import Foundation
 
 final class LiveFlightService {
 
+    enum LookupError: LocalizedError {
+        case invalidFlightNumber
+        case backoffActive
+        case invalidResponse
+        case flightNotFound(String)
+
+        var errorDescription: String? {
+            switch self {
+
+            case .invalidFlightNumber:
+                return "Enter a flight number to continue."
+
+            case .backoffActive:
+                return "Live flight data isn’t available right now. We’ll keep trying in the background."
+
+            case .invalidResponse:
+                return "We’re having trouble loading flight details right now."
+
+            case .flightNotFound:
+                return "We couldn’t find that flight. Check the number or try a different date."
+            }
+        }
+    }
+    private struct CachedLookupPayload: Codable {
+        let flightNumber: String
+        let airline: String
+        let originIATA: String
+        let destinationIATA: String
+        let terminal: String?
+        let gate: String?
+        let status: String?
+        let departureTime: Date
+
+        func toResult() -> FlightLookupResult {
+            FlightLookupResult(
+                flightNumber: flightNumber,
+                airline: airline,
+                originIATA: originIATA,
+                destinationIATA: destinationIATA,
+                terminal: terminal,
+                gate: gate,
+                status: status,
+                departureTime: departureTime
+            )
+        }
+
+        static func from(_ result: FlightLookupResult) -> CachedLookupPayload {
+            CachedLookupPayload(
+                flightNumber: result.flightNumber,
+                airline: result.airline,
+                originIATA: result.originIATA,
+                destinationIATA: result.destinationIATA,
+                terminal: result.terminal,
+                gate: result.gate,
+                status: result.status,
+                departureTime: result.departureTime
+            )
+        }
+    }
+
+    private struct StoredLookupEnvelope: Codable {
+        let key: String
+        let storedAt: Date
+        let payload: CachedLookupPayload
+
+        func isValid(ttl: TimeInterval) -> Bool {
+            Date().timeIntervalSince(storedAt) <= ttl
+        }
+    }
+
     // MARK: - Keys
 
     private let aeroDataBoxAPIKey = "326a347895msh7460adc2983b80cp19f5e1jsn6e51a9fd6172"
+
+    // MARK: - Storage
+
+    private let session: URLSession
+    private let defaults = UserDefaults.standard
+    private let cachePrefix = "flow.liveFlightLookup.cache."
+    private let failureBackoffUntilKey = "flow.liveFlightLookup.failureBackoffUntil"
+
+    // MARK: - Init
+
+    init(session: URLSession = .shared) {
+        self.session = session
+    }
 
     // MARK: - Public
 
@@ -15,16 +98,66 @@ final class LiveFlightService {
     ) async throws -> FlightLookupResult {
 
         let normalizedFlightNumber = normalizeFlightNumber(flightNumber)
+        guard normalizedFlightNumber.count >= 3 else {
+            throw LookupError.invalidFlightNumber
+        }
+
+        let cleanedAirport = cleanedString(airportIATA)?.uppercased()
         let dateString = requestDateString(from: date)
 
-        let result = try await fetchFromAeroDataBox(
+        let lookupKey = cacheKey(
             flightNumber: normalizedFlightNumber,
             dateString: dateString,
-            date: date,
-            preferredAirportIATA: cleanedString(airportIATA)
+            airportIATA: cleanedAirport ?? "ANY"
         )
 
-        return result
+        if let cached = loadCachedResult(forKey: lookupKey),
+           cached.isValid(ttl: FlightAPIConfig.identicalSearchCacheTTL) {
+            await MainActor.run {
+                FlightAPIUsageTracker.shared.recordCacheHit()
+            }
+            return cached.payload.toResult()
+        }
+
+        await MainActor.run {
+            FlightAPIUsageTracker.shared.recordCacheMiss()
+        }
+
+        if isFailureBackoffActive() {
+            if let cached = loadCachedResult(forKey: lookupKey) {
+                await MainActor.run {
+                    FlightAPIUsageTracker.shared.recordCacheHit()
+                }
+                return cached.payload.toResult()
+            }
+            throw LookupError.backoffActive
+        }
+
+        do {
+            let result = try await fetchFromAeroDataBox(
+                flightNumber: normalizedFlightNumber,
+                dateString: dateString,
+                date: date,
+                preferredAirportIATA: cleanedAirport
+            )
+
+            saveCachedResult(result, forKey: lookupKey)
+            clearFailureBackoff()
+
+            return result
+
+        } catch {
+            await MainActor.run {
+                FlightAPIUsageTracker.shared.recordFailure()
+            }
+
+            if let cached = loadCachedResult(forKey: lookupKey) {
+                return cached.payload.toResult()
+            }
+
+            setFailureBackoff()
+            throw error
+        }
     }
 
     // MARK: - AeroDataBox
@@ -45,26 +178,32 @@ final class LiveFlightService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.addValue(aeroDataBoxAPIKey, forHTTPHeaderField: "X-RapidAPI-Key")
-        request.addValue("aerodatabox.p.rapidapi.com", forHTTPHeaderField: "X-RapidAPI-Host")
+        request.timeoutInterval = 15
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue(aeroDataBoxAPIKey, forHTTPHeaderField: "X-RapidAPI-Key")
+        request.setValue("aerodatabox.p.rapidapi.com", forHTTPHeaderField: "X-RapidAPI-Host")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        await MainActor.run {
+            FlightAPIUsageTracker.shared.recordCall()
+        }
 
-        guard let http = response as? HTTPURLResponse,
-              (200...299).contains(http.statusCode) else {
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw LookupError.invalidResponse
+        }
+
+        guard (200...299).contains(http.statusCode) else {
             throw NSError(
                 domain: "AeroDataBoxHTTPError",
-                code: 500,
-                userInfo: [NSLocalizedDescriptionKey: "AeroDataBox request failed."]
+                code: http.statusCode,
+                userInfo: [NSLocalizedDescriptionKey: "AeroDataBox request failed with status \(http.statusCode)."]
             )
         }
 
         guard let flights = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
-            throw NSError(
-                domain: "InvalidJSON",
-                code: 500,
-                userInfo: [NSLocalizedDescriptionKey: "AeroDataBox returned an unexpected response."]
-            )
+            throw LookupError.invalidResponse
         }
 
         let matchingFlight = bestMatchingAeroFlight(
@@ -75,13 +214,8 @@ final class LiveFlightService {
 
         guard let flight = matchingFlight else {
             let preferredText = preferredAirportIATA?.uppercased() ?? "supported airport"
-            throw NSError(
-                domain: "FlightNotFound",
-                code: 404,
-                userInfo: [
-                    NSLocalizedDescriptionKey:
-                        "No matching departure found for \(flightNumber) on \(dateString) for \(preferredText)."
-                ]
+            throw LookupError.flightNotFound(
+                "No matching departure found for \(flightNumber) on \(dateString) for \(preferredText)."
             )
         }
 
@@ -180,6 +314,69 @@ final class LiveFlightService {
         }
 
         return sameDayFlights.first
+    }
+
+    // MARK: - Cache / Backoff
+
+    private func cacheKey(
+        flightNumber: String,
+        dateString: String,
+        airportIATA: String
+    ) -> String {
+        "\(flightNumber)|\(dateString)|\(airportIATA)"
+    }
+
+    private func storageKey(for lookupKey: String) -> String {
+        cachePrefix + lookupKey
+    }
+
+    private func loadCachedResult(forKey lookupKey: String) -> StoredLookupEnvelope? {
+        let key = storageKey(for: lookupKey)
+
+        guard let data = defaults.data(forKey: key),
+              let decoded = try? JSONDecoder().decode(StoredLookupEnvelope.self, from: data)
+        else {
+            return nil
+        }
+
+        return decoded
+    }
+
+    private func saveCachedResult(_ result: FlightLookupResult, forKey lookupKey: String) {
+        let envelope = StoredLookupEnvelope(
+            key: lookupKey,
+            storedAt: Date(),
+            payload: CachedLookupPayload.from(result)
+        )
+
+        if let data = try? JSONEncoder().encode(envelope) {
+            defaults.set(data, forKey: storageKey(for: lookupKey))
+        }
+    }
+
+    private func isFailureBackoffActive() -> Bool {
+        guard let until = defaults.object(forKey: failureBackoffUntilKey) as? Date else {
+            return false
+        }
+
+        let remaining = until.timeIntervalSinceNow
+
+        if remaining > 0 {
+            print("⏳ Flight API backoff active for \(Int(remaining))s")
+            return true
+        }
+
+        return false
+    }
+    private func setFailureBackoff() {
+        let until = Date().addingTimeInterval(FlightAPIConfig.failureBackoffInterval)
+        defaults.set(until, forKey: failureBackoffUntilKey)
+
+        print("⛔️ Flight API backoff set until:", until)
+    }
+    
+    private func clearFailureBackoff() {
+        defaults.removeObject(forKey: failureBackoffUntilKey)
     }
 
     // MARK: - Helpers

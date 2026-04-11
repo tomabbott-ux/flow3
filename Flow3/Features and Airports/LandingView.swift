@@ -913,12 +913,20 @@ private extension LandingView {
                                 .foregroundColor(.green)
                         }
                     } else {
-                        Text(metric?.minutes == nil ? "--" : "\(metric!.minutes!)")
-                            .font(.system(size: 60, weight: .heavy))
-                            .foregroundColor(.white)
-                            .monospacedDigit()
-                    }
+                        HStack(alignment: .lastTextBaseline, spacing: 8) {
+                            Text(metric?.minutes == nil ? "--" : "\(metric!.minutes!)")
+                                .font(.system(size: 60, weight: .heavy))
+                                .foregroundColor(.white)
+                                .monospacedDigit()
 
+                            if metric?.minutes != nil {
+                                Text("minutes")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.70))
+                                    .padding(.bottom, 8)
+                            }
+                        }
+                    }
                     if usesAverageWaitPresentation {
                         Text("Average wait time")
                             .font(.system(size: 12, weight: .semibold))
@@ -955,10 +963,10 @@ private extension LandingView {
             }
         }
     }
-
     @ViewBuilder
     func heroMetric(value: Int?, label: String) -> some View {
         VStack(spacing: 6) {
+
             if let value, value == 0 {
                 HStack(spacing: 6) {
                     LivePulseDot()
@@ -968,10 +976,19 @@ private extension LandingView {
                         .foregroundColor(.green)
                 }
             } else {
-                Text(value == nil ? "--" : "\(value!)")
-                    .font(.system(size: 48, weight: .heavy))
-                    .foregroundColor(.white)
-                    .monospacedDigit()
+                HStack(alignment: .lastTextBaseline, spacing: 6) {
+
+                    Text(value == nil ? "--" : "\(value!)")
+                        .font(.system(size: 48, weight: .heavy))
+                        .foregroundColor(.white)
+                        .monospacedDigit()
+
+                    if value != nil {
+                        Text("min")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.75))
+                    }
+                }
             }
 
             Text(label)
@@ -979,7 +996,6 @@ private extension LandingView {
                 .foregroundColor(.white.opacity(0.75))
         }
     }
-
     func trackedCheckpointSummary(for row: AirportDisplayRow) -> some View {
         HStack(spacing: 12) {
             summaryChip(title: "Checkpoint", value: row.title)

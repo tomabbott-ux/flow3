@@ -70,18 +70,44 @@ struct LHRLiveWaitTimeProvider: WaitTimeProviding {
 
             let checkpointName: String
             if terminal == 5 {
-                switch item.checkpointFacility.area?.uppercased() {
-                case "N":
+                let normalizedArea = item.checkpointFacility.area?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .uppercased()
+
+                if normalizedArea == "N" || normalizedArea == "NORTH" || normalizedArea?.contains("NORTH") == true {
                     checkpointName = "North"
-                case "S":
+                } else if normalizedArea == "S" || normalizedArea == "SOUTH" || normalizedArea?.contains("SOUTH") == true {
                     checkpointName = "South"
-                default:
+                } else {
                     checkpointName = "Security"
                 }
             } else {
                 checkpointName = "Security"
             }
+            
+            print(
+                "LHR row -> terminal:",
+                terminal,
+                "area:",
+                item.checkpointFacility.area ?? "nil",
+                "checkpointName:",
+                checkpointName,
+                "minutes:",
+                minutes
+            )
 
+            return WaitTimeEstimate(
+                airport: .lhr,
+                terminal: terminal,
+                queueType: .general,
+                minutes: minutes,
+                observedAt: item.lastUpdated,
+                checkpointName: checkpointName,
+                areaName: nil,
+                sourceType: .live,
+                isClosed: item.isDataStale
+            )
+            
             return WaitTimeEstimate(
                 airport: .lhr,
                 terminal: terminal,

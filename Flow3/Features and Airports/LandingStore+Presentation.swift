@@ -187,13 +187,31 @@ extension LandingStore {
             return row
         }
 
-        let grouped = Dictionary(grouping: cleanedRows) { $0.terminal ?? -1 }
+        let grouped: [String: [WaitTimeEstimate]]
+
+        if selectedAirport == .lhr {
+            grouped = Dictionary(grouping: cleanedRows) { row in
+                let terminal = row.terminal ?? -1
+                let checkpoint = row.checkpointName ?? "Security"
+                return "\(terminal)|\(checkpoint)"
+            }
+        } else {
+            grouped = Dictionary(grouping: cleanedRows) { row in
+                "\(row.terminal ?? -1)"
+            }
+        }
 
         return grouped
-            .compactMap { terminal, items -> AirportDisplayRow? in
+            .compactMap { key, items -> AirportDisplayRow? in
 
-                guard terminal >= 0 else { return nil }
+                let parts = key.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
+
+                guard let terminal = Int(parts.first ?? "-1"), terminal >= 0 else { return nil }
                 if terminal == 0 { return nil }
+
+                let checkpointName = parts.count > 1
+                    ? parts[1]
+                    : (items.first?.checkpointName ?? "Security")
 
                 let isTBIT = terminal == 999 && selectedAirport == .lax
                 let isLive = isTBIT || items.contains { $0.sourceType == .live }
@@ -204,7 +222,7 @@ extension LandingStore {
                     ? "Tom Bradley International Terminal"
                     : cleanedTerminalSubtitle(
                         title: title,
-                        subtitle: items.first?.checkpointName ?? "Security"
+                        subtitle: checkpointName
                     )
 
                 let observedAt = items.map(\.observedAt).max()
@@ -232,7 +250,7 @@ extension LandingStore {
                 }
 
                 return AirportDisplayRow(
-                    id: "\(selectedAirport.rawValue)-T\(terminal)",
+                    id: "\(selectedAirport.rawValue)-T\(terminal)-\(checkpointName)",
                     title: title,
                     subtitle: subtitle,
                     metrics: metrics,
@@ -251,7 +269,24 @@ extension LandingStore {
                     return Int(cleaned) ?? 999
                 }
 
-                return extractNumber(lhs.title) < extractNumber(rhs.title)
+                let lhsTerminal = extractNumber(lhs.title)
+                let rhsTerminal = extractNumber(rhs.title)
+
+                if lhsTerminal != rhsTerminal {
+                    return lhsTerminal < rhsTerminal
+                }
+
+                if selectedAirport == .lhr {
+                    let order = ["Security", "North", "South"]
+                    let lhsIndex = order.firstIndex(of: lhs.subtitle) ?? 999
+                    let rhsIndex = order.firstIndex(of: rhs.subtitle) ?? 999
+
+                    if lhsIndex != rhsIndex {
+                        return lhsIndex < rhsIndex
+                    }
+                }
+
+                return lhs.subtitle < rhs.subtitle
             }
     }
 

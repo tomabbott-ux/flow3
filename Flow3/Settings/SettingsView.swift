@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
 
     @EnvironmentObject private var store: LandingStore
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
 
     @AppStorage("flow_default_airport") private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
     @AppStorage("flow_use_24h_time") private var use24HourTime: Bool = true
@@ -10,15 +11,15 @@ struct SettingsView: View {
     @AppStorage("flow_auto_select_fastest_checkpoint") private var autoSelectFastestCheckpoint: Bool = true
     @AppStorage("flow_prefer_precheck") private var preferPreCheck: Bool = false
     @AppStorage("flow_calendar_flight_detection_enabled") private var calendarFlightDetectionEnabled: Bool = true
-    @AppStorage("flow_airport_sort_mode")
-    private var airportSortMode: String = "code"
-    
+    @AppStorage("flow_airport_sort_mode") private var airportSortMode: String = "code"
+
     @AppStorage("flow_notify_30") private var notify30Minutes: Bool = true
     @AppStorage("flow_notify_15") private var notify15Minutes: Bool = true
     @AppStorage("flow_notify_leave_now") private var notifyLeaveNow: Bool = true
     @AppStorage("flow_notify_gate") private var notifyGateTarget: Bool = true
 
-    @State private var selectedPlan: String = "Pro"
+    @StateObject private var flightUsageTracker = FlightAPIUsageTracker.shared
+    @State private var showSubscriptionSheet = false
 
     private let supportedAirports: [FlowAirport] = AirportRegistry.airports.map(\.airport)
 
@@ -45,11 +46,21 @@ struct SettingsView: View {
                     notificationsCard
                     subscriptionCard
                     aboutCard
+
+                    if DebugFlags.airportFeeds {
+                        diagnosticsCard
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
                 .padding(.bottom, 30)
             }
+        }
+        .task {
+            await subscriptionManager.initialize()
+        }
+        .sheet(isPresented: $showSubscriptionSheet) {
+            SubscriptionSheetView()
         }
     }
 }
@@ -100,6 +111,7 @@ private extension SettingsView {
                     Text("12-hour").tag(false)
                 }
                 .pickerStyle(.segmented)
+                .flowSegmentedStyle()
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -110,6 +122,7 @@ private extension SettingsView {
                     Text("°F").tag(false)
                 }
                 .pickerStyle(.segmented)
+                .flowSegmentedStyle()
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -120,11 +133,13 @@ private extension SettingsView {
                     Text("Airport name").tag("name")
                 }
                 .pickerStyle(.segmented)
+                .flowSegmentedStyle()
             }
         }
         .flowSettingsCard()
     }
 }
+
 // MARK: - Planning
 
 private extension SettingsView {
@@ -217,14 +232,14 @@ private extension SettingsView {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.white.opacity(0.68))
 
-                    Text(selectedPlan)
+                    Text(currentPlanTitle)
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
                 }
 
                 Spacer()
 
-                Text(selectedPlan.uppercased())
+                Text(currentPlanTitle.uppercased())
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(Color(hex: "9B6CFF"))
                     .padding(.horizontal, 10)
@@ -240,9 +255,10 @@ private extension SettingsView {
             }
 
             Button {
+                showSubscriptionSheet = true
             } label: {
                 HStack {
-                    Text("Manage subscription")
+                    Text(subscriptionManager.isPro ? "Manage subscription" : "View plans")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
 
@@ -266,6 +282,10 @@ private extension SettingsView {
             .buttonStyle(.plain)
         }
         .flowSettingsCard()
+    }
+
+    var currentPlanTitle: String {
+        subscriptionManager.isPro ? "Pro" : "Free"
     }
 }
 
@@ -295,6 +315,42 @@ private extension SettingsView {
 
     var buildNumberString: String {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+}
+
+// MARK: - Diagnostics
+
+private extension SettingsView {
+
+    var diagnosticsCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            sectionTitle("Diagnostics")
+
+            Text("Internal flight API monitoring")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.68))
+
+            infoRow(title: "Flight API calls today", value: "\(flightUsageTracker.snapshot.callsToday)")
+            infoRow(title: "Flight API calls this month", value: "\(flightUsageTracker.snapshot.callsThisMonth)")
+            infoRow(title: "Cache hits today", value: "\(flightUsageTracker.snapshot.cacheHitsToday)")
+            infoRow(title: "Cache misses today", value: "\(flightUsageTracker.snapshot.cacheMissesToday)")
+            infoRow(title: "Failures today", value: "\(flightUsageTracker.snapshot.failuresToday)")
+            infoRow(title: "Tracked refreshes today", value: "\(flightUsageTracker.snapshot.trackedRefreshesToday)")
+            infoRow(title: "Last API call", value: lastCallText)
+        }
+        .flowSettingsCard()
+    }
+
+    var lastCallText: String {
+        guard let lastCallAt = flightUsageTracker.snapshot.lastCallAt else {
+            return "—"
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: lastCallAt)
     }
 }
 
@@ -351,6 +407,12 @@ private extension View {
         self
             .font(.system(size: 16, weight: .semibold))
             .foregroundColor(.white)
+            .tint(Color(hex: "9B6CFF"))
+    }
+
+    func flowSegmentedStyle() -> some View {
+        self
+            .colorScheme(.dark)
             .tint(Color(hex: "9B6CFF"))
     }
 }

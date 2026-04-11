@@ -62,9 +62,19 @@ struct PlannerView: View {
                 }
 
                 if let errorText, !errorText.isEmpty {
-                    Text(errorText)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.red.opacity(0.95))
+                    VStack(spacing: 4) {
+                        Text(errorText)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.9))
+
+                        if errorText.contains("couldn’t find") {
+                            Text("Try airline code + number (e.g. BA245)")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                    }
+                    .padding(.top, 6)
+            
                 }
             }
             .padding(.horizontal, 16)

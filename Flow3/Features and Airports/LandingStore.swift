@@ -7,6 +7,7 @@ final class LandingStore: ObservableObject {
     private enum PreferenceKeys {
         static let defaultAirportCode = "flow_default_airport"
         static let lastSelectedAirportCode = "lastSelectedAirportCode"
+        static let lastTrackedFlightRefreshAt = "flow_last_tracked_flight_refresh_at"
     }
 
     // MARK: - Published state
@@ -77,6 +78,7 @@ final class LandingStore: ObservableObject {
 
     func setTrackedFlight(_ flight: TrackedFlight) {
         trackedFlight = flight
+        clearTrackedFlightRefreshThrottle()
 
         if let matchedPending = pendingCalendarFlights.first(where: {
             $0.flightNumber.caseInsensitiveCompare(flight.flightNumber) == .orderedSame
@@ -113,6 +115,7 @@ final class LandingStore: ObservableObject {
 
     func clearTrackedFlight() {
         trackedFlight = nil
+        clearTrackedFlightRefreshThrottle()
         SavedFlightStore.shared.clear()
         FlowWatchConnectivityManager.shared.syncTrackedFlight(nil)
         FlowNotificationManager.shared.clearTrackedFlightNotifications()
@@ -192,7 +195,10 @@ final class LandingStore: ObservableObject {
         await refreshAirport(airport, updateVisibleState: true)
 
         if shouldRefreshTrackedFlight, trackedFlight != nil {
-            await refreshTrackedFlight()
+            await refreshTrackedFlight(
+                force: false,
+                minimumInterval: FlightAPIConfig.inactiveTrackedRefreshMinimumInterval
+            )
         }
 
         if prefetchNeighbors {
@@ -494,10 +500,40 @@ final class LandingStore: ObservableObject {
         return nil
     }
 
+    private var lastTrackedFlightRefreshAt: Date? {
+        get {
+            UserDefaults.standard.object(forKey: PreferenceKeys.lastTrackedFlightRefreshAt) as? Date
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: PreferenceKeys.lastTrackedFlightRefreshAt)
+        }
+    }
+
+    private func clearTrackedFlightRefreshThrottle() {
+        lastTrackedFlightRefreshAt = nil
+    }
+
+    private func shouldPerformTrackedFlightRefresh(minimumInterval: TimeInterval) -> Bool {
+        guard trackedFlight != nil else { return false }
+
+        guard let lastRefreshAt = lastTrackedFlightRefreshAt else {
+            return true
+        }
+
+        return Date().timeIntervalSince(lastRefreshAt) >= minimumInterval
+    }
+
     // MARK: - Refresh tracked flight
 
-    func refreshTrackedFlight() async {
+    func refreshTrackedFlight(
+        force: Bool = false,
+        minimumInterval: TimeInterval = FlightAPIConfig.inactiveTrackedRefreshMinimumInterval
+    ) async {
         guard let current = trackedFlight else { return }
+
+        if !force && !shouldPerformTrackedFlightRefresh(minimumInterval: minimumInterval) {
+            return
+        }
 
         do {
             let refreshedFlight = try await flightLookupService.lookupFlight(
@@ -505,11 +541,6 @@ final class LandingStore: ObservableObject {
                 date: current.departureTime,
                 airportIATA: selectedAirport.rawValue
             )
-
-            print("Tracked refresh lookup airport:", selectedAirport.rawValue)
-            print("Tracked refresh terminal from service:", refreshedFlight.terminal ?? "nil")
-            print("Tracked refresh gate from service:", refreshedFlight.gate ?? "nil")
-            print("Tracked refresh status from service:", refreshedFlight.status ?? "nil")
 
             if isFlightFinishedStatus(refreshedFlight.status) {
                 await FlowNotificationManager.shared.requestPermission()
@@ -522,7 +553,6 @@ final class LandingStore: ObservableObject {
             do {
                 travelMinutes = try await travelTimeService.drivingMinutes(to: selectedAirport)
             } catch {
-                print("Travel time fallback used:", error.localizedDescription)
                 travelMinutes = current.travelMinutes
             }
 
@@ -606,9 +636,6 @@ final class LandingStore: ObservableObject {
                 return trimmed.isEmpty ? current.status : trimmed
             }()
 
-            print("Tracked refresh merged terminal:", updatedTerminal)
-            print("Tracked refresh merged gate:", updatedGate ?? "nil")
-
             let updated = TrackedFlight(
                 flightNumber: refreshedFlight.flightNumber,
                 route: "\(refreshedFlight.originIATA) → \(refreshedFlight.destinationIATA)",
@@ -634,13 +661,14 @@ final class LandingStore: ObservableObject {
 
             let oldFlight = current
             trackedFlight = updated
+            lastTrackedFlightRefreshAt = Date()
 
             SavedFlightStore.shared.save(updated)
             FlowWatchConnectivityManager.shared.syncTrackedFlight(updated)
 
             await FlowNotificationManager.shared.requestPermission()
-
             FlowNotificationManager.shared.scheduleTrackedFlightReminders(for: updated)
+
             FlowNotificationManager.shared.notifyTrackedFlightChanged(
                 oldFlight: oldFlight,
                 newFlight: updated
@@ -655,9 +683,11 @@ final class LandingStore: ObservableObject {
             }
 
             await FlowLiveActivityManager.shared.update(for: updated)
+            FlightAPIUsageTracker.shared.recordTrackedRefresh()
 
         } catch {
-            print("Tracked flight refresh failed:", error.localizedDescription)
+            // Intentionally silent in release flow.
+            // Flight API throttling / fallback behavior is handled inside the lookup service.
         }
     }
 
