@@ -2,19 +2,57 @@ import Foundation
 
 struct BERLiveWaitTimeProvider: WaitTimeProviding {
 
+    enum ProviderError: Error {
+        case invalidURL
+        case invalidResponse
+        case badHTTPStatus(Int)
+        case invalidJSON
+    }
+
+    private let session: URLSession
+
+    init(session: URLSession = .shared) {
+        self.session = session
+    }
+
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
 
         guard airport == .ber else { return [] }
 
-        let url = URL(string: "https://ber.berlin-airport.de/api.aplsv2.json?lang=en")!
-        let (data, _) = try await URLSession.shared.data(from: url)
+        guard let url = URL(string: "https://ber.berlin-airport.de/api.aplsv2.json?lang=en") else {
+            throw ProviderError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 12
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue("application/json, text/plain, */*", forHTTPHeaderField: "Accept")
+        request.setValue("en-GB,en;q=0.9", forHTTPHeaderField: "Accept-Language")
+        request.setValue("https://ber.berlin-airport.de/", forHTTPHeaderField: "Referer")
+        request.setValue(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+            forHTTPHeaderField: "User-Agent"
+        )
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        request.setValue("no-cache", forHTTPHeaderField: "Pragma")
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw ProviderError.invalidResponse
+        }
+
+        guard (200...299).contains(http.statusCode) else {
+            throw ProviderError.badHTTPStatus(http.statusCode)
+        }
 
         guard
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
             let dataBlock = json["data"] as? [String: Any],
             let checkpoints = dataBlock["apls-data"] as? [[String: Any]]
         else {
-            return []
+            throw ProviderError.invalidJSON
         }
 
         var estimates: [WaitTimeEstimate] = []
@@ -27,7 +65,11 @@ struct BERLiveWaitTimeProvider: WaitTimeProviding {
             let label = (item["workload_label"] as? String ?? "").lowercased()
             let workload = (item["workload"] as? String ?? "").uppercased()
 
-            let terminalNumber = Int(terminal.replacingOccurrences(of: "T", with: "")) ?? 1
+            let terminalNumber = Int(
+                terminal
+                    .replacingOccurrences(of: "T", with: "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            ) ?? 1
 
             let checkpointName: String
             let minutes: Int?
@@ -42,7 +84,7 @@ struct BERLiveWaitTimeProvider: WaitTimeProviding {
                 checkpointName = "Runway Security"
                 minutes = low
                 isClosed = false
-                
+
             } else if label.contains("closed") || workload == "C" {
                 if terminal == "T2" {
                     checkpointName = "Security"

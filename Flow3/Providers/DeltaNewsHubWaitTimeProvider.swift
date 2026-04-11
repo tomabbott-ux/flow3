@@ -71,13 +71,10 @@ throw ProviderError.invalidURL
         }
 
       
-
         let sourceType: WaitTimeSourceType = {
             switch airport {
-            case .dtw:
+            case .atl, .msp, .dtw:
                 return .live
-            case .atl, .msp:
-                return .predicted
             default:
                 return .predicted
             }
@@ -304,10 +301,10 @@ throw ProviderError.invalidURL
 
     private func parseDTWRows(from html: String) throws -> [ParsedRow] {
         let normalized = normalizeHTML(html)
-        print("🔎 DELTA trying to find DTW block")
+     
 
         let block = try airportBlock(for: "DTW", in: normalized)
-        print("✅ DELTA found DTW block, length:", block.count)
+       
 
         let rowMatches = matches(
             pattern: #"<tr>\s*<td>\s*(.*?)\s*</td>\s*<td(?: class="([^"]*)")?>\s*(.*?)\s*</td>\s*<td>\s*(.*?)\s*</td>\s*</tr>"#,
@@ -315,7 +312,7 @@ throw ProviderError.invalidURL
             options: [.caseInsensitive, .dotMatchesLineSeparators]
         )
 
-        print("🔎 DELTA DTW row matches:", rowMatches.count)
+        
 
         var rows: [ParsedRow] = []
 
@@ -324,7 +321,7 @@ throw ProviderError.invalidURL
             let rawWait = decodeHTML(rowMatch[safe: 2] ?? "")
             let rawStatus = decodeHTML(rowMatch[safe: 3] ?? "")
 
-            print("🔎 DELTA DTW raw checkpoint:", rawCheckpoint, "| raw wait:", rawWait, "| raw status:", rawStatus)
+            
 
             guard let minutes = minutesFromText(rawWait) else { continue }
 
@@ -344,7 +341,7 @@ throw ProviderError.invalidURL
         }
 
         if rows.isEmpty {
-            print("❌ DELTA DTW parsed zero rows")
+           
         }
 
         return rows.sorted(by: dtwSort)
@@ -395,12 +392,12 @@ throw ProviderError.invalidURL
         for blockMatch in blockMatches {
             let block = blockMatch[safe: 0] ?? ""
             if block.localizedCaseInsensitiveContains("(\(code))") {
-                print("✅ DELTA matched airport block for:", code)
+             
                 return block
             }
         }
 
-        print("❌ DELTA airport block not found for:", code)
+       
         throw ProviderError.airportBlockNotFound
     }
 

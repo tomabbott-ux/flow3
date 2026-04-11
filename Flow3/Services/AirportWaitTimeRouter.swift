@@ -306,8 +306,8 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
     private func timeoutSeconds(for providerKind: AirportProviderKind) -> TimeInterval {
         switch providerKind {
-        case .jfk, .lhr, .ams, .ist, .syd:
-            return 8
+        case .jfk, .lhr, .ams, .ist, .syd, .doh:
+            return 10
         default:
             return 6
         }

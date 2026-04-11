@@ -24,6 +24,7 @@ struct DOHLiveWaitTimeProvider: WaitTimeProviding {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.timeoutInterval = 12
         request.setValue("application/json, text/javascript, */*; q=0.01", forHTTPHeaderField: "Accept")
         request.setValue("en-GB,en;q=0.9", forHTTPHeaderField: "Accept-Language")
         request.setValue("https://dohahamadairport.com/", forHTTPHeaderField: "Referer")
@@ -32,6 +33,8 @@ struct DOHLiveWaitTimeProvider: WaitTimeProviding {
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
             forHTTPHeaderField: "User-Agent"
         )
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        request.setValue("no-cache", forHTTPHeaderField: "Pragma")
 
         let (data, response) = try await session.data(for: request)
 
