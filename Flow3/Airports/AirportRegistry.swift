@@ -36,6 +36,7 @@ enum AirportProviderKind: String, Codable, Hashable {
     case del
     case chs
     case bna
+    case syd
 
     case yyz
     case yvr
@@ -174,7 +175,7 @@ struct AirportRegistry {
         AirportDefinition(airport: .sin, feedType: .estimated, providerKind: .estimated),
 
         AirportDefinition(airport: .hnd, feedType: .estimated, providerKind: .estimated),
-        AirportDefinition(airport: .syd, feedType: .estimated, providerKind: .estimated)
+        AirportDefinition(airport: .syd, feedType: .live, providerKind: .syd)
     ]
 
     static var airports: [AirportDefinition] {

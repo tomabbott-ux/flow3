@@ -4,9 +4,10 @@ struct LandingView: View {
     @ObservedObject var store: LandingStore
     @Binding var selectedTab: FlowRootView.FlowTab
     @EnvironmentObject private var subscriptionManager: SubscriptionManager
+
     @AppStorage("flow_use_celsius")
     private var useCelsius: Bool = true
-    
+
     @State private var selectedRowID: String? = nil
     @State private var otherCheckpointsExpanded = false
     @State private var hasPerformedInitialLoad = false
@@ -32,7 +33,7 @@ struct LandingView: View {
         guard store.selectedAirport == trackedAirportIfKnown else { return nil }
 
         if let routeID = trackedFlight.securityRouteID,
-           let matchedByID = displayRows.first(where: { $0.id == routeID })?.id {
+           let matchedByID = displayRows.first(where: { rowMatchesID($0, routeID) })?.id {
             return matchedByID
         }
 
@@ -64,12 +65,12 @@ struct LandingView: View {
             $0.subtitle.caseInsensitiveCompare(subtitle) == .orderedSame
         })?.id
     }
+
     private var trackedAirportIfKnown: FlowAirport? {
         store.trackedFlight == nil ? nil : store.selectedAirport
     }
 
     private var selectedRow: AirportDisplayRow? {
-
         if let tracked = store.trackedFlight {
             print("🛬 LandingView selectedRow: tracked flight exists")
             print("   routeID:", tracked.securityRouteID ?? "nil")
@@ -83,23 +84,22 @@ struct LandingView: View {
 
         if let tracked = store.trackedFlight,
            let routeID = tracked.securityRouteID,
-           let row = displayRows.first(where: { $0.id == routeID }) {
+           let row = displayRows.first(where: { rowMatchesID($0, routeID) }) {
             print("✅ selectedRow matched by routeID:", routeID, "->", row.title, "|", row.subtitle)
             return row
         }
 
         if let preferredTrackedFlightRowID,
-           let trackedRow = displayRows.first(where: { $0.id == preferredTrackedFlightRowID }) {
+           let trackedRow = displayRows.first(where: { rowMatchesID($0, preferredTrackedFlightRowID) }) {
             print("✅ selectedRow matched by preferredTrackedFlightRowID:", preferredTrackedFlightRowID, "->", trackedRow.title, "|", trackedRow.subtitle)
             return trackedRow
         }
 
         if let selectedRowID,
-           let row = displayRows.first(where: { $0.id == selectedRowID }) {
-            print("⚠️ selectedRow fell back to selectedRowID:", selectedRowID, "->", row.title, "|", row.subtitle)
+           let row = displayRows.first(where: { rowMatchesID($0, selectedRowID) }) {
+            print("✅ selectedRow matched by selectedRowID:", selectedRowID, "->", row.title, "|", row.subtitle)
             return row
         }
-
         if let first = displayRows.first {
             print("⚠️ selectedRow fell back to FIRST row:", first.id, "->", first.title, "|", first.subtitle)
             return first
@@ -120,7 +120,7 @@ struct LandingView: View {
 
         if store.selectedAirport == .lax {
             let selectedRows = store.displayRowsForSelectedAirport()
-            let selectedRow = selectedRows.first(where: { $0.id == selectedRowID }) ?? selectedRows.first
+            let selectedRow = selectedRows.first(where: { rowMatchesID($0, selectedRowID) }) ?? selectedRows.first
 
             if selectedRow?.title == "Terminal B" {
                 return .live
@@ -146,7 +146,7 @@ struct LandingView: View {
             return displayRows
         }
 
-        return displayRows.filter { $0.id != primary.id }
+        return displayRows.filter { !rowMatchesID($0, primary.id) }
     }
 
     private var hasTrackedFlight: Bool {
@@ -217,7 +217,6 @@ struct LandingView: View {
                 await FlowNotificationManager.shared.requestPermission()
             }
         }
-        
         .onReceive(refreshTick) { now in
             guard isSelectedAirportUnlocked else { return }
             guard hasPerformedInitialLoad else { return }
@@ -295,16 +294,16 @@ struct LandingView: View {
         print("   selectedAirport:", store.selectedAirport.rawValue)
         print("   tracked routeID:", store.trackedFlight?.securityRouteID ?? "nil")
         print("   latestRows:", latestRows.map { "\($0.id) | \($0.title) | \($0.subtitle)" })
-        
+
         if let preferredTrackedFlightRowID,
-           latestRows.contains(where: { $0.id == preferredTrackedFlightRowID }) {
-            selectedRowID = preferredTrackedFlightRowID
+           let matchedPreferred = latestRows.first(where: { rowMatchesID($0, preferredTrackedFlightRowID) }) {
+            selectedRowID = matchedPreferred.id
             return
         }
 
         if let selectedRowID,
-           latestRows.contains(where: { $0.id == selectedRowID }) {
-            self.selectedRowID = selectedRowID
+           let matchedSelected = latestRows.first(where: { rowMatchesID($0, selectedRowID) }) {
+            self.selectedRowID = matchedSelected.id
         } else {
             self.selectedRowID = latestRows.first?.id
         }
@@ -330,7 +329,29 @@ struct LandingView: View {
             selectedRowID = matchedTerminalRow.id
         }
     }
+
+    private func normalizedRowID(_ value: String?) -> String? {
+        guard let value else { return nil }
+
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let parts = trimmed
+            .components(separatedBy: "|")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        if parts.count <= 1 {
+            return parts.first
+        }
+
+        return parts.joined(separator: "|")
+    }
+
+    private func rowMatchesID(_ row: AirportDisplayRow, _ id: String?) -> Bool {
+        normalizedRowID(row.id) == normalizedRowID(id)
+    }
 }
+
 // MARK: - Top Pill
 
 private extension LandingView {
@@ -668,6 +689,7 @@ private extension LandingView {
             return "\(fahrenheit)°F"
         }
     }
+
     var weatherConditionLine: String {
         guard let weather = store.weather else { return "--" }
 
@@ -820,7 +842,7 @@ private extension LandingView {
                 .overlay(
                     Capsule()
                         .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                    )
+                )
         )
     }
 
@@ -1098,7 +1120,7 @@ private extension LandingView {
                             ForEach(secondaryCheckpointRows) { row in
                                 checkpointCard(
                                     row: row,
-                                    isSelected: selectedRowID == row.id
+                                    isSelected: rowMatchesID(row, selectedRowID)
                                 )
                             }
                         }
@@ -1110,7 +1132,7 @@ private extension LandingView {
                     ForEach(displayRows) { row in
                         checkpointCard(
                             row: row,
-                            isSelected: selectedRowID == row.id
+                            isSelected: rowMatchesID(row, selectedRowID)
                         )
                     }
                 }

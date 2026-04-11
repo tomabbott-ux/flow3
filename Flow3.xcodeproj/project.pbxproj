@@ -60,6 +60,7 @@
 		F84605DC2F86C555005E5B03 /* CalendarFlightScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605DB2F86C555005E5B03 /* CalendarFlightScanner.swift */; };
 		F84605DE2F86D1E6005E5B03 /* PendingCalendarFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605DD2F86D1E6005E5B03 /* PendingCalendarFlight.swift */; };
 		F84605E02F86DEB8005E5B03 /* LandingStore+CalendarFlights.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605DF2F86DEB8005E5B03 /* LandingStore+CalendarFlights.swift */; };
+		F84605E22F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605E12F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift */; };
 		F846E0872F82F11500997E61 /* FreeAirportConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0862F82F11500997E61 /* FreeAirportConfig.swift */; };
 		F846E0892F82F14800997E61 /* SubscriptionTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0882F82F14800997E61 /* SubscriptionTier.swift */; };
 		F846E08B2F82F17800997E61 /* FlowEntitlements.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E08A2F82F17800997E61 /* FlowEntitlements.swift */; };
@@ -262,6 +263,7 @@
 		F84605DB2F86C555005E5B03 /* CalendarFlightScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarFlightScanner.swift; sourceTree = "<group>"; };
 		F84605DD2F86D1E6005E5B03 /* PendingCalendarFlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingCalendarFlight.swift; sourceTree = "<group>"; };
 		F84605DF2F86DEB8005E5B03 /* LandingStore+CalendarFlights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+CalendarFlights.swift"; sourceTree = "<group>"; };
+		F84605E12F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SYDLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F846E0862F82F11500997E61 /* FreeAirportConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeAirportConfig.swift; sourceTree = "<group>"; };
 		F846E0882F82F14800997E61 /* SubscriptionTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
 		F846E08A2F82F17800997E61 /* FlowEntitlements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowEntitlements.swift; sourceTree = "<group>"; };
@@ -491,7 +493,6 @@
 			children = (
 				F862F1D02F583995001666F2 /* FlowTypes.swift */,
 				F862F1D22F5839B4001666F2 /* WaitTimeModels.swift */,
-				F862F1D42F5839C9001666F2 /* WeatherModels.swift */,
 				F80599CC2F5ACDB500146BF1 /* AirportPresentation.swift */,
 				F80599E42F5B024600146BF1 /* WeatherEstimate.swift */,
 			);
@@ -563,6 +564,7 @@
 				F8B5C97B2F79CCD00083071D /* DTWLiveWaitTimeProvider.swift */,
 				F8B5C97D2F79D5D00083071D /* BNAWebsiteWaitTimeProvider.swift */,
 				F8B5C9832F7F188C0083071D /* DeltaNewsHubWaitTimeProvider.swift */,
+				F84605E12F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -663,6 +665,7 @@
 				F862F1DA2F583A3A001666F2 /* WaitTimeService.swift */,
 				F862F1DC2F583A5B001666F2 /* WeatherService.swift */,
 				F80599CA2F5ACAA300146BF1 /* AirportWaitTimeRouter.swift */,
+				F862F1D42F5839C9001666F2 /* WeatherModels.swift */,
 				F8796C2E2F6B8CB100040769 /* TSAWaitTimeService.swift */,
 				F8CD3EAF2F703DB500490E20 /* LAXTBITLiveService.swift */,
 			);
@@ -978,6 +981,7 @@
 				F8796CA12F6D935500040769 /* FlightLookupResult+Boarding.swift in Sources */,
 				F8A1AB442F68CFD80093D0B6 /* FlowRootView.swift in Sources */,
 				F84605E02F86DEB8005E5B03 /* LandingStore+CalendarFlights.swift in Sources */,
+				F84605E22F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift in Sources */,
 				F8796CA42F6E040600040769 /* FlowActivityAttributes.swift in Sources */,
 				F80599C92F5AC8F200146BF1 /* AirportRegistry.swift in Sources */,
 				F8DBD8912F6563A600246968 /* TravelTime Service.swift in Sources */,

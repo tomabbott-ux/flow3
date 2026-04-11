@@ -27,6 +27,7 @@ final class DTWLiveWaitTimeProvider: WaitTimeProviding {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.timeoutInterval = 6
         request.setValue("application/json, text/plain, */*", forHTTPHeaderField: "Accept")
         request.setValue("https://www.metroairport.com/", forHTTPHeaderField: "Referer")
         request.setValue("https://www.metroairport.com", forHTTPHeaderField: "Origin")

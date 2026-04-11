@@ -55,6 +55,7 @@ final class LandingStore: ObservableObject {
     var pendingCalendarFlight: PendingCalendarFlight? {
         reviewCalendarFlight
     }
+
     func dismissPendingCalendarFlight() {
         reviewCalendarFlight = nil
         selectedPendingCalendarFlightID = nil
@@ -202,36 +203,80 @@ final class LandingStore: ObservableObject {
     }
 
     private func refreshAirport(_ airport: FlowAirport, updateVisibleState: Bool) async {
-        do {
-            if updateVisibleState {
-                errorText = nil
-            }
+        if updateVisibleState {
+            errorText = nil
+        }
 
-            async let wt = loadWaitTimes(for: airport)
-            async let wx = loadWeather(for: airport)
+        async let waitTimesResult = loadWaitTimesResult(for: airport)
+        async let weatherResult = loadWeatherResult(for: airport)
 
-            let (newWaitTimes, newWeather) = try await (wt, wx)
-            let refreshedAt = Date()
+        let (waitResult, wxResult) = await (waitTimesResult, weatherResult)
+        let refreshedAt = Date()
 
+        var didUpdateAnything = false
+        var waitTimesError: Error?
+        var weatherError: Error?
+
+        switch waitResult {
+        case .success(let newWaitTimes):
             waitTimeCache[airport] = newWaitTimes
-            weatherCache[airport] = newWeather
             refreshedAtCache[airport] = refreshedAt
+            didUpdateAnything = true
 
             if updateVisibleState, airport == selectedAirport {
                 waitTimes = newWaitTimes
+                lastUpdated = refreshedAt
+            }
+
+        case .failure(let error):
+            waitTimesError = error
+        }
+
+        switch wxResult {
+        case .success(let newWeather):
+            weatherCache[airport] = newWeather
+            refreshedAtCache[airport] = refreshedAt
+            didUpdateAnything = true
+
+            if updateVisibleState, airport == selectedAirport {
                 weather = newWeather
                 lastUpdated = refreshedAt
-                rebuildAlerts()
             }
+
+        case .failure(let error):
+            weatherError = error
+        }
+
+        if updateVisibleState, airport == selectedAirport {
+            if didUpdateAnything {
+                errorText = nil
+            } else if airport == .atl {
+                errorText = nil
+            } else if let waitTimesError {
+                errorText = "Refresh failed: \(waitTimesError.localizedDescription)"
+            } else if let weatherError {
+                errorText = "Refresh failed: \(weatherError.localizedDescription)"
+            }
+
+            rebuildAlerts()
+        }
+    }
+
+    private func loadWaitTimesResult(for airport: FlowAirport) async -> Result<[WaitTimeEstimate], Error> {
+        do {
+            let result = try await loadWaitTimes(for: airport)
+            return .success(result)
         } catch {
-            if updateVisibleState, airport == selectedAirport {
-                if airport == .atl {
-                    errorText = nil
-                } else {
-                    errorText = "Refresh failed: \(error.localizedDescription)"
-                }
-                rebuildAlerts()
-            }
+            return .failure(error)
+        }
+    }
+
+    private func loadWeatherResult(for airport: FlowAirport) async -> Result<WeatherSnapshot, Error> {
+        do {
+            let result = try await loadWeather(for: airport)
+            return .success(result)
+        } catch {
+            return .failure(error)
         }
     }
 
