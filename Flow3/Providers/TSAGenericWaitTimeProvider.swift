@@ -39,17 +39,17 @@ final class TSAGenericWaitTimeProvider: WaitTimeProviding {
             throw ProviderError.invalidResponse
         }
 
-        print("🌐 TSA API \(airport.rawValue) status:", http.statusCode)
+        
 
         guard (200...299).contains(http.statusCode) else {
             if let raw = String(data: data, encoding: .utf8) {
-                print("❌ TSA API \(airport.rawValue) raw error body:", raw)
+                
             }
             throw ProviderError.badHTTPStatus(http.statusCode)
         }
 
         if let raw = String(data: data, encoding: .utf8) {
-            print("📦 TSA API \(airport.rawValue) raw body:", raw)
+            
         }
 
         let jsonObject = try JSONSerialization.jsonObject(with: data)
@@ -82,11 +82,11 @@ final class TSAGenericWaitTimeProvider: WaitTimeProviding {
             ?? firstNestedInt(in: root)
 
         guard let minutes = waitMinutes else {
-            print("⚠️ TSA API \(airport.rawValue): no wait minutes found")
+            
             return []
         }
 
-        print("✅ TSA API \(airport.rawValue): parsed minutes =", minutes)
+        
 
         return [
             WaitTimeEstimate(

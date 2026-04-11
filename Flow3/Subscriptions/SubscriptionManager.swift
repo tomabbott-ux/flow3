@@ -118,8 +118,7 @@ final class SubscriptionManager: ObservableObject {
 
         // Simulator unlock for local Xcode testing
         if isSimulator {
-            print("🧪 Simulator detected — Pro unlocked automatically")
-
+          
             applyEntitlementState(
                 hasPro: true,
                 productID: Constants.yearlyProductID,
@@ -131,7 +130,7 @@ final class SubscriptionManager: ObservableObject {
 
         // TestFlight unlock for testers
         if isTestFlight {
-            print("🚀 TestFlight detected — Pro unlocked automatically")
+            
 
             applyEntitlementState(
                 hasPro: true,

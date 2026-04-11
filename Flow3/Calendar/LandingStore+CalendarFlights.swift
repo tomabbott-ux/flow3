@@ -5,12 +5,12 @@ import EventKit
 extension LandingStore {
 
     func scanCalendarForFlightsIfNeeded(force: Bool = false) async {
-        Swift.print("📆 LandingStore scanning calendar for flights")
+        
 
         let granted = await CalendarFlightScanner.shared.requestAccess()
 
         guard granted else {
-            Swift.print("📆 Calendar scan stopped: access denied")
+    
             pendingCalendarFlights = []
             return
         }
@@ -18,7 +18,7 @@ extension LandingStore {
         let matches = CalendarFlightScanner.shared.upcomingFlightCandidates(withinDays: 30)
 
         guard !matches.isEmpty else {
-            Swift.print("📆 Calendar scan found no flight candidates")
+            
             pendingCalendarFlights = []
             return
         }
@@ -28,7 +28,7 @@ extension LandingStore {
         }
 
         guard !parsedFlights.isEmpty else {
-            Swift.print("📆 Calendar scan could not convert candidates into pending flights")
+            
             pendingCalendarFlights = []
             return
         }
@@ -42,9 +42,7 @@ extension LandingStore {
 
         pendingCalendarFlights = filtered.sorted { $0.departureDate < $1.departureDate }
 
-        Swift.print("📆 Calendar scan complete")
-        Swift.print("📆 pendingCalendarFlights count =", pendingCalendarFlights.count)
-        Swift.print("📆 trackedFlight =", trackedFlight?.flightNumber ?? "nil")
+        
     }
 
     func pendingCalendarFlight(withID id: String?) -> PendingCalendarFlight? {
@@ -79,7 +77,7 @@ private extension LandingStore {
         .joined(separator: " ")
 
         guard let flightNumber = extractFlightNumber(from: fullText) else {
-            Swift.print("📆 Could not extract flight number from event:", event.title ?? "(no title)")
+            
             return nil
         }
 
@@ -115,7 +113,7 @@ private extension LandingStore {
                 .uppercased()
 
             if isLikelyRealFlightNumber(candidate), !looksLikeAirportRoomCode(candidate) {
-                Swift.print("🔎 Flight number candidate:", candidate)
+                
                 return candidate
             }
         }

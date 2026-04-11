@@ -190,11 +190,11 @@ struct FlowRootView: View {
 
     private func runCalendarFlightScanIfNeeded(force: Bool) async {
         guard calendarFlightDetectionEnabled else {
-            print("📆 Calendar scan skipped: toggle off")
+            
             return
         }
 
-        print("📆 Calendar scan requested")
+    
         await store.scanCalendarForFlightsIfNeeded(force: force)
     }
 

@@ -184,7 +184,7 @@ extension LandingStore {
         
         rebuildAlerts()
         
-        print("🔁 Auto-refreshed tracked flight security route")
+        
     }
 }
 

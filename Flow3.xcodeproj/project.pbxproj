@@ -1253,6 +1253,7 @@
 				DEVELOPMENT_TEAM = QQ6KGT3TQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Flow;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Flow uses your calendar to detect upcoming flights and help you track them automatically.";
 				INFOPLIST_KEY_NSLocationUsageDescription = "Flow uses your location to calculate travel time to the airport so it can tell you when to leave for your flight.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Flow uses your location to calculate driving time to the airport and recommend when to leave for your flight.";
@@ -1288,6 +1289,7 @@
 				DEVELOPMENT_TEAM = QQ6KGT3TQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Flow;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Flow uses your calendar to detect upcoming flights and help you track them automatically.";
 				INFOPLIST_KEY_NSLocationUsageDescription = "Flow uses your location to calculate travel time to the airport so it can tell you when to leave for your flight.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Flow uses your location to calculate driving time to the airport and recommend when to leave for your flight.";

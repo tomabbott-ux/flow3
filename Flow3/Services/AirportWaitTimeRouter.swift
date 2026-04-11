@@ -96,7 +96,7 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
                 return officialResults
             }
         } catch {
-            print("⚠️ DTW official feed failed:", error.localizedDescription)
+            
         }
 
         // Second try Delta News Hub feed for DTW
@@ -115,7 +115,7 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
                 return deltaResults
             }
         } catch {
-            print("⚠️ DTW Delta News Hub fallback failed:", error.localizedDescription)
+            
         }
 
         // Final fallback

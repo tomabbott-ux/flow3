@@ -615,7 +615,7 @@ struct DeparturePlannerSheet: View {
         )
 
         // DEBUG: Confirm what we are saving
-        print("✅ TRACKED FLIGHT CREATED")
+        
         print("   saved routeID:", tracked.securityRouteID ?? "nil")
         print("   saved title:", tracked.securityRouteTitle)
         print("   saved subtitle:", tracked.securityRouteSubtitle)
@@ -626,16 +626,16 @@ struct DeparturePlannerSheet: View {
 
         // DEBUG: Immediately inspect rows AFTER saving
         let rowsAfterSave = store.displayRowsForSelectedAirport()
-        print("📊 Rows AFTER saving tracked flight:")
+        
         for row in rowsAfterSave {
             print("   \(row.id) | \(row.title) | \(row.subtitle)")
         }
 
         // DEBUG: Try to match immediately
         if let match = rowsAfterSave.first(where: { $0.id == tracked.securityRouteID }) {
-            print("🎯 MATCH FOUND IMMEDIATELY:", match.title, "|", match.subtitle)
+            
         } else {
-            print("❌ NO MATCH for routeID immediately after save")
+            
         }
 
         dismiss()    }

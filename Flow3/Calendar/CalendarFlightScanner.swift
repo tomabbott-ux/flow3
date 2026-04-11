@@ -17,12 +17,12 @@ final class CalendarFlightScanner {
             do {
                 let granted = try await eventStore.requestFullAccessToEvents()
                 if DebugFlags.calendar {
-                    print("📆 Calendar access granted:", granted)
+                   
                 }
                 return granted
             } catch {
                 if DebugFlags.calendar {
-                    print("📆 Calendar access failed:", error.localizedDescription)
+                    
                 }
                 return false
             }
@@ -30,10 +30,10 @@ final class CalendarFlightScanner {
             return await withCheckedContinuation { continuation in
                 eventStore.requestAccess(to: .event) { granted, error in
                     if DebugFlags.calendar, let error {
-                        print("📆 Calendar access failed:", error.localizedDescription)
+                        
                     }
                     if DebugFlags.calendar {
-                        print("📆 Calendar access granted:", granted)
+                        
                     }
                     continuation.resume(returning: granted)
                 }
@@ -57,10 +57,10 @@ final class CalendarFlightScanner {
             .filter { !$0.isAllDay }
 
         if DebugFlags.calendar {
-            print("📆 Calendar events found in range:", events.count)
+            
 
             for event in events.prefix(20) {
-                print("📆 Event:", event.title ?? "(no title)", "| location:", event.location ?? "nil")
+                
             }
         }
 
@@ -91,10 +91,10 @@ final class CalendarFlightScanner {
             .sorted { $0.startDate < $1.startDate }
 
         if DebugFlags.calendar {
-            print("✈️ Flight-like calendar matches:", matches.count)
+            
 
             for match in matches {
-                print("✈️ Matched flight event:", match.title ?? "(no title)")
+                
             }
         }
 
@@ -116,28 +116,28 @@ final class CalendarFlightScanner {
 
         if containsHardExcludedPhrase(in: combined) {
             if DebugFlags.calendar {
-                print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: hard excluded phrase")
+                
             }
             return nil
         }
 
         if isCheckInOnlyEvent(combined) {
             if DebugFlags.calendar {
-                print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: check-in only event")
+               
             }
             return nil
         }
 
         guard let flightNumber = extractLikelyFlightNumber(from: combined) else {
             if DebugFlags.calendar {
-                print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: no valid flight number")
+                
             }
             return nil
         }
 
         if looksLikeAirportRoomCode(flightNumber) {
             if DebugFlags.calendar {
-                print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: airport/room code false positive")
+                
             }
             return nil
         }
@@ -187,7 +187,7 @@ final class CalendarFlightScanner {
 
         guard score >= 70 else {
             if DebugFlags.calendar {
-                print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: score too low")
+                
             }
             return nil
         }
@@ -306,7 +306,7 @@ final class CalendarFlightScanner {
                 .uppercased()
 
             if DebugFlags.calendar {
-                print("🔎 Flight number candidate:", candidate)
+                
             }
 
             if isLikelyRealFlightNumber(candidate) {

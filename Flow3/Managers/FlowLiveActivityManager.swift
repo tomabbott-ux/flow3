@@ -51,7 +51,7 @@ final class FlowLiveActivityManager {
         }
 
         guard let currentActivity else {
-            print("⚠️ No Live Activity to update")
+            
             return
         }
 

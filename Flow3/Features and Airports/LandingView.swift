@@ -72,40 +72,40 @@ struct LandingView: View {
 
     private var selectedRow: AirportDisplayRow? {
         if let tracked = store.trackedFlight {
-            print("🛬 LandingView selectedRow: tracked flight exists")
+            
             print("   routeID:", tracked.securityRouteID ?? "nil")
             print("   title:", tracked.securityRouteTitle)
             print("   subtitle:", tracked.securityRouteSubtitle)
             print("   selectedAirport:", store.selectedAirport.rawValue)
             print("   displayRows:", displayRows.map { "\($0.id) | \($0.title) | \($0.subtitle)" })
         } else {
-            print("🛬 LandingView selectedRow: no tracked flight")
+        
         }
 
         if let tracked = store.trackedFlight,
            let routeID = tracked.securityRouteID,
            let row = displayRows.first(where: { rowMatchesID($0, routeID) }) {
-            print("✅ selectedRow matched by routeID:", routeID, "->", row.title, "|", row.subtitle)
+            
             return row
         }
 
         if let preferredTrackedFlightRowID,
            let trackedRow = displayRows.first(where: { rowMatchesID($0, preferredTrackedFlightRowID) }) {
-            print("✅ selectedRow matched by preferredTrackedFlightRowID:", preferredTrackedFlightRowID, "->", trackedRow.title, "|", trackedRow.subtitle)
+          
             return trackedRow
         }
 
         if let selectedRowID,
            let row = displayRows.first(where: { rowMatchesID($0, selectedRowID) }) {
-            print("✅ selectedRow matched by selectedRowID:", selectedRowID, "->", row.title, "|", row.subtitle)
+            
             return row
         }
         if let first = displayRows.first {
-            print("⚠️ selectedRow fell back to FIRST row:", first.id, "->", first.title, "|", first.subtitle)
+            
             return first
         }
 
-        print("❌ selectedRow found no row")
+        
         return nil
     }
 
@@ -290,7 +290,7 @@ struct LandingView: View {
         lastRefreshDate = Date()
 
         let latestRows = store.displayRowsForSelectedAirport()
-        print("🔁 refreshNow completed")
+      
         print("   selectedAirport:", store.selectedAirport.rawValue)
         print("   tracked routeID:", store.trackedFlight?.securityRouteID ?? "nil")
         print("   latestRows:", latestRows.map { "\($0.id) | \($0.title) | \($0.subtitle)" })
