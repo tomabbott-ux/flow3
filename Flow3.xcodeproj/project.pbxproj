@@ -66,6 +66,7 @@
 		F84605E92F8A92CB005E5B03 /* CachedFlightLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605E82F8A92CB005E5B03 /* CachedFlightLookup.swift */; };
 		F84605EB2F8A9316005E5B03 /* FlightAPIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605EA2F8A9316005E5B03 /* FlightAPIConfig.swift */; };
 		F84605ED2F8AAFAC005E5B03 /* SubscriptionSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605EC2F8AAFAC005E5B03 /* SubscriptionSheetView.swift */; };
+		F84605F02F8AD3CF005E5B03 /* APIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605EF2F8AD3CF005E5B03 /* APIConfig.swift */; };
 		F846E0872F82F11500997E61 /* FreeAirportConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0862F82F11500997E61 /* FreeAirportConfig.swift */; };
 		F846E0892F82F14800997E61 /* SubscriptionTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0882F82F14800997E61 /* SubscriptionTier.swift */; };
 		F846E08B2F82F17800997E61 /* FlowEntitlements.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E08A2F82F17800997E61 /* FlowEntitlements.swift */; };
@@ -273,6 +274,8 @@
 		F84605E82F8A92CB005E5B03 /* CachedFlightLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedFlightLookup.swift; sourceTree = "<group>"; };
 		F84605EA2F8A9316005E5B03 /* FlightAPIConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAPIConfig.swift; sourceTree = "<group>"; };
 		F84605EC2F8AAFAC005E5B03 /* SubscriptionSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionSheetView.swift; sourceTree = "<group>"; };
+		F84605EF2F8AD3CF005E5B03 /* APIConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConfig.swift; sourceTree = "<group>"; };
+		F84605F12F8AD45E005E5B03 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F846E0862F82F11500997E61 /* FreeAirportConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeAirportConfig.swift; sourceTree = "<group>"; };
 		F846E0882F82F14800997E61 /* SubscriptionTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
 		F846E08A2F82F17800997E61 /* FlowEntitlements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowEntitlements.swift; sourceTree = "<group>"; };
@@ -440,6 +443,14 @@
 			path = Debugs;
 			sourceTree = "<group>";
 		};
+		F84605EE2F8AD3B5005E5B03 /* API */ = {
+			isa = PBXGroup;
+			children = (
+				F84605EF2F8AD3CF005E5B03 /* APIConfig.swift */,
+			);
+			path = API;
+			sourceTree = "<group>";
+		};
 		F846E0852F82F0D500997E61 /* Subscriptions */ = {
 			isa = PBXGroup;
 			children = (
@@ -480,6 +491,8 @@
 		F862F1A12F583923001666F2 /* Flow3 */ = {
 			isa = PBXGroup;
 			children = (
+				F84605F12F8AD45E005E5B03 /* Info.plist */,
+				F84605EE2F8AD3B5005E5B03 /* API */,
 				F84605E32F8A4219005E5B03 /* Debugs */,
 				F84605DA2F86C531005E5B03 /* Calendar */,
 				F846E0852F82F0D500997E61 /* Subscriptions */,
@@ -1069,6 +1082,7 @@
 				F8DBD8B02F68135C00246968 /* PlannerSecurityModels.swift in Sources */,
 				F8CD3EB42F70654500490E20 /* MIALiveWaitTimeProvider.swift in Sources */,
 				F80C80AA2F77473900C4DABC /* FlowWatchConnectivityManager.swift in Sources */,
+				F84605F02F8AD3CF005E5B03 /* APIConfig.swift in Sources */,
 				F8CD3EB02F703DB500490E20 /* LAXTBITLiveService.swift in Sources */,
 				F822A8D82F5CE9CE009F6107 /* TSAGenericWaitTimeProvider.swift in Sources */,
 				F80599D72F5AD4A200146BF1 /* Color+Hex.swift in Sources */,
@@ -1265,6 +1279,7 @@
 				DEVELOPMENT_TEAM = QQ6KGT3TQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Flow3/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Flow;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Flow uses your calendar to detect upcoming flights and help you track them automatically.";
 				INFOPLIST_KEY_NSLocationUsageDescription = "Flow uses your location to calculate travel time to the airport so it can tell you when to leave for your flight.";
@@ -1301,6 +1316,7 @@
 				DEVELOPMENT_TEAM = QQ6KGT3TQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Flow3/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Flow;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Flow uses your calendar to detect upcoming flights and help you track them automatically.";
 				INFOPLIST_KEY_NSLocationUsageDescription = "Flow uses your location to calculate travel time to the airport so it can tell you when to leave for your flight.";

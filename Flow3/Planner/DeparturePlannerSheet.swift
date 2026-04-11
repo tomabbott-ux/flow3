@@ -51,8 +51,10 @@ struct DeparturePlannerSheet: View {
                     
                     bagToggleCard
                     travelTimeCard
-                    actionButton
-                    
+
+                    if !useFlightNumber {
+                        actionButton
+                    }
                     if let plan {
                         resultCard(plan)
                     }
@@ -770,6 +772,7 @@ struct DeparturePlannerSheet: View {
             
             flightLookupResult = result
             departureTime = result.departureTime
+            await calculate()
             
         } catch {
             errorText = error.localizedDescription

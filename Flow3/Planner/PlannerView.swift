@@ -51,8 +51,10 @@ struct PlannerView: View {
 
                 bagToggleCard
                 travelTimeCard
-                actionButton
 
+                if !useFlightNumber {
+                    actionButton
+                }
                 if let plan {
                     resultCard(plan)
                 }
@@ -423,11 +425,7 @@ private extension PlannerView {
             )
         }
         .buttonStyle(.plain)
-        .disabled(
-            isCalculating ||
-            isLookingUpFlight ||
-            (useFlightNumber && flightLookupResult == nil)
-        )
+        .disabled(isCalculating || isLookingUpFlight)
     }
 
     func resultCard(_ plan: DeparturePlan) -> some View {
@@ -482,7 +480,7 @@ private extension PlannerView {
                 Spacer()
 
                 HStack(spacing: 8) {
-                    Image(systemName: "lock.open.fill")
+                    Image(systemName: "airplane")
                         .font(.system(size: 13, weight: .bold))
 
                     Text("Track flight")
