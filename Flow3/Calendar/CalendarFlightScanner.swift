@@ -17,12 +17,12 @@ final class CalendarFlightScanner {
             do {
                 let granted = try await eventStore.requestFullAccessToEvents()
                 if DebugFlags.calendar {
-                   
+                    print("📅 Calendar access (iOS 17+):", granted)
                 }
                 return granted
             } catch {
                 if DebugFlags.calendar {
-                    
+                    print("❌ Calendar access error:", error.localizedDescription)
                 }
                 return false
             }
@@ -30,10 +30,10 @@ final class CalendarFlightScanner {
             return await withCheckedContinuation { continuation in
                 eventStore.requestAccess(to: .event) { granted, error in
                     if DebugFlags.calendar, let error {
-                        
+                        print("❌ Calendar access error:", error.localizedDescription)
                     }
                     if DebugFlags.calendar {
-                        
+                        print("📅 Calendar access (< iOS 17):", granted)
                     }
                     continuation.resume(returning: granted)
                 }
@@ -57,10 +57,10 @@ final class CalendarFlightScanner {
             .filter { !$0.isAllDay }
 
         if DebugFlags.calendar {
-            
+            print("📅 Calendar events fetched:", events.count)
 
             for event in events.prefix(20) {
-                
+                print("   •", event.title ?? "(no title)", "|", event.startDate)
             }
         }
 
@@ -91,10 +91,10 @@ final class CalendarFlightScanner {
             .sorted { $0.startDate < $1.startDate }
 
         if DebugFlags.calendar {
-            
+            print("✈️ Calendar flight matches:", matches.count)
 
             for match in matches {
-                
+                print("   ✅", match.title ?? "(no title)", "|", match.startDate)
             }
         }
 
@@ -116,97 +116,147 @@ final class CalendarFlightScanner {
 
         if containsHardExcludedPhrase(in: combined) {
             if DebugFlags.calendar {
-                
+                print("🚫 Hard excluded:", event.title ?? "(no title)")
             }
             return nil
         }
 
         if isCheckInOnlyEvent(combined) {
             if DebugFlags.calendar {
-               
+                print("🚫 Check-in only event:", event.title ?? "(no title)")
             }
             return nil
         }
 
-        guard let flightNumber = extractLikelyFlightNumber(from: combined) else {
+        guard let flightMatch = extractStrictFlightNumber(from: combined) else {
             if DebugFlags.calendar {
-                
+                print("🚫 No strict flight number found:", event.title ?? "(no title)")
             }
             return nil
         }
 
-        if looksLikeAirportRoomCode(flightNumber) {
+        if looksLikeAirportRoomCode(flightMatch.fullFlightNumber) {
             if DebugFlags.calendar {
-                
+                print("🚫 Looks like airport room/checkpoint code:", flightMatch.fullFlightNumber, "|", event.title ?? "(no title)")
             }
             return nil
         }
+
+        let hasRoute = containsAirportRoute(in: combined)
+        let hasAirlineName = containsAirlineName(in: combined)
+        let hasTerminalOrGate = containsTerminalOrGate(in: combined)
+        let hasDepartureLanguage = containsDepartureLanguage(in: combined)
+        let hasCheckInLanguage = containsCheckInLanguage(in: combined)
+        let hasMeetingLanguage = containsMeetingLikeLanguage(in: combined)
+        let keywordScore = flightKeywordScore(in: combined)
+        let titleContainsFlightNumber = title?.uppercased().contains(flightMatch.fullFlightNumber) == true
 
         var score = 0
 
+        // Strong base only after strict airline-code validation
         score += 100
 
-        if containsAirportRoute(in: combined) {
-            score += 30
+        if hasRoute {
+            score += 35
         }
 
-        score += flightKeywordScore(in: combined) * 8
-
-        if containsAirlineName(in: combined) {
+        if hasAirlineName {
             score += 20
         }
 
-        if containsTerminalOrGate(in: combined) {
+        if hasTerminalOrGate {
+            score += 14
+        }
+
+        if hasDepartureLanguage {
+            score += 18
+        }
+
+        score += keywordScore * 8
+
+        if titleContainsFlightNumber {
             score += 12
         }
 
-        if containsDepartureLanguage(in: combined) {
-            score += 16
+        // Penalize weak/business-like or check-in-only language
+        if hasCheckInLanguage && !hasRoute && !hasAirlineName {
+            score -= 20
         }
 
-        if containsCheckInLanguage(in: combined) {
-            score -= 25
+        if hasMeetingLanguage {
+            score -= 90
         }
 
-        if containsMeetingLikeLanguage(in: combined) {
-            score -= 80
-        }
+        // Critical hardening:
+        // Must have at least one strong travel context signal beyond just "AA123".
+        let strongSignals = [
+            hasRoute,
+            hasAirlineName,
+            hasTerminalOrGate,
+            hasDepartureLanguage,
+            keywordScore >= 2,
+            containsAirportName(in: combined),
+            containsLikelyTravelLocation(in: combined)
+        ]
 
-        if let title, title.uppercased().contains(flightNumber) {
-            score += 10
+        let strongSignalCount = strongSignals.filter { $0 }.count
+
+        if strongSignalCount == 0 {
+            if DebugFlags.calendar {
+                print("🚫 Rejected due to no travel context:", event.title ?? "(no title)", "|", flightMatch.fullFlightNumber)
+            }
+            return nil
         }
 
         if DebugFlags.calendar {
             print(
                 "🧪 Checking event:",
                 event.title ?? "(no title)",
-                "| flightNumber:", flightNumber,
-                "| score:", score
+                "| flightNumber:", flightMatch.fullFlightNumber,
+                "| score:", score,
+                "| route:", hasRoute,
+                "| airline:", hasAirlineName,
+                "| terminal/gate:", hasTerminalOrGate,
+                "| depart:", hasDepartureLanguage,
+                "| keywords:", keywordScore,
+                "| meeting:", hasMeetingLanguage
             )
         }
 
-        guard score >= 70 else {
+        guard score >= 75 else {
             if DebugFlags.calendar {
-                
+                print("🚫 Score too low:", score, "|", event.title ?? "(no title)")
             }
             return nil
         }
 
-        return (flightNumber, score)
+        return (flightMatch.fullFlightNumber, score)
     }
 
     // MARK: - Normalization
 
     private func normalized(_ value: String?) -> String? {
         guard let value else { return nil }
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let trimmed = value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\t", with: " ")
+
         guard !trimmed.isEmpty else { return nil }
-        return trimmed.lowercased()
+
+        return trimmed.replacingOccurrences(
+            of: #"\s+"#,
+            with: " ",
+            options: .regularExpression
+        )
     }
 
     // MARK: - Hard exclusions
 
     private func containsHardExcludedPhrase(in text: String) -> Bool {
+        let lowered = text.lowercased()
+
         let phrases = [
             " v ",
             " vs ",
@@ -243,8 +293,6 @@ final class CalendarFlightScanner {
             "conference room",
             "conference",
             "training room",
-            "room",
-            "slt",
             "zoom",
             "teams call",
             "school",
@@ -254,13 +302,7 @@ final class CalendarFlightScanner {
             "wedding"
         ]
 
-        let padded = " \(text.lowercased()) "
-
-        for phrase in phrases where padded.contains(phrase.lowercased()) {
-            return true
-        }
-
-        return false
+        return phrases.contains(where: lowered.contains)
     }
 
     // MARK: - Check-in detection
@@ -283,63 +325,65 @@ final class CalendarFlightScanner {
             "check in for your flight"
         ]
 
-        return phrases.contains(where: { lowered.contains($0) })
+        return phrases.contains(where: lowered.contains)
     }
 
     // MARK: - Flight number extraction
 
-    private func extractLikelyFlightNumber(from text: String) -> String? {
+    private func extractStrictFlightNumber(from text: String) -> FlightNumberMatch? {
         let upper = text.uppercased()
-        let pattern = #"\b[A-Z]{2,3}\s?\d{1,4}\b"#
-
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
-            return nil
-        }
-
         let nsText = upper as NSString
         let range = NSRange(location: 0, length: nsText.length)
-        let matches = regex.matches(in: upper, options: [], range: range)
 
-        for match in matches {
-            let candidate = nsText.substring(with: match.range)
-                .replacingOccurrences(of: " ", with: "")
-                .uppercased()
+        // Strict accepted patterns:
+        // AA123
+        // AA 123
+        // U21234
+        // B6 123
+        let patterns = [
+            #"\b([A-Z0-9]{2})(\d{1,4})\b"#,
+            #"\b([A-Z0-9]{2})\s+(\d{1,4})\b"#
+        ]
 
-            if DebugFlags.calendar {
-                
-            }
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
 
-            if isLikelyRealFlightNumber(candidate) {
-                return candidate
+            let matches = regex.matches(in: upper, options: [], range: range)
+
+            for match in matches {
+                guard match.numberOfRanges >= 3 else { continue }
+
+                let full = nsText.substring(with: match.range(at: 0))
+                    .replacingOccurrences(of: " ", with: "")
+                    .uppercased()
+
+                let airlineCode = nsText.substring(with: match.range(at: 1)).uppercased()
+                let digits = nsText.substring(with: match.range(at: 2))
+
+                guard validAirlineIATACodes.contains(airlineCode) else {
+                    if DebugFlags.calendar {
+                        print("🚫 Unknown airline code:", airlineCode, "| candidate:", full)
+                    }
+                    continue
+                }
+
+                guard digits.count >= 1 && digits.count <= 4 else {
+                    continue
+                }
+
+                return FlightNumberMatch(
+                    fullFlightNumber: airlineCode + digits,
+                    airlineCode: airlineCode,
+                    matchedText: full
+                )
             }
         }
 
         return nil
     }
 
-    private func isLikelyRealFlightNumber(_ value: String) -> Bool {
-        let cleaned = value
-            .replacingOccurrences(of: " ", with: "")
-            .uppercased()
-
-        guard cleaned.count >= 3, cleaned.count <= 7 else { return false }
-        guard cleaned.prefix(2).allSatisfy({ $0.isLetter }) else { return false }
-        guard cleaned.contains(where: { $0.isNumber }) else { return false }
-
-        let blockedPrefixes = [
-            "MR", "MRS", "MS", "DR", "APT", "REF", "NO"
-        ]
-
-        for prefix in blockedPrefixes where cleaned.hasPrefix(prefix) {
-            return false
-        }
-
-        return true
-    }
-
     private func looksLikeAirportRoomCode(_ value: String) -> Bool {
         let cleaned = value.uppercased()
-
         let supportedCodes = Set(AirportRegistry.airports.map { $0.airport.rawValue.uppercased() })
 
         for code in supportedCodes {
@@ -357,41 +401,44 @@ final class CalendarFlightScanner {
     // MARK: - Positive signals
 
     private func flightKeywordScore(in text: String) -> Int {
-        let padded = " \(text.lowercased()) "
+        let lowered = text.lowercased()
 
-        let keywordGroups: [String] = [
-            " flight ",
-            " airline ",
-            " terminal ",
-            " gate ",
-            " boarding ",
-            " boarding time ",
-            " check-in ",
-            " check in ",
-            " departure ",
-            " departs ",
-            " arriving ",
-            " arrives ",
-            " airport ",
-            " passenger ",
-            " seat "
+        let keywords = [
+            "flight",
+            "airline",
+            "terminal",
+            "gate",
+            "boarding",
+            "boarding time",
+            "check-in",
+            "check in",
+            "departure",
+            "departs",
+            "departs at",
+            "scheduled departure",
+            "arrival",
+            "arrives",
+            "airport",
+            "passenger",
+            "seat",
+            "bag drop",
+            "baggage",
+            "boarding pass"
         ]
 
-        var matches = 0
-
-        for keyword in keywordGroups where padded.contains(keyword) {
-            matches += 1
+        return keywords.reduce(into: 0) { total, keyword in
+            if lowered.contains(keyword) {
+                total += 1
+            }
         }
-
-        return matches
     }
 
     private func containsAirportRoute(in text: String) -> Bool {
         let upper = text.uppercased()
 
         let patterns = [
-            #"\b[A-Z]{3}\s?(->|→|-|/)\s?[A-Z]{3}\b"#,
-            #"\b[A-Z]{3}\s+TO\s+[A-Z]{3}\b"#
+            #"\b([A-Z]{3})\s?(->|→|–|—|-|/)\s?([A-Z]{3})\b"#,
+            #"\b([A-Z]{3})\s+TO\s+([A-Z]{3})\b"#
         ]
 
         for pattern in patterns {
@@ -400,8 +447,24 @@ final class CalendarFlightScanner {
             let nsText = upper as NSString
             let range = NSRange(location: 0, length: nsText.length)
 
-            if regex.firstMatch(in: upper, options: [], range: range) != nil {
-                return true
+            let matches = regex.matches(in: upper, options: [], range: range)
+
+            for match in matches {
+                if match.numberOfRanges >= 4 {
+                    let origin = nsText.substring(with: match.range(at: 1)).uppercased()
+                    let destination = nsText.substring(with: match.range(at: 3)).uppercased()
+
+                    if validAirportCodes.contains(origin), validAirportCodes.contains(destination) {
+                        return true
+                    }
+                } else if match.numberOfRanges >= 3 {
+                    let origin = nsText.substring(with: match.range(at: 1)).uppercased()
+                    let destination = nsText.substring(with: match.range(at: 2)).uppercased()
+
+                    if validAirportCodes.contains(origin), validAirportCodes.contains(destination) {
+                        return true
+                    }
+                }
             }
         }
 
@@ -415,18 +478,56 @@ final class CalendarFlightScanner {
             "british airways",
             "american airlines",
             "delta",
+            "delta air lines",
             "united",
+            "united airlines",
+            "southwest",
+            "jetblue",
+            "spirit",
+            "frontier",
+            "air canada",
+            "westjet",
             "lufthansa",
             "klm",
             "air france",
+            "swiss",
+            "iberia",
+            "tap air portugal",
+            "sas",
+            "finnair",
+            "ita airways",
+            "austrian",
             "easyjet",
+            "jet2",
             "ryanair",
             "virgin atlantic",
+            "vueling",
+            "wizz air",
+            "norwegian",
             "emirates",
-            "qatar airways"
+            "qatar airways",
+            "etihad",
+            "saudia",
+            "kuwait airways",
+            "oman air",
+            "flydubai",
+            "air arabia",
+            "singapore airlines",
+            "cathay pacific",
+            "all nippon airways",
+            "ana",
+            "japan airlines",
+            "jal",
+            "qantas",
+            "virgin australia",
+            "air new zealand",
+            "thai airways",
+            "malaysia airlines",
+            "garuda indonesia",
+            "airasia"
         ]
 
-        return airlines.contains(where: { lowered.contains($0) })
+        return airlines.contains(where: lowered.contains)
     }
 
     private func containsTerminalOrGate(in text: String) -> Bool {
@@ -443,10 +544,14 @@ final class CalendarFlightScanner {
             "departs at",
             "scheduled departure",
             "boarding",
-            "operated by"
+            "operated by",
+            "arrives",
+            "arrival",
+            "takeoff",
+            "take-off"
         ]
 
-        return phrases.contains(where: { lowered.contains($0) })
+        return phrases.contains(where: lowered.contains)
     }
 
     private func containsCheckInLanguage(in text: String) -> Bool {
@@ -463,12 +568,104 @@ final class CalendarFlightScanner {
             "board room",
             "conference room",
             "conference",
-            "room",
-            "slt",
+            "standup",
+            "stand-up",
             "office",
-            "leadership"
+            "leadership",
+            "review",
+            "sync",
+            "1:1",
+            "interview",
+            "agenda",
+            "project",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "call",
+            "teams",
+            "zoom"
         ]
 
-        return phrases.contains(where: { lowered.contains($0) })
+        return phrases.contains(where: lowered.contains)
     }
+
+    private func containsAirportName(in text: String) -> Bool {
+        let lowered = text.lowercased()
+
+        let airportNameHints = [
+            "heathrow",
+            "gatwick",
+            "stansted",
+            "luton",
+            "city airport",
+            "new york jfk",
+            "jfk",
+            "newark",
+            "laguardia",
+            "atlanta",
+            "schiphol",
+            "doha",
+            "charles de gaulle",
+            "frankfurt",
+            "munich",
+            "madrid",
+            "barcelona",
+            "lisbon",
+            "dublin",
+            "dubai",
+            "singapore",
+            "haneda",
+            "narita",
+            "los angeles",
+            "ohare",
+            "dallas fort worth"
+        ]
+
+        return airportNameHints.contains(where: lowered.contains)
+    }
+
+    private func containsLikelyTravelLocation(in text: String) -> Bool {
+        let lowered = text.lowercased()
+
+        let travelLocationHints = [
+            "airport",
+            "terminal",
+            "gate",
+            "departures",
+            "arrivals",
+            "check-in",
+            "check in"
+        ]
+
+        return travelLocationHints.contains(where: lowered.contains)
+    }
+
+    // MARK: - Models
+
+    private struct FlightNumberMatch {
+        let fullFlightNumber: String
+        let airlineCode: String
+        let matchedText: String
+    }
+
+    // MARK: - Lookup Data
+
+    private var validAirportCodes: Set<String> {
+        Set(AirportRegistry.airports.map { $0.airport.rawValue.uppercased() })
+    }
+
+    private let validAirlineIATACodes: Set<String> = [
+        // UK & Europe
+        "BA", "U2", "LS", "FR", "KL", "LH", "AF", "LX", "IB", "TP", "SK", "AY", "AZ", "OS",
+        "VY", "W6", "DY",
+
+        // North America
+        "AA", "DL", "UA", "WN", "B6", "NK", "F9", "AC", "WS",
+
+        // Middle East
+        "EK", "QR", "EY", "SV", "KU", "WY", "FZ", "G9",
+
+        // Asia-Pacific
+        "SQ", "CX", "NH", "JL", "QF", "VA", "NZ", "TG", "MH", "GA", "AK"
+    ]
 }
