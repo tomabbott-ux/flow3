@@ -23,7 +23,22 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
         guard let definition = AirportRegistry.definition(for: airport) else {
-            return fallbackEstimate(for: airport)
+            let fallback = fallbackEstimate(for: airport)
+            logResult(
+                airport: airport,
+                providerKind: .estimated,
+                outcome: "No registry definition, using fallback",
+                rows: fallback
+            )
+            return fallback
+        }
+
+        // DTW special handling:
+        // 1. official DTW provider
+        // 2. Delta News Hub fallback
+        // 3. static fallback rows
+        if airport == .dtw {
+            return try await fetchDTWWaitTimes()
         }
 
         do {
@@ -32,21 +47,89 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
             }
 
             if results.isEmpty {
-                switch definition.feedType {
-                case .estimated, .comingSoon, .live, .highConfidence:
-                    return fallbackEstimate(for: airport)
-                }
+                let fallback = fallbackEstimate(for: airport)
+                logResult(
+                    airport: airport,
+                    providerKind: definition.providerKind,
+                    outcome: "Primary returned empty, using fallback",
+                    rows: fallback
+                )
+                return fallback
             }
 
+            logResult(
+                airport: airport,
+                providerKind: definition.providerKind,
+                outcome: "Primary success",
+                rows: results
+            )
             return results
 
         } catch {
-            switch definition.feedType {
-            case .estimated, .comingSoon, .live, .highConfidence:
-                return fallbackEstimate(for: airport)
-            }
+            let fallback = fallbackEstimate(for: airport)
+            logResult(
+                airport: airport,
+                providerKind: definition.providerKind,
+                outcome: "Primary failed: \(error.localizedDescription). Using fallback",
+                rows: fallback
+            )
+            return fallback
         }
     }
+
+    // MARK: - DTW Special Handling
+
+    private func fetchDTWWaitTimes() async throws -> [WaitTimeEstimate] {
+        // First try official DTW provider
+        do {
+            let officialResults: [WaitTimeEstimate] = try await withTimeout(seconds: 8) {
+                try await DTWLiveWaitTimeProvider().fetchWaitTimes(for: .dtw)
+            }
+
+            if !officialResults.isEmpty {
+                logResult(
+                    airport: .dtw,
+                    providerKind: .dtw,
+                    outcome: "Primary success (official DTW feed)",
+                    rows: officialResults
+                )
+                return officialResults
+            }
+        } catch {
+            print("⚠️ DTW official feed failed:", error.localizedDescription)
+        }
+
+        // Second try Delta News Hub feed for DTW
+        do {
+            let deltaResults: [WaitTimeEstimate] = try await withTimeout(seconds: 8) {
+                try await deltaNewsHubProvider.fetchWaitTimes(for: .dtw)
+            }
+
+            if !deltaResults.isEmpty {
+                logResult(
+                    airport: .dtw,
+                    providerKind: .deltaNewsHub,
+                    outcome: "Recovered via Delta News Hub fallback",
+                    rows: deltaResults
+                )
+                return deltaResults
+            }
+        } catch {
+            print("⚠️ DTW Delta News Hub fallback failed:", error.localizedDescription)
+        }
+
+        // Final fallback
+        let fallback = fallbackEstimate(for: .dtw)
+        logResult(
+            airport: .dtw,
+            providerKind: .dtw,
+            outcome: "Official DTW feed failed and Delta fallback failed. Using static fallback",
+            rows: fallback
+        )
+        return fallback
+    }
+
+    // MARK: - Primary Fetch
 
     private func fetchPrimaryResults(for airport: FlowAirport, providerKind: AirportProviderKind) async throws -> [WaitTimeEstimate] {
         switch providerKind {
@@ -219,6 +302,8 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
         }
     }
 
+    // MARK: - Timeout
+
     private func timeoutSeconds(for providerKind: AirportProviderKind) -> TimeInterval {
         switch providerKind {
         case .jfk, .lhr, .ams, .ist, .syd:
@@ -248,6 +333,42 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
             return result
         }
     }
+
+    // MARK: - Logging
+
+    private func logResult(
+        airport: FlowAirport,
+        providerKind: AirportProviderKind,
+        outcome: String,
+        rows: [WaitTimeEstimate]
+    ) {
+        let sourceSummary = rows.map { row -> String in
+            let source: String
+
+            switch row.sourceType {
+            case .live:
+                source = "live"
+            case .predicted:
+                source = "predicted"
+            default:
+                source = "other"
+            }
+
+            let checkpoint = row.checkpointName ?? "—"
+            let area = row.areaName ?? "—"
+            return "\(checkpoint) / \(area) / \(source) / \(row.minutes)m"
+        }
+
+        if DebugFlags.airportFeeds {
+            print("🩺 WAIT TIME HEALTH CHECK")
+            print("   airport:", airport.rawValue)
+            print("   provider:", providerKind.rawValue)
+            print("   outcome:", outcome)
+            print("   rows:", sourceSummary)
+        }
+    }
+
+    // MARK: - Fallback
 
     private func fallbackEstimate(for airport: FlowAirport) -> [WaitTimeEstimate] {
         let now = Date()

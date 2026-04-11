@@ -34,7 +34,9 @@ final class DeltaNewsHubWaitTimeProvider: WaitTimeProviding {
     }
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
-        guard airport == .atl || airport == .msp else {
+
+
+        guard airport == .atl || airport == .msp || airport == .dtw else {
             throw ProviderError.unsupportedAirport
         }
 
@@ -43,21 +45,43 @@ final class DeltaNewsHubWaitTimeProvider: WaitTimeProviding {
         }
 
         guard let url = URL(string: "https://news.delta.com/airport-wait-times") else {
-            throw ProviderError.invalidURL
+throw ProviderError.invalidURL
         }
+
+        
 
         let html = try await fetchHTML(from: url)
         let now = Date()
+
+    
 
         let parsedRows: [ParsedRow]
         switch airport {
         case .atl:
             parsedRows = try parseATLRows(from: html)
+
         case .msp:
             parsedRows = try parseMSPRows(from: html)
+
+        case .dtw:
+            parsedRows = try parseDTWRows(from: html)
+
         default:
             parsedRows = []
         }
+
+      
+
+        let sourceType: WaitTimeSourceType = {
+            switch airport {
+            case .dtw:
+                return .live
+            case .atl, .msp:
+                return .predicted
+            default:
+                return .predicted
+            }
+        }()
 
         let results = parsedRows.map { row in
             WaitTimeEstimate(
@@ -68,7 +92,7 @@ final class DeltaNewsHubWaitTimeProvider: WaitTimeProviding {
                 observedAt: now,
                 checkpointName: row.checkpointName,
                 areaName: row.areaName,
-                sourceType: .predicted,
+                sourceType: sourceType,
                 isClosed: false
             )
         }
@@ -98,14 +122,19 @@ final class DeltaNewsHubWaitTimeProvider: WaitTimeProviding {
         let (data, response) = try await session.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
+           
             throw ProviderError.invalidHTML
         }
 
+ 
+
         guard (200...299).contains(http.statusCode) else {
+           
             throw ProviderError.badHTTPStatus(http.statusCode)
         }
 
         guard let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
+         
             throw ProviderError.invalidHTML
         }
 
@@ -271,6 +300,87 @@ final class DeltaNewsHubWaitTimeProvider: WaitTimeProviding {
         return lhsIndex < rhsIndex
     }
 
+    // MARK: - DTW
+
+    private func parseDTWRows(from html: String) throws -> [ParsedRow] {
+        let normalized = normalizeHTML(html)
+        print("🔎 DELTA trying to find DTW block")
+
+        let block = try airportBlock(for: "DTW", in: normalized)
+        print("✅ DELTA found DTW block, length:", block.count)
+
+        let rowMatches = matches(
+            pattern: #"<tr>\s*<td>\s*(.*?)\s*</td>\s*<td(?: class="([^"]*)")?>\s*(.*?)\s*</td>\s*<td>\s*(.*?)\s*</td>\s*</tr>"#,
+            in: block,
+            options: [.caseInsensitive, .dotMatchesLineSeparators]
+        )
+
+        print("🔎 DELTA DTW row matches:", rowMatches.count)
+
+        var rows: [ParsedRow] = []
+
+        for rowMatch in rowMatches {
+            let rawCheckpoint = decodeHTML(rowMatch[safe: 0] ?? "")
+            let rawWait = decodeHTML(rowMatch[safe: 2] ?? "")
+            let rawStatus = decodeHTML(rowMatch[safe: 3] ?? "")
+
+            print("🔎 DELTA DTW raw checkpoint:", rawCheckpoint, "| raw wait:", rawWait, "| raw status:", rawStatus)
+
+            guard let minutes = minutesFromText(rawWait) else { continue }
+
+            let checkpoint = normalizeDTWCheckpoint(rawCheckpoint)
+            let terminal = terminalFromDTWCheckpoint(checkpoint)
+            let queueType: QueueType = rawStatus.localizedCaseInsensitiveContains("precheck") ? .precheck : .general
+
+            rows.append(
+                ParsedRow(
+                    checkpointName: checkpoint,
+                    areaName: "Detroit",
+                    minutes: minutes,
+                    queueType: queueType,
+                    terminal: terminal
+                )
+            )
+        }
+
+        if rows.isEmpty {
+            print("❌ DELTA DTW parsed zero rows")
+        }
+
+        return rows.sorted(by: dtwSort)
+    }
+
+    private func normalizeDTWCheckpoint(_ text: String) -> String {
+        let value = cleanText(text)
+
+        switch value.lowercased() {
+        case "mcnamara":
+            return "McNamara"
+        case "evans":
+            return "Evans"
+        default:
+            return value
+        }
+    }
+
+    private func terminalFromDTWCheckpoint(_ checkpoint: String) -> Int? {
+        switch checkpoint.lowercased() {
+        case "evans":
+            return 1
+        case "mcnamara":
+            return 2
+        default:
+            return nil
+        }
+    }
+
+    private func dtwSort(_ lhs: ParsedRow, _ rhs: ParsedRow) -> Bool {
+        let order = ["Evans", "McNamara"]
+        let lhsIndex = order.firstIndex(of: lhs.checkpointName) ?? 999
+        let rhsIndex = order.firstIndex(of: rhs.checkpointName) ?? 999
+        return lhsIndex < rhsIndex
+    }
+
     // MARK: - Shared helpers
 
     private func airportBlock(for code: String, in html: String) throws -> String {
@@ -280,13 +390,17 @@ final class DeltaNewsHubWaitTimeProvider: WaitTimeProviding {
             options: [.caseInsensitive, .dotMatchesLineSeparators]
         )
 
+        print("🔎 DELTA airport blocks found:", blockMatches.count)
+
         for blockMatch in blockMatches {
             let block = blockMatch[safe: 0] ?? ""
             if block.localizedCaseInsensitiveContains("(\(code))") {
+                print("✅ DELTA matched airport block for:", code)
                 return block
             }
         }
 
+        print("❌ DELTA airport block not found for:", code)
         throw ProviderError.airportBlockNotFound
     }
 

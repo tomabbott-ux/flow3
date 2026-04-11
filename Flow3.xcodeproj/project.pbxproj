@@ -61,6 +61,7 @@
 		F84605DE2F86D1E6005E5B03 /* PendingCalendarFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605DD2F86D1E6005E5B03 /* PendingCalendarFlight.swift */; };
 		F84605E02F86DEB8005E5B03 /* LandingStore+CalendarFlights.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605DF2F86DEB8005E5B03 /* LandingStore+CalendarFlights.swift */; };
 		F84605E22F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605E12F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift */; };
+		F84605E52F8A4233005E5B03 /* DebugFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605E42F8A4233005E5B03 /* DebugFlags.swift */; };
 		F846E0872F82F11500997E61 /* FreeAirportConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0862F82F11500997E61 /* FreeAirportConfig.swift */; };
 		F846E0892F82F14800997E61 /* SubscriptionTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0882F82F14800997E61 /* SubscriptionTier.swift */; };
 		F846E08B2F82F17800997E61 /* FlowEntitlements.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E08A2F82F17800997E61 /* FlowEntitlements.swift */; };
@@ -264,6 +265,7 @@
 		F84605DD2F86D1E6005E5B03 /* PendingCalendarFlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingCalendarFlight.swift; sourceTree = "<group>"; };
 		F84605DF2F86DEB8005E5B03 /* LandingStore+CalendarFlights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LandingStore+CalendarFlights.swift"; sourceTree = "<group>"; };
 		F84605E12F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SYDLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F84605E42F8A4233005E5B03 /* DebugFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugFlags.swift; sourceTree = "<group>"; };
 		F846E0862F82F11500997E61 /* FreeAirportConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeAirportConfig.swift; sourceTree = "<group>"; };
 		F846E0882F82F14800997E61 /* SubscriptionTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
 		F846E08A2F82F17800997E61 /* FlowEntitlements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowEntitlements.swift; sourceTree = "<group>"; };
@@ -424,6 +426,14 @@
 			path = Calendar;
 			sourceTree = "<group>";
 		};
+		F84605E32F8A4219005E5B03 /* Debugs */ = {
+			isa = PBXGroup;
+			children = (
+				F84605E42F8A4233005E5B03 /* DebugFlags.swift */,
+			);
+			path = Debugs;
+			sourceTree = "<group>";
+		};
 		F846E0852F82F0D500997E61 /* Subscriptions */ = {
 			isa = PBXGroup;
 			children = (
@@ -463,6 +473,7 @@
 		F862F1A12F583923001666F2 /* Flow3 */ = {
 			isa = PBXGroup;
 			children = (
+				F84605E32F8A4219005E5B03 /* Debugs */,
 				F84605DA2F86C531005E5B03 /* Calendar */,
 				F846E0852F82F0D500997E61 /* Subscriptions */,
 				F80C80A92F77471E00C4DABC /* FlowWatchConnectivityManager.swift */,
@@ -1030,6 +1041,7 @@
 				F8DBD89E2F662EE900246968 /* SavedFlightStore.swift in Sources */,
 				F880517F2F60E64F005CF24F /* FavouriteAirports.swift in Sources */,
 				F822A8D62F5CE41D009F6107 /* SLCLiveWaitTimeProvider.swift in Sources */,
+				F84605E52F8A4233005E5B03 /* DebugFlags.swift in Sources */,
 				F8A4ABB52F644E2E003DDA0C /* FcoWaitTimeProvider.swift in Sources */,
 				F8796C9F2F6D708400040769 /* NotificationNames.swift in Sources */,
 				F862F1D32F5839B4001666F2 /* WaitTimeModels.swift in Sources */,

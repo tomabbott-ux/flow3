@@ -16,19 +16,25 @@ final class CalendarFlightScanner {
         if #available(iOS 17.0, *) {
             do {
                 let granted = try await eventStore.requestFullAccessToEvents()
-                print("📆 Calendar access granted:", granted)
+                if DebugFlags.calendar {
+                    print("📆 Calendar access granted:", granted)
+                }
                 return granted
             } catch {
-                print("📆 Calendar access failed:", error.localizedDescription)
+                if DebugFlags.calendar {
+                    print("📆 Calendar access failed:", error.localizedDescription)
+                }
                 return false
             }
         } else {
             return await withCheckedContinuation { continuation in
                 eventStore.requestAccess(to: .event) { granted, error in
-                    if let error {
+                    if DebugFlags.calendar, let error {
                         print("📆 Calendar access failed:", error.localizedDescription)
                     }
-                    print("📆 Calendar access granted:", granted)
+                    if DebugFlags.calendar {
+                        print("📆 Calendar access granted:", granted)
+                    }
                     continuation.resume(returning: granted)
                 }
             }
@@ -50,10 +56,12 @@ final class CalendarFlightScanner {
         let events = eventStore.events(matching: predicate)
             .filter { !$0.isAllDay }
 
-        print("📆 Calendar events found in range:", events.count)
+        if DebugFlags.calendar {
+            print("📆 Calendar events found in range:", events.count)
 
-        for event in events.prefix(20) {
-            print("📆 Event:", event.title ?? "(no title)", "| location:", event.location ?? "nil")
+            for event in events.prefix(20) {
+                print("📆 Event:", event.title ?? "(no title)", "| location:", event.location ?? "nil")
+            }
         }
 
         let scored: [(event: EKEvent, score: Int, flightNumber: String)] = events.compactMap { event in
@@ -61,7 +69,6 @@ final class CalendarFlightScanner {
             return (event: event, score: result.score, flightNumber: result.flightNumber)
         }
 
-        // Deduplicate by flight number and keep the best candidate
         var bestByFlightNumber: [String: (event: EKEvent, score: Int)] = [:]
 
         for item in scored {
@@ -83,10 +90,12 @@ final class CalendarFlightScanner {
             .map(\.event)
             .sorted { $0.startDate < $1.startDate }
 
-        print("✈️ Flight-like calendar matches:", matches.count)
+        if DebugFlags.calendar {
+            print("✈️ Flight-like calendar matches:", matches.count)
 
-        for match in matches {
-            print("✈️ Matched flight event:", match.title ?? "(no title)")
+            for match in matches {
+                print("✈️ Matched flight event:", match.title ?? "(no title)")
+            }
         }
 
         return matches
@@ -106,28 +115,35 @@ final class CalendarFlightScanner {
         guard !combined.isEmpty else { return nil }
 
         if containsHardExcludedPhrase(in: combined) {
-            print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: hard excluded phrase")
+            if DebugFlags.calendar {
+                print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: hard excluded phrase")
+            }
             return nil
         }
 
         if isCheckInOnlyEvent(combined) {
-            print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: check-in only event")
+            if DebugFlags.calendar {
+                print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: check-in only event")
+            }
             return nil
         }
 
         guard let flightNumber = extractLikelyFlightNumber(from: combined) else {
-            print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: no valid flight number")
+            if DebugFlags.calendar {
+                print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: no valid flight number")
+            }
             return nil
         }
 
         if looksLikeAirportRoomCode(flightNumber) {
-            print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: airport/room code false positive")
+            if DebugFlags.calendar {
+                print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: airport/room code false positive")
+            }
             return nil
         }
 
         var score = 0
 
-        // Strong positive: valid flight number
         score += 100
 
         if containsAirportRoute(in: combined) {
@@ -160,15 +176,19 @@ final class CalendarFlightScanner {
             score += 10
         }
 
-        print(
-            "🧪 Checking event:",
-            event.title ?? "(no title)",
-            "| flightNumber:", flightNumber,
-            "| score:", score
-        )
+        if DebugFlags.calendar {
+            print(
+                "🧪 Checking event:",
+                event.title ?? "(no title)",
+                "| flightNumber:", flightNumber,
+                "| score:", score
+            )
+        }
 
         guard score >= 70 else {
-            print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: score too low")
+            if DebugFlags.calendar {
+                print("🚫 Rejected event:", event.title ?? "(no title)", "| reason: score too low")
+            }
             return nil
         }
 
@@ -285,7 +305,9 @@ final class CalendarFlightScanner {
                 .replacingOccurrences(of: " ", with: "")
                 .uppercased()
 
-            print("🔎 Flight number candidate:", candidate)
+            if DebugFlags.calendar {
+                print("🔎 Flight number candidate:", candidate)
+            }
 
             if isLikelyRealFlightNumber(candidate) {
                 return candidate
@@ -318,7 +340,6 @@ final class CalendarFlightScanner {
     private func looksLikeAirportRoomCode(_ value: String) -> Bool {
         let cleaned = value.uppercased()
 
-        // Reject things like LHR2, JFK1, AMS3 where the prefix is an airport code
         let supportedCodes = Set(AirportRegistry.airports.map { $0.airport.rawValue.uppercased() })
 
         for code in supportedCodes {
