@@ -8,6 +8,7 @@ final class LandingStore: ObservableObject {
         static let defaultAirportCode = "flow_default_airport"
         static let lastSelectedAirportCode = "lastSelectedAirportCode"
         static let lastTrackedFlightRefreshAt = "flow_last_tracked_flight_refresh_at"
+        static let dismissedPendingCalendarFlightIDs = "flow_dismissed_pending_calendar_flight_ids"
     }
 
     // MARK: - Published state
@@ -42,14 +43,18 @@ final class LandingStore: ObservableObject {
     @Published var pendingCalendarFlights: [PendingCalendarFlight] = [] {
         didSet {
             rebuildAlerts()
-
+            
             if let reviewCalendarFlight,
                !pendingCalendarFlights.contains(where: { $0.id == reviewCalendarFlight.id }) {
                 self.reviewCalendarFlight = nil
             }
+            
+            if let selectedPendingCalendarFlightID,
+               !pendingCalendarFlights.contains(where: { $0.id == selectedPendingCalendarFlightID }) {
+                self.selectedPendingCalendarFlightID = nil
+            }
         }
     }
-
     // Legacy selection support
     @Published var selectedPendingCalendarFlightID: String?
 
@@ -62,14 +67,67 @@ final class LandingStore: ObservableObject {
         selectedPendingCalendarFlightID = nil
     }
 
+
     func setPendingCalendarFlights(_ flights: [PendingCalendarFlight]) {
-        pendingCalendarFlights = flights.sorted { $0.departureDate < $1.departureDate }
+        let filtered = flights
+            .filter { !isPendingCalendarFlightDismissed(id: $0.id) }
+            .sorted { $0.departureDate < $1.departureDate }
+
+        pendingCalendarFlights = filtered
     }
 
     func addPendingCalendarFlight(_ flight: PendingCalendarFlight) {
+        guard !isPendingCalendarFlightDismissed(id: flight.id) else { return }
         guard !pendingCalendarFlights.contains(where: { $0.id == flight.id }) else { return }
+
         pendingCalendarFlights.append(flight)
         pendingCalendarFlights.sort { $0.departureDate < $1.departureDate }
+    }
+
+    func dismissPendingCalendarFlight(withID id: String) {
+        var dismissed = dismissedPendingCalendarFlightIDs
+        dismissed.insert(id)
+        saveDismissedPendingCalendarFlightIDs(dismissed)
+
+        pendingCalendarFlights.removeAll { $0.id == id }
+
+        if selectedPendingCalendarFlightID == id {
+            selectedPendingCalendarFlightID = nil
+        }
+
+        if reviewCalendarFlight?.id == id {
+            reviewCalendarFlight = nil
+        }
+
+        rebuildAlerts()
+    }
+
+    func restoreDismissedPendingCalendarFlight(withID id: String) {
+        var dismissed = dismissedPendingCalendarFlightIDs
+        dismissed.remove(id)
+        saveDismissedPendingCalendarFlightIDs(dismissed)
+    }
+
+    func clearDismissedPendingCalendarFlights() {
+        saveDismissedPendingCalendarFlightIDs([])
+    }
+
+    private var dismissedPendingCalendarFlightIDs: Set<String> {
+        let stored = UserDefaults.standard.stringArray(
+            forKey: PreferenceKeys.dismissedPendingCalendarFlightIDs
+        ) ?? []
+        return Set(stored)
+    }
+
+    private func saveDismissedPendingCalendarFlightIDs(_ ids: Set<String>) {
+        UserDefaults.standard.set(
+            Array(ids),
+            forKey: PreferenceKeys.dismissedPendingCalendarFlightIDs
+        )
+    }
+
+    private func isPendingCalendarFlightDismissed(id: String) -> Bool {
+        dismissedPendingCalendarFlightIDs.contains(id)
     }
 
     // MARK: - Tracked Flight
@@ -92,6 +150,8 @@ final class LandingStore: ObservableObject {
             if reviewCalendarFlight?.id == matchedPending.id {
                 reviewCalendarFlight = nil
             }
+
+            dismissPendingCalendarFlight(withID: matchedPending.id)
         }
 
         if let departureAirport = trackedDepartureAirport(from: flight.route) {
@@ -176,6 +236,10 @@ final class LandingStore: ObservableObject {
         } else {
             self.selectedAirport = .atl
         }
+
+        pendingCalendarFlights = pendingCalendarFlights
+            .filter { !isPendingCalendarFlightDismissed(id: $0.id) }
+            .sorted { $0.departureDate < $1.departureDate }
 
         rebuildAlerts()
     }
@@ -696,7 +760,9 @@ final class LandingStore: ObservableObject {
     func rebuildAlerts() {
         var items: [FlowAlert] = []
 
-        for pending in pendingCalendarFlights.sorted(by: { $0.departureDate < $1.departureDate }) {
+        for pending in pendingCalendarFlights
+            .filter({ !isPendingCalendarFlightDismissed(id: $0.id) })
+            .sorted(by: { $0.departureDate < $1.departureDate }) {
             items.append(
                 FlowAlert(
                     kind: .calendarFlightDetected,

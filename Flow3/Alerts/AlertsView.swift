@@ -36,6 +36,15 @@ struct AlertsView: View {
                                 pendingCalendarCard(alert)
                             }
                             .buttonStyle(.plain)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                if let id = alert.relatedFlightID {
+                                    Button(role: .destructive) {
+                                        store.dismissPendingCalendarFlight(withID: id)
+                                    } label: {
+                                        Label("Dismiss", systemImage: "trash")
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -345,6 +354,14 @@ private extension AlertsView {
             )
         }
         .buttonStyle(.plain)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                store.clearTrackedFlight()
+                trackedFlightExpanded = false
+            } label: {
+                Label("Stop Tracking", systemImage: "xmark.circle")
+            }
+        }
     }
 
     var trackingPill: some View {
@@ -742,6 +759,7 @@ private extension AlertsView {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading) // ✅ THIS LINE FIXES IT
                 .padding(18)
                 .background(
                     RoundedRectangle(cornerRadius: 26)
@@ -751,9 +769,9 @@ private extension AlertsView {
                                 .stroke(Color.white.opacity(0.10), lineWidth: 1)
                         )
                 )
-
                 HStack(spacing: 10) {
                     Button {
+                        store.dismissPendingCalendarFlight(withID: pending.id)
                         selectedCalendarFlight = nil
                     } label: {
                         Text("Dismiss")
