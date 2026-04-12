@@ -4,42 +4,42 @@ struct LandingView: View {
     @ObservedObject var store: LandingStore
     @Binding var selectedTab: FlowRootView.FlowTab
     @EnvironmentObject private var subscriptionManager: SubscriptionManager
-
+    
     @AppStorage("flow_use_celsius")
     private var useCelsius: Bool = true
-
+    
     @State private var selectedRowID: String? = nil
     @State private var otherCheckpointsExpanded = false
     @State private var hasPerformedInitialLoad = false
     @State private var lastRefreshDate: Date? = nil
     @State private var isRefreshInFlight = false
-
+    
     private let refreshTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     private let autoRefreshInterval: TimeInterval = 60
-
+    
     private var displayRows: [AirportDisplayRow] {
         store.displayRowsForSelectedAirport()
     }
-
+    
     private var isSelectedAirportUnlocked: Bool {
         FlowEntitlements.canAccessAirport(
             airportCode: store.selectedAirport.rawValue,
             subscriptionTier: subscriptionManager.tier
         )
     }
-
+    
     private var preferredTrackedFlightRowID: String? {
         guard let trackedFlight = store.trackedFlight else { return nil }
         guard store.selectedAirport == trackedAirportIfKnown else { return nil }
-
+        
         if let routeID = trackedFlight.securityRouteID,
            let matchedByID = displayRows.first(where: { rowMatchesID($0, routeID) })?.id {
             return matchedByID
         }
-
+        
         let terminalText = trackedFlight.terminal
             .trimmingCharacters(in: .whitespacesAndNewlines)
-
+        
         if !terminalText.isEmpty {
             if let matchedByTerminal = displayRows.first(where: { row in
                 row.title.localizedCaseInsensitiveContains("Terminal \(terminalText)") ||
@@ -48,87 +48,80 @@ struct LandingView: View {
                 return matchedByTerminal
             }
         }
-
+        
         let title = trackedFlight.securityRouteTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         let subtitle = trackedFlight.securityRouteSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
-
+        
         guard !title.isEmpty else { return nil }
-
+        
         if subtitle.isEmpty {
             return displayRows.first(where: {
                 $0.title.caseInsensitiveCompare(title) == .orderedSame
             })?.id
         }
-
+        
         return displayRows.first(where: {
             $0.title.caseInsensitiveCompare(title) == .orderedSame &&
             $0.subtitle.caseInsensitiveCompare(subtitle) == .orderedSame
         })?.id
     }
-
+    
     private var trackedAirportIfKnown: FlowAirport? {
         store.trackedFlight == nil ? nil : store.selectedAirport
     }
-
+    
     private var selectedRow: AirportDisplayRow? {
         if let tracked = store.trackedFlight {
-            
             print("   routeID:", tracked.securityRouteID ?? "nil")
             print("   title:", tracked.securityRouteTitle)
             print("   subtitle:", tracked.securityRouteSubtitle)
             print("   selectedAirport:", store.selectedAirport.rawValue)
             print("   displayRows:", displayRows.map { "\($0.id) | \($0.title) | \($0.subtitle)" })
-        } else {
-        
         }
-
+        
         if let tracked = store.trackedFlight,
            let routeID = tracked.securityRouteID,
            let row = displayRows.first(where: { rowMatchesID($0, routeID) }) {
-            
             return row
         }
-
+        
         if let preferredTrackedFlightRowID,
            let trackedRow = displayRows.first(where: { rowMatchesID($0, preferredTrackedFlightRowID) }) {
-          
             return trackedRow
         }
-
+        
         if let selectedRowID,
            let row = displayRows.first(where: { rowMatchesID($0, selectedRowID) }) {
-            
             return row
         }
+        
         if let first = displayRows.first {
-            
             return first
         }
-
         
         return nil
     }
-
+    
     private var usesAverageWaitPresentation: Bool {
         AirportRegistry.definition(for: store.selectedAirport)?.feedType == .highConfidence
     }
-
+    
     private var confidenceLevel: FlowConfidenceLevel {
         guard let definition = AirportRegistry.definition(for: store.selectedAirport) else {
             return .comingSoon
         }
-
+        
         if store.selectedAirport == .lax {
             let selectedRows = store.displayRowsForSelectedAirport()
             let selectedRow = selectedRows.first(where: { rowMatchesID($0, selectedRowID) }) ?? selectedRows.first
-
+            
             if selectedRow?.title == "Terminal B" {
                 return .live
             } else {
                 return .highConfidence
             }
         }
-
+        
         switch definition.feedType {
         case .live:
             return .live
@@ -140,44 +133,76 @@ struct LandingView: View {
             return .comingSoon
         }
     }
-
+    
     private var secondaryCheckpointRows: [AirportDisplayRow] {
         guard let primary = selectedRow else {
             return displayRows
         }
-
+        
         return displayRows.filter { !rowMatchesID($0, primary.id) }
     }
-
+    
     private var hasTrackedFlight: Bool {
         store.trackedFlight != nil
     }
-
+    
+    private var displayAirportCode: String {
+        if let flight = store.trackedFlight {
+            return flight.route
+                .components(separatedBy: "→")
+                .first?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .uppercased() ?? store.selectedAirport.rawValue
+        }
+        
+        return store.selectedAirport.rawValue
+    }
+    private var trackedFlightUsesFlowAirport: Bool {
+        guard let trackedFlight = store.trackedFlight else { return false }
+        
+        let departureCode = trackedFlight.route
+            .components(separatedBy: "→")
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased() ?? ""
+        
+        return AirportRegistry.airports.contains {
+            $0.airport.rawValue.caseInsensitiveCompare(departureCode) == .orderedSame
+        }
+    }
+    
+    private var shouldShowTrackedSecurityUI: Bool {
+        hasTrackedFlight && trackedFlightUsesFlowAirport
+    }
+    
     private var isLoadingCurrentAirport: Bool {
         store.allWaitTimes()
             .filter { $0.airport == store.selectedAirport }
             .isEmpty
     }
-
+    
     var body: some View {
         ZStack {
             FlowBrand.backgroundGradient
                 .ignoresSafeArea()
-
+            
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
                     airportSelectorPill
                     headerSection
-
+                    
                     if isSelectedAirportUnlocked {
                         weatherRow
-
+                        
                         if store.trackedFlight != nil {
                             TrackedFlightPill(store: store)
                         }
-
-                        securityHero
-                        checkpointsSection
+                        
+                        if shouldShowTrackedSecurityUI || store.trackedFlight == nil {
+                            securityHero
+                            checkpointsSection
+                        }
+                        
                         errorSection
                     } else {
                         lockedAirportView
@@ -193,9 +218,9 @@ struct LandingView: View {
         .task {
             guard !hasPerformedInitialLoad else { return }
             hasPerformedInitialLoad = true
-
+            
             guard isSelectedAirportUnlocked else { return }
-
+            
             Task {
                 await refreshNow(
                     prefetchNeighbors: false,
@@ -210,9 +235,9 @@ struct LandingView: View {
             print("   trackedFlight title:", store.trackedFlight?.securityRouteTitle ?? "nil")
             print("   trackedFlight subtitle:", store.trackedFlight?.securityRouteSubtitle ?? "nil")
             print("   displayRows at appear:", displayRows.map { "\($0.id) | \($0.title) | \($0.subtitle)" })
-
+            
             syncSelectedRowWithTrackedFlight()
-
+            
             Task {
                 await FlowNotificationManager.shared.requestPermission()
             }
@@ -222,7 +247,7 @@ struct LandingView: View {
             guard hasPerformedInitialLoad else { return }
             guard !isRefreshInFlight else { return }
             guard let lastRefreshDate else { return }
-
+            
             if now.timeIntervalSince(lastRefreshDate) >= autoRefreshInterval {
                 Task {
                     await refreshNow(
@@ -235,9 +260,9 @@ struct LandingView: View {
         .onChange(of: store.selectedAirport) {
             otherCheckpointsExpanded = false
             selectedRowID = nil
-
+            
             guard isSelectedAirportUnlocked else { return }
-
+            
             Task {
                 await refreshNow(
                     prefetchNeighbors: false,
@@ -262,7 +287,7 @@ struct LandingView: View {
         }
         .onChange(of: subscriptionManager.tier) { _, _ in
             guard isSelectedAirportUnlocked else { return }
-
+            
             Task {
                 await refreshNow(
                     prefetchNeighbors: false,
@@ -271,36 +296,36 @@ struct LandingView: View {
             }
         }
     }
-
+    
     private func refreshNow(
         prefetchNeighbors: Bool,
         shouldRefreshTrackedFlight: Bool
     ) async {
         guard isSelectedAirportUnlocked else { return }
         guard !isRefreshInFlight else { return }
-
+        
         isRefreshInFlight = true
         defer { isRefreshInFlight = false }
-
+        
         await store.refresh(
             prefetchNeighbors: prefetchNeighbors,
             shouldRefreshTrackedFlight: shouldRefreshTrackedFlight
         )
-
+        
         lastRefreshDate = Date()
-
+        
         let latestRows = store.displayRowsForSelectedAirport()
-      
+        
         print("   selectedAirport:", store.selectedAirport.rawValue)
         print("   tracked routeID:", store.trackedFlight?.securityRouteID ?? "nil")
         print("   latestRows:", latestRows.map { "\($0.id) | \($0.title) | \($0.subtitle)" })
-
+        
         if let preferredTrackedFlightRowID,
            let matchedPreferred = latestRows.first(where: { rowMatchesID($0, preferredTrackedFlightRowID) }) {
             selectedRowID = matchedPreferred.id
             return
         }
-
+        
         if let selectedRowID,
            let matchedSelected = latestRows.first(where: { rowMatchesID($0, selectedRowID) }) {
             self.selectedRowID = matchedSelected.id
@@ -308,20 +333,20 @@ struct LandingView: View {
             self.selectedRowID = latestRows.first?.id
         }
     }
-
+    
     private func syncSelectedRowWithTrackedFlight() {
         if let preferredTrackedFlightRowID {
             selectedRowID = preferredTrackedFlightRowID
             return
         }
-
+        
         guard let trackedFlight = store.trackedFlight else { return }
-
+        
         let terminalText = trackedFlight.terminal
             .trimmingCharacters(in: .whitespacesAndNewlines)
-
+        
         guard !terminalText.isEmpty else { return }
-
+        
         if let matchedTerminalRow = displayRows.first(where: { row in
             row.title.localizedCaseInsensitiveContains("Terminal \(terminalText)") ||
             row.subtitle.localizedCaseInsensitiveContains("Terminal \(terminalText)")
@@ -329,29 +354,28 @@ struct LandingView: View {
             selectedRowID = matchedTerminalRow.id
         }
     }
-
+    
     private func normalizedRowID(_ value: String?) -> String? {
         guard let value else { return nil }
-
+        
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
-
+        
         let parts = trimmed
             .components(separatedBy: "|")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-
+        
         if parts.count <= 1 {
             return parts.first
         }
-
+        
         return parts.joined(separator: "|")
     }
-
+    
     private func rowMatchesID(_ row: AirportDisplayRow, _ id: String?) -> Bool {
         normalizedRowID(row.id) == normalizedRowID(id)
     }
 }
-
 // MARK: - Top Pill
 
 private extension LandingView {
@@ -393,7 +417,7 @@ private extension LandingView {
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .center, spacing: 10) {
-                Text(store.selectedAirport.rawValue)
+                Text(displayAirportCode)
                     .font(.system(size: 34, weight: .heavy))
                     .foregroundColor(.white)
 
@@ -591,6 +615,32 @@ private extension LandingView {
 
 private extension LandingView {
 
+    var displayAirportCodeForHeader: String {
+        if let flight = store.trackedFlight {
+            return flight.route
+                .components(separatedBy: "→")
+                .first?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .uppercased() ?? store.selectedAirport.rawValue
+        }
+
+        return store.selectedAirport.rawValue
+    }
+
+    func timeZoneForDisplayAirport() -> TimeZone {
+        if let flowAirport = AirportRegistry.airports
+            .map(\.airport)
+            .first(where: { $0.rawValue.caseInsensitiveCompare(displayAirportCodeForHeader) == .orderedSame }) {
+            return flowAirport.timeZone
+        }
+
+        if displayAirportCodeForHeader == "PER" {
+            return TimeZone(identifier: "Australia/Perth") ?? store.selectedAirport.timeZone
+        }
+
+        return store.selectedAirport.timeZone
+    }
+
     var weatherRow: some View {
         HStack(spacing: 12) {
             weatherSection
@@ -670,16 +720,20 @@ private extension LandingView {
 
     func timeString(for date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.timeZone = store.selectedAirport.timeZone
+        formatter.timeZone = timeZoneForDisplayAirport()
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: date)
     }
 
     var timeZoneAbbreviation: String {
-        store.selectedAirport.timeZone.abbreviation() ?? ""
+        timeZoneForDisplayAirport().abbreviation() ?? ""
     }
 
     var weatherTemperatureLine: String {
+        if displayAirportCodeForHeader != store.selectedAirport.rawValue {
+            return "—"
+        }
+
         guard let weather = store.weather else { return "—" }
 
         if useCelsius {
@@ -691,6 +745,10 @@ private extension LandingView {
     }
 
     var weatherConditionLine: String {
+        if displayAirportCodeForHeader != store.selectedAirport.rawValue {
+            return "Live weather unavailable"
+        }
+
         guard let weather = store.weather else { return "--" }
 
         let cond = weather.summary.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -698,6 +756,10 @@ private extension LandingView {
     }
 
     var weatherSymbolName: String {
+        if displayAirportCodeForHeader != store.selectedAirport.rawValue {
+            return "cloud.sun.fill"
+        }
+
         let s = (store.weather?.summary ?? "").lowercased()
 
         if s.contains("thunder") || s.contains("storm") { return "cloud.bolt.rain.fill" }
@@ -723,33 +785,36 @@ private extension LandingView {
         return "cloud.sun.fill"
     }
 }
-
 // MARK: - Security Hero
 
 private extension LandingView {
 
     var securityHero: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(hasTrackedFlight ? "Your Security Checkpoint" : "Security wait")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(.white)
+        Group {
+            if !hasTrackedFlight || trackedFlightUsesFlowAirport {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text(hasTrackedFlight ? "Your Security Checkpoint" : "Security wait")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
 
-                Spacer()
+                        Spacer()
 
-                refreshButton
-                statusBadge
+                        refreshButton
+                        statusBadge
+                    }
+
+                    heroCard
+
+                    if hasTrackedFlight, let row = selectedRow, !isLoadingCurrentAirport {
+                        trackedCheckpointSummary(for: row)
+                    }
+
+                    updatedRelativeTextView
+                }
+                .flowGlassCard()
             }
-
-            heroCard
-
-            if hasTrackedFlight, let row = selectedRow, !isLoadingCurrentAirport {
-                trackedCheckpointSummary(for: row)
-            }
-
-            updatedRelativeTextView
         }
-        .flowGlassCard()
     }
 
     var updatedRelativeTextView: some View {
@@ -927,6 +992,7 @@ private extension LandingView {
                             }
                         }
                     }
+
                     if usesAverageWaitPresentation {
                         Text("Average wait time")
                             .font(.system(size: 12, weight: .semibold))
@@ -963,10 +1029,10 @@ private extension LandingView {
             }
         }
     }
+
     @ViewBuilder
     func heroMetric(value: Int?, label: String) -> some View {
         VStack(spacing: 6) {
-
             if let value, value == 0 {
                 HStack(spacing: 6) {
                     LivePulseDot()
@@ -977,7 +1043,6 @@ private extension LandingView {
                 }
             } else {
                 HStack(alignment: .lastTextBaseline, spacing: 6) {
-
                     Text(value == nil ? "--" : "\(value!)")
                         .font(.system(size: 48, weight: .heavy))
                         .foregroundColor(.white)
@@ -996,6 +1061,7 @@ private extension LandingView {
                 .foregroundColor(.white.opacity(0.75))
         }
     }
+
     func trackedCheckpointSummary(for row: AirportDisplayRow) -> some View {
         HStack(spacing: 12) {
             summaryChip(title: "Checkpoint", value: row.title)

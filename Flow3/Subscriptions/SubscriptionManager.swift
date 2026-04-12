@@ -116,28 +116,13 @@ final class SubscriptionManager: ObservableObject {
             isRefreshingEntitlements = false
         }
 
-        // Simulator unlock for local Xcode testing
+        // Simulator unlock for local Xcode testing only
         if isSimulator {
-          
             applyEntitlementState(
                 hasPro: true,
                 productID: Constants.yearlyProductID,
                 expirationDate: .distantFuture
             )
-
-            return
-        }
-
-        // TestFlight unlock for testers
-        if isTestFlight {
-            
-
-            applyEntitlementState(
-                hasPro: true,
-                productID: Constants.yearlyProductID,
-                expirationDate: .distantFuture
-            )
-
             return
         }
 
@@ -244,7 +229,7 @@ final class SubscriptionManager: ObservableObject {
     func restorePurchases() async {
         lastErrorMessage = nil
 
-        if isSimulator || isTestFlight {
+        if isSimulator {
             await refreshEntitlements()
             return
         }

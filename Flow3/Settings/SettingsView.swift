@@ -3,8 +3,8 @@ import SwiftUI
 struct SettingsView: View {
 
     @EnvironmentObject private var store: LandingStore
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
-
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
+    
     @AppStorage("flow_default_airport") private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
     @AppStorage("flow_use_24h_time") private var use24HourTime: Bool = true
     @AppStorage("flow_use_celsius") private var useCelsius: Bool = true
@@ -56,9 +56,7 @@ struct SettingsView: View {
                 .padding(.bottom, 30)
             }
         }
-        .task {
-            await subscriptionManager.initialize()
-        }
+
         .sheet(isPresented: $showSubscriptionSheet) {
             SubscriptionSheetView()
         }

@@ -4,8 +4,7 @@ import StoreKit
 struct SubscriptionSheetView: View {
 
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
-
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
     var body: some View {
         NavigationStack {
             ZStack {
@@ -40,9 +39,6 @@ struct SubscriptionSheetView: View {
                     }
                     .foregroundColor(.white)
                 }
-            }
-            .task {
-                await subscriptionManager.initialize()
             }
         }
     }

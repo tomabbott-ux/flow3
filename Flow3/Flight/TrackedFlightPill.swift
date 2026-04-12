@@ -12,7 +12,12 @@ struct TrackedFlightPill: View {
     private let refreshTimer = Timer.publish(every: 120, on: .main, in: .common).autoconnect()
 
     private var availableRoutes: [SecurityRouteOption] {
-        store.availableSecurityRoutes(for: store.selectedAirport)
+        guard let flight = store.trackedFlight,
+              let airport = flowAirport(for: flight) else {
+            return []
+        }
+
+        return store.availableSecurityRoutes(for: airport)
     }
 
     var body: some View {
@@ -41,13 +46,15 @@ struct TrackedFlightPill: View {
                     isPresented: $showingRoutePicker,
                     titleVisibility: .visible
                 ) {
-                    Button("Auto") {
-                        store.setTrackedFlightSecurityRoute(nil)
-                    }
+                    if usesFlowAirport(flight) {
+                        Button("Auto") {
+                            store.setTrackedFlightSecurityRoute(nil)
+                        }
 
-                    ForEach(availableRoutes) { route in
-                        Button(routePickerTitle(for: route)) {
-                            store.setTrackedFlightSecurityRoute(route.id)
+                        ForEach(availableRoutes) { route in
+                            Button(routePickerTitle(for: route)) {
+                                store.setTrackedFlightSecurityRoute(route.id)
+                            }
                         }
                     }
 
@@ -187,12 +194,14 @@ struct TrackedFlightPill: View {
 
             HStack(spacing: 6) {
                 Image(systemName: "building.2")
-                Text(displayTerminalCompact(flight.terminal))
+                Text(displayTerminalCompact(flight.terminal, for: flight))
             }
 
-            HStack(spacing: 6) {
-                Image(systemName: "suitcase")
-                Text(securityRouteSummary(for: flight))
+            if usesFlowAirport(flight) {
+                HStack(spacing: 6) {
+                    Image(systemName: "suitcase")
+                    Text(securityRouteSummary(for: flight))
+                }
             }
 
             Spacer()
@@ -208,7 +217,7 @@ struct TrackedFlightPill: View {
 
             infoRow("Airline", flight.airline)
             infoRow("Status", displayStatus(for: flight))
-            infoRow("Terminal", displayTerminalExpanded(flight.terminal))
+            infoRow("Terminal", displayTerminalExpanded(flight.terminal, for: flight))
             infoRow("Gate", displayGateExpanded(flight.gate))
             infoRow("Departure", timeString(flight.departureTime))
             infoRow("Leave at", timeString(flight.leaveTime))
@@ -217,27 +226,40 @@ struct TrackedFlightPill: View {
             Divider()
                 .overlay(Color.white.opacity(0.10))
 
-            infoRow("Security route", securityRouteValueText(for: flight))
+            if usesFlowAirport(flight) {
+                infoRow("Security route", securityRouteValueText(for: flight))
 
-            Text(flight.securityRouteDetail)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.white.opacity(0.68))
+                Text(flight.securityRouteDetail)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.68))
 
-            Button {
-                showingRoutePicker = true
-            } label: {
-                Text("Change checkpoint")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                Button {
+                    showingRoutePicker = true
+                } label: {
+                    Text("Change checkpoint")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                .buttonStyle(.plain)
+
+                Divider()
+                    .overlay(Color.white.opacity(0.10))
+
+                infoRow("Journey time", "\(flight.travelMinutes)m")
+                infoRow("Security wait", "\(flight.securityMinutes)m")
+                infoRow("Airport buffer", "\(flight.airportBufferMinutes)m")
+            } else {
+                infoRow("Journey time", "\(flight.travelMinutes)m")
+                infoRow("Airport buffer", "\(flight.airportBufferMinutes)m")
+                infoRow("Security", "Not supported")
+
+                Text("Flow does not yet provide checkpoint timing for this airport. Leave planning uses your travel time and standard buffers only.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.68))
+
+                Divider()
+                    .overlay(Color.white.opacity(0.10))
             }
-            .buttonStyle(.plain)
-
-            Divider()
-                .overlay(Color.white.opacity(0.10))
-
-            infoRow("Journey time", "\(flight.travelMinutes)m")
-            infoRow("Security wait", "\(flight.securityMinutes)m")
-            infoRow("Airport buffer", "\(flight.airportBufferMinutes)m")
 
             if flight.bagBufferMinutes > 0 {
                 infoRow("Bag drop buffer", "\(flight.bagBufferMinutes)m")
@@ -287,6 +309,30 @@ struct TrackedFlightPill: View {
             }
             .padding(.top, 4)
         }
+    }
+
+    private func usesFlowAirport(_ flight: TrackedFlight) -> Bool {
+        let code = departureAirportCode(for: flight)
+
+        return AirportRegistry.airports.contains {
+            $0.airport.rawValue.caseInsensitiveCompare(code) == .orderedSame
+        }
+    }
+
+    private func departureAirportCode(for flight: TrackedFlight) -> String {
+        flight.route
+            .components(separatedBy: "→")
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased() ?? ""
+    }
+
+    private func flowAirport(for flight: TrackedFlight) -> FlowAirport? {
+        let code = departureAirportCode(for: flight)
+
+        return AirportRegistry.airports
+            .map(\.airport)
+            .first(where: { $0.rawValue.caseInsensitiveCompare(code) == .orderedSame })
     }
 
     private func securityRouteValueText(for flight: TrackedFlight) -> String {
@@ -414,12 +460,20 @@ struct TrackedFlightPill: View {
         }
     }
 
-    private func displayTerminalCompact(_ terminal: String) -> String {
-        AirportTerminalFormatter.compactName(for: store.selectedAirport, rawTerminal: terminal)
+    private func displayTerminalCompact(_ terminal: String, for flight: TrackedFlight) -> String {
+        if let airport = flowAirport(for: flight) {
+            return AirportTerminalFormatter.compactName(for: airport, rawTerminal: terminal)
+        }
+
+        return cleanedText(terminal) ?? "TBD"
     }
 
-    private func displayTerminalExpanded(_ terminal: String) -> String {
-        AirportTerminalFormatter.displayName(for: store.selectedAirport, rawTerminal: terminal)
+    private func displayTerminalExpanded(_ terminal: String, for flight: TrackedFlight) -> String {
+        if let airport = flowAirport(for: flight) {
+            return AirportTerminalFormatter.displayName(for: airport, rawTerminal: terminal)
+        }
+
+        return cleanedText(terminal) ?? "TBD"
     }
 
     private func displayGateExpanded(_ gate: String?) -> String {

@@ -6,6 +6,7 @@ enum TravelTimeServiceError: LocalizedError {
     case permissionDenied
     case locationUnavailable
     case routeUnavailable
+    case airportLookupFailed
 
     var errorDescription: String? {
         switch self {
@@ -15,6 +16,8 @@ enum TravelTimeServiceError: LocalizedError {
             return "Could not get your current location."
         case .routeUnavailable:
             return "Directions not available."
+        case .airportLookupFailed:
+            return "Could not find that airport location."
         }
     }
 }
@@ -31,24 +34,12 @@ final class TravelTimeService: NSObject, CLLocationManagerDelegate {
     }
 
     func drivingMinutes(to airport: FlowAirport) async throws -> Int {
-        let userCoordinate = try await currentLocationCoordinate(fallbackAirport: airport)
+        try await drivingMinutes(to: airport.coordinate, fallbackAirport: airport)
+    }
 
-        let request = MKDirections.Request()
-        request.source = MKMapItem(
-            placemark: MKPlacemark(coordinate: userCoordinate)
-        )
-        request.destination = MKMapItem(
-            placemark: MKPlacemark(coordinate: airport.coordinate)
-        )
-        request.transportType = .automobile
-
-        let response = try await MKDirections(request: request).calculate()
-
-        guard let route = response.routes.first else {
-            throw TravelTimeServiceError.routeUnavailable
-        }
-
-        return Int(ceil(route.expectedTravelTime / 60.0))
+    func drivingMinutes(toAirportCode airportCode: String) async throws -> Int {
+        let destinationCoordinate = try await resolveAirportCoordinate(for: airportCode)
+        return try await drivingMinutes(to: destinationCoordinate, fallbackAirport: nil)
     }
 
     func nearestAirport(from airports: [FlowAirport]) async throws -> FlowAirport {
@@ -68,6 +59,83 @@ final class TravelTimeService: NSObject, CLLocationManagerDelegate {
 
     func currentLocationCoordinate() async throws -> CLLocationCoordinate2D {
         try await currentLocationCoordinate(fallbackAirport: nil)
+    }
+
+    private func drivingMinutes(
+        to destinationCoordinate: CLLocationCoordinate2D,
+        fallbackAirport: FlowAirport?
+    ) async throws -> Int {
+        let userCoordinate = try await currentLocationCoordinate(fallbackAirport: fallbackAirport)
+
+        let request = MKDirections.Request()
+        request.source = MKMapItem(
+            placemark: MKPlacemark(coordinate: userCoordinate)
+        )
+        request.destination = MKMapItem(
+            placemark: MKPlacemark(coordinate: destinationCoordinate)
+        )
+        request.transportType = .automobile
+
+        let response = try await MKDirections(request: request).calculate()
+
+        guard let route = response.routes.first else {
+            throw TravelTimeServiceError.routeUnavailable
+        }
+
+        return Int(ceil(route.expectedTravelTime / 60.0))
+    }
+
+    private func resolveAirportCoordinate(for airportCode: String) async throws -> CLLocationCoordinate2D {
+        let cleanedCode = airportCode
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+
+        guard !cleanedCode.isEmpty else {
+            throw TravelTimeServiceError.airportLookupFailed
+        }
+
+        let queries = [
+            "\(cleanedCode) airport",
+            "\(cleanedCode) international airport",
+            "\(cleanedCode) terminal"
+        ]
+
+        for query in queries {
+            let request = MKLocalSearch.Request()
+            request.naturalLanguageQuery = query
+
+            let response = try await MKLocalSearch(request: request).start()
+
+            if let best = bestAirportMatch(from: response.mapItems, airportCode: cleanedCode) {
+                return best.placemark.coordinate
+            }
+
+            if let first = response.mapItems.first {
+                return first.placemark.coordinate
+            }
+        }
+
+        throw TravelTimeServiceError.airportLookupFailed
+    }
+
+    private func bestAirportMatch(from items: [MKMapItem], airportCode: String) -> MKMapItem? {
+        let upperCode = airportCode.uppercased()
+
+        if let directCodeMatch = items.first(where: { item in
+            let name = item.name?.uppercased() ?? ""
+            let title = item.placemark.title?.uppercased() ?? ""
+            return name.contains(upperCode) || title.contains(upperCode)
+        }) {
+            return directCodeMatch
+        }
+
+        if let airportPOI = items.first(where: { item in
+            item.pointOfInterestCategory == .airport
+        }) {
+            return airportPOI
+        }
+
+        return items.first
     }
 
     private func currentLocationCoordinate(fallbackAirport: FlowAirport?) async throws -> CLLocationCoordinate2D {

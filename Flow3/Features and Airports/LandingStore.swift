@@ -600,10 +600,12 @@ final class LandingStore: ObservableObject {
         }
 
         do {
+            let lookupAirportCode = trackedDepartureAirportCode(from: current.route)
+
             let refreshedFlight = try await flightLookupService.lookupFlight(
                 flightNumber: current.flightNumber,
                 date: current.departureTime,
-                airportIATA: selectedAirport.rawValue
+                airportIATA: lookupAirportCode
             )
 
             if isFlightFinishedStatus(refreshedFlight.status) {
@@ -613,9 +615,19 @@ final class LandingStore: ObservableObject {
                 return
             }
 
+            let departureAirportCode = refreshedFlight.originIATA
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .uppercased()
+
+            let supportedDepartureAirport = flowAirport(from: departureAirportCode)
+
             let travelMinutes: Int
             do {
-                travelMinutes = try await travelTimeService.drivingMinutes(to: selectedAirport)
+                if let supportedDepartureAirport {
+                    travelMinutes = try await travelTimeService.drivingMinutes(to: supportedDepartureAirport)
+                } else {
+                    travelMinutes = try await travelTimeService.drivingMinutes(toAirportCode: departureAirportCode)
+                }
             } catch {
                 travelMinutes = current.travelMinutes
             }
@@ -624,16 +636,21 @@ final class LandingStore: ObservableObject {
                 ? current.securityRouteID
                 : nil
 
-            let securitySelection = plannerSecuritySelection(
-                for: selectedAirport,
-                flightTerminal: refreshedFlight.terminal,
-                preferredRouteID: preferredRouteID
-            )
+            let securitySelection: PlannerSecuritySelection? = {
+                guard let supportedDepartureAirport else { return nil }
+                return plannerSecuritySelection(
+                    for: supportedDepartureAirport,
+                    flightTerminal: refreshedFlight.terminal,
+                    preferredRouteID: preferredRouteID
+                )
+            }()
 
-            let routeClosed =
-                current.securityRouteMode == .manual &&
+            let routeClosed: Bool = {
+                guard let securitySelection else { return false }
+                return current.securityRouteMode == .manual &&
                 preferredRouteID != nil &&
                 securitySelection.option.id != preferredRouteID
+            }()
 
             let securityMinutes: Int
             let securityRouteMode: SecurityRouteMode
@@ -643,26 +660,36 @@ final class LandingStore: ObservableObject {
             let securityRouteDetail: String
             let securityRouteIsPreCheckOnly: Bool
 
-            if routeClosed {
-                securityMinutes = current.securityMinutes
-                securityRouteMode = current.securityRouteMode
-                securityRouteID = current.securityRouteID
-                securityRouteTitle = current.securityRouteTitle
-                securityRouteSubtitle = current.securityRouteSubtitle
-                securityRouteDetail = current.securityRouteDetail
-                securityRouteIsPreCheckOnly = current.securityRouteIsPreCheckOnly
+            if let securitySelection {
+                if routeClosed {
+                    securityMinutes = current.securityMinutes
+                    securityRouteMode = current.securityRouteMode
+                    securityRouteID = current.securityRouteID
+                    securityRouteTitle = current.securityRouteTitle
+                    securityRouteSubtitle = current.securityRouteSubtitle
+                    securityRouteDetail = current.securityRouteDetail
+                    securityRouteIsPreCheckOnly = current.securityRouteIsPreCheckOnly
+                } else {
+                    securityMinutes = max(0, securitySelection.option.minutes)
+                    securityRouteMode = securitySelection.mode
+                    securityRouteID = securitySelection.mode == .manual
+                        ? securitySelection.option.id
+                        : nil
+                    securityRouteTitle = securitySelection.option.title
+                    securityRouteSubtitle = securitySelection.option.subtitle
+                    securityRouteDetail = securitySelection.mode == .manual
+                        ? "\(securitySelection.option.detail) · Chosen by you"
+                        : securitySelection.option.detail
+                    securityRouteIsPreCheckOnly = securitySelection.option.isPreCheckOnly
+                }
             } else {
-                securityMinutes = max(0, securitySelection.option.minutes)
-                securityRouteMode = securitySelection.mode
-                securityRouteID = securitySelection.mode == .manual
-                    ? securitySelection.option.id
-                    : nil
-                securityRouteTitle = securitySelection.option.title
-                securityRouteSubtitle = securitySelection.option.subtitle
-                securityRouteDetail = securitySelection.mode == .manual
-                    ? "\(securitySelection.option.detail) · Chosen by you"
-                    : securitySelection.option.detail
-                securityRouteIsPreCheckOnly = securitySelection.option.isPreCheckOnly
+                securityMinutes = 0
+                securityRouteMode = .auto
+                securityRouteID = nil
+                securityRouteTitle = ""
+                securityRouteSubtitle = ""
+                securityRouteDetail = "Security checkpoint timing is not available for this airport."
+                securityRouteIsPreCheckOnly = false
             }
 
             let plan = DeparturePlanner.makePlan(
@@ -754,7 +781,6 @@ final class LandingStore: ObservableObject {
             // Flight API throttling / fallback behavior is handled inside the lookup service.
         }
     }
-
     // MARK: - Alerts
 
     func rebuildAlerts() {

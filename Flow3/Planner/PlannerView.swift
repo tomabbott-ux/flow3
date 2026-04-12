@@ -47,6 +47,10 @@ struct PlannerView: View {
 
                 if let flight = flightLookupResult, useFlightNumber {
                     flightFoundCard(flight)
+
+                    if !flightUsesSupportedFlowAirport(flight) {
+                        unsupportedAirportCard(flight)
+                    }
                 }
 
                 bagToggleCard
@@ -55,6 +59,7 @@ struct PlannerView: View {
                 if !useFlightNumber {
                     actionButton
                 }
+
                 if let plan {
                     resultCard(plan)
                 }
@@ -76,7 +81,6 @@ struct PlannerView: View {
                         }
                     }
                     .padding(.top, 6)
-            
                 }
             }
             .padding(.horizontal, 16)
@@ -259,9 +263,9 @@ private extension PlannerView {
             if let flightLookupResult {
                 VStack(alignment: .leading, spacing: 8) {
                     inputTitle("Airport")
-                    valueLine("\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)")
+                    valueLine(flightAirportDisplayLine(flightLookupResult))
 
-                    if !isSelectedAirportUnlocked {
+                    if flightUsesSupportedFlowAirport(flightLookupResult) && !isSelectedAirportUnlocked {
                         proUpsellInlineCard(
                             title: "This flight uses a Pro airport",
                             message: "Upgrade to continue with premium airport access and full flight tools."
@@ -316,7 +320,7 @@ private extension PlannerView {
                 .foregroundColor(.white)
 
             infoRow("Flight", flight.flightNumber)
-            infoRow("Airport", "\(store.selectedAirport.rawValue) · \(store.selectedAirport.displayName)")
+            infoRow("Airport", flightAirportDisplayLine(flight))
             infoRow("Route", cleanedRoute("\(flight.originIATA) → \(flight.destinationIATA)"))
             infoRow("Airline", flight.airline)
 
@@ -337,9 +341,9 @@ private extension PlannerView {
                 infoRow("Status", flight.statusDisplayText)
             }
 
-            infoRow("Departure", flightDateTimeString(flight.departureTime))
+            infoRow("Departure", flightDateTimeString(flight.departureTime, airportCode: flight.originIATA))
 
-            if !isSelectedAirportUnlocked {
+            if flightUsesSupportedFlowAirport(flight), !isSelectedAirportUnlocked {
                 proUpsellInlineCard(
                     title: "Upgrade to continue",
                     message: "This airport is available with Flow Pro."
@@ -347,6 +351,33 @@ private extension PlannerView {
             }
         }
         .flowGlassCard()
+    }
+
+    func unsupportedAirportCard(_ flight: FlightLookupResult) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "airplane.departure")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Color(hex: "D8C4FF"))
+
+                Text("Limited airport support")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+            }
+
+            Text("Flow can track this flight and calculate travel time from your location, but live security checkpoint timing is not yet available for \(flight.originIATA.uppercased()). Your leave plan will use travel time and airport buffers without security wait time.")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white.opacity(0.74))
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color(hex: "9B6CFF").opacity(0.16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                )
+        )
     }
 
     var bagToggleCard: some View {
@@ -659,15 +690,6 @@ private extension PlannerView {
 
     func calculate() async {
         errorText = nil
-
-        if !isSelectedAirportUnlocked {
-            NotificationCenter.default.post(
-                name: .showProPaywall,
-                object: PaywallView.PaywallSource.lockedAirport(code: store.selectedAirport.rawValue.uppercased())
-            )
-            return
-        }
-
         isCalculating = true
         defer { isCalculating = false }
 
@@ -676,22 +698,33 @@ private extension PlannerView {
 
             if useManualTravelTime {
                 travelMinutes = manualTravelMinutes
+            } else if let flight = flightLookupResult, !flightUsesSupportedFlowAirport(flight) {
+                travelMinutes = try await travelTimeService.drivingMinutes(
+                    toAirportCode: flight.originIATA
+                )
             } else {
                 travelMinutes = try await travelTimeService.drivingMinutes(
                     to: store.selectedAirport
                 )
             }
 
-            let securitySelection = store.plannerSecuritySelection(
-                for: store.selectedAirport,
-                flightTerminal: flightLookupResult?.terminal,
-                preferredRouteID: nil
-            )
+            let securityMinutes: Int
+
+            if let flight = flightLookupResult, !flightUsesSupportedFlowAirport(flight) {
+                securityMinutes = 0
+            } else {
+                let securitySelection = store.plannerSecuritySelection(
+                    for: store.selectedAirport,
+                    flightTerminal: flightLookupResult?.terminal,
+                    preferredRouteID: nil
+                )
+                securityMinutes = max(0, securitySelection.option.minutes)
+            }
 
             plan = DeparturePlanner.makePlan(
                 departureTime: departureTime,
                 travelMinutes: travelMinutes,
-                securityMinutes: max(0, securitySelection.option.minutes),
+                securityMinutes: securityMinutes,
                 checkedBags: checkedBags
             )
 
@@ -723,17 +756,20 @@ private extension PlannerView {
             return
         }
 
-        let departureAirport = flowAirport(from: flight.originIATA) ?? store.selectedAirport
+        let departureFlowAirport = flowAirport(from: flight.originIATA)
 
-        if store.selectedAirport != departureAirport {
-            store.selectedAirport = departureAirport
+        if let departureFlowAirport, store.selectedAirport != departureFlowAirport {
+            store.selectedAirport = departureFlowAirport
         }
 
-        let securitySelection = store.plannerSecuritySelection(
-            for: departureAirport,
-            flightTerminal: flight.terminal,
-            preferredRouteID: nil
-        )
+        let securitySelection: PlannerSecuritySelection? = {
+            guard let departureFlowAirport else { return nil }
+            return store.plannerSecuritySelection(
+                for: departureFlowAirport,
+                flightTerminal: flight.terminal,
+                preferredRouteID: nil
+            )
+        }()
 
         let tracked = TrackedFlight(
             flightNumber: flight.flightNumber,
@@ -746,16 +782,16 @@ private extension PlannerView {
             leaveTime: plan.recommendedLeaveTime,
             gateTargetTime: plan.gateTargetTime,
             travelMinutes: plan.travelMinutes,
-            securityMinutes: max(0, securitySelection.option.minutes),
+            securityMinutes: securitySelection.map { max(0, $0.option.minutes) } ?? 0,
             airportBufferMinutes: plan.airportBufferMinutes,
             bagBufferMinutes: plan.bagBufferMinutes,
             leaveTimeTrend: .unchanged,
-            securityRouteMode: securitySelection.mode,
-            securityRouteID: securitySelection.option.id,
-            securityRouteTitle: securitySelection.option.title,
-            securityRouteSubtitle: securitySelection.option.subtitle,
-            securityRouteDetail: securitySelection.option.detail,
-            securityRouteIsPreCheckOnly: securitySelection.option.isPreCheckOnly
+            securityRouteMode: securitySelection?.mode ?? .auto,
+            securityRouteID: securitySelection?.option.id,
+            securityRouteTitle: securitySelection?.option.title ?? "",
+            securityRouteSubtitle: securitySelection?.option.subtitle ?? "",
+            securityRouteDetail: securitySelection?.option.detail ?? "Security checkpoint timing is not available for this airport.",
+            securityRouteIsPreCheckOnly: securitySelection?.option.isPreCheckOnly ?? false
         )
 
         store.setTrackedFlight(tracked)
@@ -766,6 +802,10 @@ private extension PlannerView {
         AirportRegistry.airports
             .map(\.airport)
             .first(where: { $0.rawValue.caseInsensitiveCompare(code) == .orderedSame })
+    }
+
+    func flightUsesSupportedFlowAirport(_ flight: FlightLookupResult) -> Bool {
+        flowAirport(from: flight.originIATA) != nil
     }
 }
 
@@ -821,6 +861,14 @@ private extension PlannerView {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    func flightAirportDisplayLine(_ flight: FlightLookupResult) -> String {
+        if let matchedAirport = flowAirport(from: flight.originIATA) {
+            return "\(matchedAirport.rawValue) · \(matchedAirport.displayName)"
+        } else {
+            return flight.originIATA.uppercased()
+        }
+    }
+
     func timeString(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeZone = store.selectedAirport.timeZone
@@ -828,9 +876,15 @@ private extension PlannerView {
         return formatter.string(from: date)
     }
 
-    func flightDateTimeString(_ date: Date) -> String {
+    func flightDateTimeString(_ date: Date, airportCode: String) -> String {
         let formatter = DateFormatter()
-        formatter.timeZone = store.selectedAirport.timeZone
+
+        if let airport = flowAirport(from: airportCode) {
+            formatter.timeZone = airport.timeZone
+        } else {
+            formatter.timeZone = store.selectedAirport.timeZone
+        }
+
         formatter.dateFormat = "dd MMM yyyy · HH:mm"
         return formatter.string(from: date)
     }
