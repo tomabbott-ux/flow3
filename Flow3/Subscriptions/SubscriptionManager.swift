@@ -87,7 +87,13 @@ final class SubscriptionManager: ObservableObject {
         }
 
         do {
+            print("🔍 Loading StoreKit products...")
+            print("🔍 Product IDs:", Array(Constants.productIDs))
+
             let fetchedProducts = try await Product.products(for: Array(Constants.productIDs))
+
+            print("✅ Fetched products count:", fetchedProducts.count)
+            print("✅ Fetched product IDs:", fetchedProducts.map(\.id))
 
             let sortedProducts = fetchedProducts.sorted { lhs, rhs in
                 let lhsRank = sortRank(for: lhs.id)
@@ -103,11 +109,15 @@ final class SubscriptionManager: ObservableObject {
             products = sortedProducts
             monthlyProduct = sortedProducts.first(where: { $0.id == Constants.monthlyProductID })
             yearlyProduct = sortedProducts.first(where: { $0.id == Constants.yearlyProductID })
+
+            print("📦 Monthly product:", monthlyProduct?.displayName ?? "nil")
+            print("📦 Yearly product:", yearlyProduct?.displayName ?? "nil")
+
         } catch {
+            print("❌ Product load failed:", error.localizedDescription)
             lastErrorMessage = "Failed to load subscription products: \(error.localizedDescription)"
         }
     }
-
     func refreshEntitlements() async {
         isRefreshingEntitlements = true
         lastErrorMessage = nil

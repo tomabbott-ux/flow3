@@ -14,8 +14,9 @@ struct Flow3App: App {
             FlowRootView(store: store)
                 .environmentObject(subscriptionManager)
                 .task {
+                    print("🚀 App launched — initializing subscriptions")
                     await subscriptionManager.initialize()
                 }
         }
+        }
     }
-}

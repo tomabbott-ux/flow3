@@ -20,7 +20,7 @@ struct FlowRootView: View {
     @AppStorage("flow_calendar_flight_detection")
     private var calendarFlightDetectionEnabled: Bool = true
 
-    @State private var selectedTab: FlowTab = .flight
+    @State private var selectedTab: FlowTab = .explore
     @State private var hasAppliedStartupAirport = false
 
     @State private var isShowingPaywall = false
@@ -67,11 +67,9 @@ struct FlowRootView: View {
         TabView(selection: $selectedTab) {
 
             NavigationStack {
-                AirportSelectorView(
+                LandingView(
                     store: store,
-                    onAirportSelected: {
-                        selectedTab = .flight
-                    }
+                    selectedTab: $selectedTab
                 )
             }
             .tabItem {
@@ -93,7 +91,7 @@ struct FlowRootView: View {
             .tag(FlowTab.planner)
 
             NavigationStack {
-                LandingView(
+                FlightTabView(
                     store: store,
                     selectedTab: $selectedTab
                 )
@@ -190,30 +188,24 @@ struct FlowRootView: View {
 
     private func runCalendarFlightScanIfNeeded(force: Bool) async {
         guard calendarFlightDetectionEnabled else {
-            
             return
         }
 
-    
         await store.scanCalendarForFlightsIfNeeded(force: force)
     }
 
     private func applyDefaultAirportFromSettings() {
-        let trackedAirport = trackedFlightDepartureAirport()
-
         let requestedAirport = AirportRegistry.airports
             .map(\.airport)
             .first(where: { $0.rawValue == defaultAirportRawValue })
 
         let airportToApply: FlowAirport
 
-        if let trackedAirport {
-            airportToApply = trackedAirport
-        } else if let requestedAirport,
-                  FlowEntitlements.canAccessAirport(
-                    airportCode: requestedAirport.rawValue,
-                    subscriptionTier: subscriptionManager.tier
-                  ) {
+        if let requestedAirport,
+           FlowEntitlements.canAccessAirport(
+                airportCode: requestedAirport.rawValue,
+                subscriptionTier: subscriptionManager.tier
+           ) {
             airportToApply = requestedAirport
         } else {
             airportToApply = fallbackAirport()
@@ -222,26 +214,6 @@ struct FlowRootView: View {
         if store.selectedAirport != airportToApply {
             store.selectedAirport = airportToApply
         }
-    }
-
-    private func trackedFlightDepartureAirport() -> FlowAirport? {
-        guard let trackedFlight = store.trackedFlight else { return nil }
-
-        let route = trackedFlight.route.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !route.isEmpty else { return nil }
-
-        let parts = route.components(separatedBy: "→")
-        guard let originPart = parts.first?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-              !originPart.isEmpty else {
-            return nil
-        }
-
-        return AirportRegistry.airports
-            .map(\.airport)
-            .first {
-                $0.rawValue.caseInsensitiveCompare(originPart) == .orderedSame
-            }
     }
 
     private func fallbackAirport() -> FlowAirport {
