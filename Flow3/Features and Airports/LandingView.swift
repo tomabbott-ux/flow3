@@ -218,12 +218,8 @@ struct LandingView: View {
             guard !hasPerformedInitialLoad else { return }
             hasPerformedInitialLoad = true
 
-            guard isSelectedAirportUnlocked else { return }
-
-            await refreshNow(
-                prefetchNeighbors: false,
-                shouldRefreshTrackedFlight: false
-            )
+            // No initial fetch here — handled at app launch
+            lastRefreshDate = Date()
         }
         .onAppear {
             print("👀 LandingView onAppear")

@@ -7,7 +7,8 @@ struct AlertsView: View {
     @State private var pulseCritical = false
     @State private var selectedCalendarFlight: PendingCalendarFlight?
     @State private var trackedFlightExpanded = false
-
+    @State private var isRefreshing = false
+    
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
@@ -74,6 +75,9 @@ struct AlertsView: View {
             .padding(.horizontal, 16)
             .padding(.top, 14)
             .padding(.bottom, 30)
+        }
+        .refreshable {
+            await refreshAlertsNow()
         }
         .background(
             LinearGradient(
@@ -855,7 +859,17 @@ private extension AlertsView {
 // MARK: - Helpers
 
 private extension AlertsView {
+    
+    
+    func refreshAlertsNow() async {
+        guard !isRefreshing else { return }
 
+        isRefreshing = true
+        defer { isRefreshing = false }
+
+        store.rebuildAlerts()
+    }
+    
     func iconName(for alert: FlowAlert) -> String {
         switch alert.severity {
         case .critical:

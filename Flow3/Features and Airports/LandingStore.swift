@@ -134,8 +134,21 @@ final class LandingStore: ObservableObject {
 
     @Published var trackedFlight: TrackedFlight?
 
+    // MARK: - Plan Input (FIX for Alerts → Plan handoff)
+
+    @Published var planFlightNumber: String = ""
+    @Published var planDepartureTime: Date?
+    @Published var planAirport: FlowAirport?
+    
     func setTrackedFlight(_ flight: TrackedFlight) {
         trackedFlight = flight
+        // 🔥 Populate Plan tab from tracked flight
+        planFlightNumber = flight.flightNumber
+        planDepartureTime = flight.departureTime
+
+        if let departureAirport = trackedDepartureAirport(from: flight.route) {
+            planAirport = departureAirport
+        }
         clearTrackedFlightRefreshThrottle()
 
         if let matchedPending = pendingCalendarFlights.first(where: {

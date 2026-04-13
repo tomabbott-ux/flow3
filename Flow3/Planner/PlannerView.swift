@@ -21,7 +21,6 @@ struct PlannerView: View {
     @State private var plan: DeparturePlan?
 
     @State private var useFlightNumber = true
-    @State private var flightNumber = ""
     @State private var flightDate = Date()
     @State private var flightLookupResult: FlightLookupResult?
 
@@ -101,8 +100,16 @@ struct PlannerView: View {
         )
         .navigationTitle("Plan")
         .navigationBarTitleDisplayMode(.inline)
+
+        // 🔥 FIX: populate Plan from tracked flight
         .onAppear {
             resetPlanner()
+
+            if let tracked = store.trackedFlight {
+                useFlightNumber = true   // 🔥 CRITICAL FIX
+                store.planFlightNumber = tracked.flightNumber
+                departureTime = tracked.departureTime
+            }
 
             Task {
                 await consumePendingCalendarFlightIfNeeded(force: true)
@@ -113,6 +120,7 @@ struct PlannerView: View {
             plan = nil
             flightLookupResult = nil
         }
+
         .onChange(of: store.reviewCalendarFlight?.id) { _, _ in
             Task {
                 await consumePendingCalendarFlightIfNeeded(force: true)
@@ -120,7 +128,6 @@ struct PlannerView: View {
         }
     }
 }
-
 // MARK: - UI
 
 private extension PlannerView {
@@ -230,7 +237,7 @@ private extension PlannerView {
             VStack(alignment: .leading, spacing: 8) {
                 inputTitle("Flight")
 
-                TextField("e.g. BA216", text: $flightNumber)
+                TextField("e.g. BA216", text: $store.planFlightNumber)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled(true)
                     .submitLabel(.done)
@@ -306,8 +313,7 @@ private extension PlannerView {
             .buttonStyle(.plain)
             .disabled(
                 isLookingUpFlight ||
-                flightNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            )
+                store.planFlightNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty            )
         }
         .flowGlassCard()
     }
@@ -596,7 +602,7 @@ private extension PlannerView {
         errorText = nil
         plan = nil
         flightLookupResult = nil
-        flightNumber = ""
+        store.planFlightNumber = ""
         checkedBags = false
         useManualTravelTime = false
         manualTravelMinutes = 20
@@ -625,7 +631,7 @@ private extension PlannerView {
         plan = nil
         flightLookupResult = nil
         useFlightNumber = true
-        flightNumber = pending.flightNumber
+        store.planFlightNumber = pending.flightNumber
         flightDate = pending.departureDate
         departureTime = pending.departureDate
 
@@ -649,7 +655,7 @@ private extension PlannerView {
         defer { isLookingUpFlight = false }
 
         do {
-            let trimmedFlightNumber = flightNumber
+            let trimmedFlightNumber = store.planFlightNumber
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .uppercased()
 

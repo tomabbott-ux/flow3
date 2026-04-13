@@ -1,43 +1,46 @@
 import Foundation
 
 extension LandingStore {
-    
+
     func availableSecurityRoutes(for airport: FlowAirport) -> [SecurityRouteOption] {
         let airportWaits = allWaitTimes()
             .filter { $0.airport == airport }
-        
-        let built = buildSecurityRouteOptions(from: airportWaits, airport: airport)
-        
-        if built.isEmpty {
-            return [fallbackSecurityRouteOption(for: airport)]
-        }
-        
-        return built.sorted { lhs, rhs in
-            if lhs.minutes == rhs.minutes {
-                return lhs.title < rhs.title
+
+        let built = buildSecurityRouteOptions(
+            from: airportWaits,
+            airport: airport
+        )
+
+        if !built.isEmpty {
+            return built.sorted { lhs, rhs in
+                if lhs.minutes == rhs.minutes {
+                    return lhs.title < rhs.title
+                }
+                return lhs.minutes < rhs.minutes
             }
-            return lhs.minutes < rhs.minutes
         }
+
+        return [fallbackSecurityRouteOption(for: airport)]
     }
-    
+
     func plannerSecuritySelection(
         for airport: FlowAirport,
         flightTerminal: String?,
         preferredRouteID: String?
     ) -> PlannerSecuritySelection {
-        
+
         let allRoutes = availableSecurityRoutes(for: airport)
-        
+
         if let preferredRouteID,
            let preferred = allRoutes.first(where: { $0.id == preferredRouteID }) {
             return PlannerSecuritySelection(option: preferred, mode: .manual)
         }
-        
+
         let terminalText = normalizedTerminalText(from: flightTerminal)
         let preferPreCheck = UserDefaults.standard.bool(forKey: "flow_prefer_precheck")
-        
+
         let terminalMatches: [SecurityRouteOption]
-        
+
         if airport == .atl, let terminalText {
             terminalMatches = allRoutes.filter { route in
                 atlRouteMatch(for: terminalText, in: [route]) != nil
@@ -59,7 +62,8 @@ extension LandingStore {
         } else {
             terminalMatches = []
         }
-        
+
+        // Continue your existing logic below...
         let candidateRoutes = terminalMatches.isEmpty ? allRoutes : terminalMatches
         
         let generalRoutes = candidateRoutes.filter { !$0.isPreCheckOnly }
@@ -258,13 +262,33 @@ private extension LandingStore {
         from waits: [WaitTimeEstimate],
         airport: FlowAirport
     ) -> [AirportDisplayRow] {
+
+        let hasUsableTerminalData = waits.contains { row in
+            if let terminal = row.terminal, terminal > 0 {
+                return true
+            }
+
+            let checkpoint = (row.checkpointName ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+
+            let area = (row.areaName ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+
+            return checkpoint.contains("terminal") || area.contains("terminal")
+        }
+
+        if hasUsableTerminalData {
+            return terminalStyleDisplayRows(from: waits, airport: airport)
+        }
+
         if airport.prefersCheckpointPresentation {
             return checkpointDisplayRows(from: waits, airport: airport)
         } else {
             return terminalStyleDisplayRows(from: waits, airport: airport)
         }
     }
-    
     func checkpointDisplayRows(
         from rows: [WaitTimeEstimate],
         airport: FlowAirport

@@ -73,8 +73,8 @@ struct FlowRootView: View {
                 )
             }
             .tabItem {
-                Image(systemName: "location.fill")
-                Text("Airports")
+                Image(systemName: "clock.fill")
+                Text("Wait Times")
             }
             .tag(FlowTab.explore)
 
@@ -98,7 +98,7 @@ struct FlowRootView: View {
             }
             .tabItem {
                 Image(systemName: "airplane")
-                Text("Flight")
+                Text("Tracked")
             }
             .tag(FlowTab.flight)
 
