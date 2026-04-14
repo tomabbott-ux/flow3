@@ -94,6 +94,7 @@ struct AlertsView: View {
         .navigationTitle("Alerts")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            await store.scanCalendarForFlightsIfNeeded(force: false)
             store.rebuildAlerts()
         }
         .onAppear {
@@ -867,6 +868,7 @@ private extension AlertsView {
         isRefreshing = true
         defer { isRefreshing = false }
 
+        await store.scanCalendarForFlightsIfNeeded(force: true)
         store.rebuildAlerts()
     }
     

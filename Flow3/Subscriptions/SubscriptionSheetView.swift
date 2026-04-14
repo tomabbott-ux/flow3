@@ -202,18 +202,4 @@ private extension SubscriptionSheetView {
     }
 }
 
-private extension View {
-    func flowSettingsCard() -> some View {
-        self
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color.white.opacity(0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 24)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
-                    )
-            )
-            .shadow(color: .black.opacity(0.25), radius: 18, x: 0, y: 10)
-    }
-}
+

@@ -17,6 +17,9 @@ struct Flow3App: App {
                     print("🚀 App launched — initializing subscriptions")
                     await subscriptionManager.initialize()
                     
+                    // ✅ Track app opens for review logic
+                    FlowReviewPrompter.shared.recordAppOpen()
+                    
                     print("⚡️ Preloading initial airport data")
                     await store.refresh(
                         prefetchNeighbors: true,
@@ -26,4 +29,3 @@ struct Flow3App: App {
         }
     }
 }
-

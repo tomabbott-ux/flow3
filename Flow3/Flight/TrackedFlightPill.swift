@@ -5,7 +5,6 @@ struct TrackedFlightPill: View {
     @ObservedObject var store: LandingStore
 
     @State private var expanded = false
-    @State private var pulse = false
     @State private var isRefreshing = false
     @State private var showingRoutePicker = false
 
@@ -33,9 +32,7 @@ struct TrackedFlightPill: View {
                 .padding(20)
                 .background(cardBackground)
                 .shadow(color: .black.opacity(0.25), radius: 18, x: 0, y: 10)
-                .onAppear {
-                    pulse = true
-                }
+                
                 .onReceive(refreshTimer) { _ in
                     Task {
                         await store.refreshTrackedFlight()
@@ -102,15 +99,11 @@ struct TrackedFlightPill: View {
     private var headerTopBar: some View {
         HStack {
             HStack(spacing: 8) {
+
+                // Static dot (no animation)
                 Circle()
                     .fill(Color.green)
-                    .frame(width: 8, height: 8)
-                    .scaleEffect(pulse ? 1.2 : 0.8)
-                    .opacity(pulse ? 0.4 : 1)
-                    .animation(
-                        .easeInOut(duration: 1.2).repeatForever(autoreverses: true),
-                        value: pulse
-                    )
+                    .frame(width: 6, height: 6)
 
                 Text("Tracking Flight")
                     .font(.system(size: 15, weight: .semibold))
@@ -124,7 +117,7 @@ struct TrackedFlightPill: View {
                 .foregroundColor(.white.opacity(0.7))
         }
     }
-
+    
     private func titleRow(for flight: TrackedFlight) -> some View {
         Text("\(flight.flightNumber) • \(flight.route)")
             .font(.system(size: 20, weight: .bold))

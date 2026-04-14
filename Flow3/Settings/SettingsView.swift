@@ -1,10 +1,12 @@
 import SwiftUI
+import UIKit
+import StoreKit
 
 struct SettingsView: View {
 
     @EnvironmentObject private var store: LandingStore
     @EnvironmentObject var subscriptionManager: SubscriptionManager
-    
+
     @AppStorage("flow_default_airport") private var defaultAirportRawValue: String = FlowAirport.atl.rawValue
     @AppStorage("flow_use_24h_time") private var use24HourTime: Bool = true
     @AppStorage("flow_use_celsius") private var useCelsius: Bool = true
@@ -20,6 +22,7 @@ struct SettingsView: View {
 
     @StateObject private var flightUsageTracker = FlightAPIUsageTracker.shared
     @State private var showSubscriptionSheet = false
+    @State private var showFeedbackUnavailableAlert = false
 
     private let supportedAirports: [FlowAirport] = AirportRegistry.airports.map(\.airport)
 
@@ -38,27 +41,25 @@ struct SettingsView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
-
                     headerSection
-
                     displayCard
                     planningCard
                     notificationsCard
                     subscriptionCard
                     aboutCard
-
-                    if DebugFlags.airportFeeds {
-                        diagnosticsCard
-                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
                 .padding(.bottom, 30)
             }
         }
-
         .sheet(isPresented: $showSubscriptionSheet) {
             SubscriptionSheetView()
+        }
+        .alert("Mail Not Available", isPresented: $showFeedbackUnavailableAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Mail is not available on this device. Please email admin@flowairport.com manually.")
         }
     }
 }
@@ -303,8 +304,93 @@ private extension SettingsView {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white.opacity(0.68))
                 .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+                .background(Color.white.opacity(0.2))
+
+            Button {
+                sendFeedback()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color(hex: "CBA8FF"))
+
+                    Text("Send Feedback")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.vertical, 12)
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                requestAppReview()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color(hex: "FFD166"))
+
+                    Text("Rate Flow")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.vertical, 12)
+            }
+            .buttonStyle(.plain)
         }
         .flowSettingsCard()
+    }
+
+    func sendFeedback() {
+        let email = "admin@flowairport.com"
+        let subject = "Flow Feedback"
+
+        let body = """
+Hi Flow Team,
+
+---
+
+App Version: \(appVersionString)
+Build: \(buildNumberString)
+Device: \(UIDevice.current.model)
+iOS: \(UIDevice.current.systemVersion)
+Default Airport: \(defaultAirportRawValue)
+Subscription: \(currentPlanTitle)
+"""
+
+        let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+
+        guard let url = URL(string: "mailto:\(email)?subject=\(encodedSubject)&body=\(encodedBody)") else {
+            showFeedbackUnavailableAlert = true
+            return
+        }
+
+        if UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        } else {
+            showFeedbackUnavailableAlert = true
+        }
+    }
+
+    func requestAppReview() {
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            SKStoreReviewController.requestReview(in: scene)
+        }
     }
 
     var appVersionString: String {
@@ -313,42 +399,6 @@ private extension SettingsView {
 
     var buildNumberString: String {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-    }
-}
-
-// MARK: - Diagnostics
-
-private extension SettingsView {
-
-    var diagnosticsCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            sectionTitle("Diagnostics")
-
-            Text("Internal flight API monitoring")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.white.opacity(0.68))
-
-            infoRow(title: "Flight API calls today", value: "\(flightUsageTracker.snapshot.callsToday)")
-            infoRow(title: "Flight API calls this month", value: "\(flightUsageTracker.snapshot.callsThisMonth)")
-            infoRow(title: "Cache hits today", value: "\(flightUsageTracker.snapshot.cacheHitsToday)")
-            infoRow(title: "Cache misses today", value: "\(flightUsageTracker.snapshot.cacheMissesToday)")
-            infoRow(title: "Failures today", value: "\(flightUsageTracker.snapshot.failuresToday)")
-            infoRow(title: "Tracked refreshes today", value: "\(flightUsageTracker.snapshot.trackedRefreshesToday)")
-            infoRow(title: "Last API call", value: lastCallText)
-        }
-        .flowSettingsCard()
-    }
-
-    var lastCallText: String {
-        guard let lastCallAt = flightUsageTracker.snapshot.lastCallAt else {
-            return "—"
-        }
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: lastCallAt)
     }
 }
 
@@ -385,7 +435,7 @@ private extension SettingsView {
 
 // MARK: - Styling
 
-private extension View {
+extension View {
 
     func flowSettingsCard() -> some View {
         self

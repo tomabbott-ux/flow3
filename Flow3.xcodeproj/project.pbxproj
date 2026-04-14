@@ -69,6 +69,7 @@
 		F84605F02F8AD3CF005E5B03 /* APIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605EF2F8AD3CF005E5B03 /* APIConfig.swift */; };
 		F84605F62F8BEE60005E5B03 /* AirportTimeZoneResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605F52F8BEE60005E5B03 /* AirportTimeZoneResolver.swift */; };
 		F84605F82F8C461E005E5B03 /* FlightTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605F72F8C461E005E5B03 /* FlightTabView.swift */; };
+		F84605FA2F8E26F4005E5B03 /* FlowReviewPrompter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F84605F92F8E26F4005E5B03 /* FlowReviewPrompter.swift */; };
 		F846E0872F82F11500997E61 /* FreeAirportConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0862F82F11500997E61 /* FreeAirportConfig.swift */; };
 		F846E0892F82F14800997E61 /* SubscriptionTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E0882F82F14800997E61 /* SubscriptionTier.swift */; };
 		F846E08B2F82F17800997E61 /* FlowEntitlements.swift in Sources */ = {isa = PBXBuildFile; fileRef = F846E08A2F82F17800997E61 /* FlowEntitlements.swift */; };
@@ -280,6 +281,7 @@
 		F84605F12F8AD45E005E5B03 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F84605F52F8BEE60005E5B03 /* AirportTimeZoneResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportTimeZoneResolver.swift; sourceTree = "<group>"; };
 		F84605F72F8C461E005E5B03 /* FlightTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightTabView.swift; sourceTree = "<group>"; };
+		F84605F92F8E26F4005E5B03 /* FlowReviewPrompter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowReviewPrompter.swift; sourceTree = "<group>"; };
 		F846E0862F82F11500997E61 /* FreeAirportConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeAirportConfig.swift; sourceTree = "<group>"; };
 		F846E0882F82F14800997E61 /* SubscriptionTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
 		F846E08A2F82F17800997E61 /* FlowEntitlements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowEntitlements.swift; sourceTree = "<group>"; };
@@ -474,6 +476,7 @@
 				F846E0902F83021D00997E61 /* FlowSubscriptions.storekit */,
 				F854035C2F850055001A4969 /* AppEnvironment.swift */,
 				F84605EC2F8AAFAC005E5B03 /* SubscriptionSheetView.swift */,
+				F84605F92F8E26F4005E5B03 /* FlowReviewPrompter.swift */,
 			);
 			path = Subscriptions;
 			sourceTree = "<group>";
@@ -1015,6 +1018,7 @@
 				F80599CB2F5ACAA300146BF1 /* AirportWaitTimeRouter.swift in Sources */,
 				F8DBD8AA2F672FCB00246968 /* LiveFlightService.swift in Sources */,
 				F8BD8FE32F631C53000EE425 /* ICNLiveWaitTimeProvider.swift in Sources */,
+				F84605FA2F8E26F4005E5B03 /* FlowReviewPrompter.swift in Sources */,
 				F8A1AB462F68CFFC0093D0B6 /* PlannerView.swift in Sources */,
 				F8DBD8982F6625D000246968 /* FlightLookupResult.swift in Sources */,
 				F862F1A32F583923001666F2 /* Flow3App.swift in Sources */,
