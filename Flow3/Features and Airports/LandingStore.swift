@@ -3,43 +3,43 @@ import Combine
 
 @MainActor
 final class LandingStore: ObservableObject {
-
+    
     private enum PreferenceKeys {
         static let defaultAirportCode = "flow_default_airport"
         static let lastSelectedAirportCode = "lastSelectedAirportCode"
         static let lastTrackedFlightRefreshAt = "flow_last_tracked_flight_refresh_at"
         static let dismissedPendingCalendarFlightIDs = "flow_dismissed_pending_calendar_flight_ids"
     }
-
+    
     // MARK: - Published state
-
+    
     @Published var selectedAirport: FlowAirport = .atl {
         didSet {
             guard oldValue != selectedAirport else { return }
-
+            
             UserDefaults.standard.set(
                 selectedAirport.rawValue,
                 forKey: PreferenceKeys.lastSelectedAirportCode
             )
-
+            
             Task { [weak self] in
                 await self?.handleSelectedAirportChanged()
             }
         }
     }
-
+    
     @Published var weather: WeatherSnapshot?
     @Published var lastUpdated: Date?
     @Published var errorText: String?
     @Published private(set) var waitTimes: [WaitTimeEstimate] = []
     @Published private(set) var alerts: [FlowAlert] = []
-
+    
     // MARK: - Calendar Review Target
-
+    
     @Published var reviewCalendarFlight: PendingCalendarFlight?
-
+    
     // MARK: - Calendar Flights
-
+    
     @Published var pendingCalendarFlights: [PendingCalendarFlight] = [] {
         didSet {
             rebuildAlerts()
@@ -57,85 +57,85 @@ final class LandingStore: ObservableObject {
     }
     // Legacy selection support
     @Published var selectedPendingCalendarFlightID: String?
-
+    
     var pendingCalendarFlight: PendingCalendarFlight? {
         reviewCalendarFlight
     }
-
+    
     func dismissPendingCalendarFlight() {
         reviewCalendarFlight = nil
         selectedPendingCalendarFlightID = nil
     }
-
-
+    
+    
     func setPendingCalendarFlights(_ flights: [PendingCalendarFlight]) {
         let filtered = flights
             .filter { !isPendingCalendarFlightDismissed(id: $0.id) }
             .sorted { $0.departureDate < $1.departureDate }
-
+        
         pendingCalendarFlights = filtered
     }
-
+    
     func addPendingCalendarFlight(_ flight: PendingCalendarFlight) {
         guard !isPendingCalendarFlightDismissed(id: flight.id) else { return }
         guard !pendingCalendarFlights.contains(where: { $0.id == flight.id }) else { return }
-
+        
         pendingCalendarFlights.append(flight)
         pendingCalendarFlights.sort { $0.departureDate < $1.departureDate }
     }
-
+    
     func dismissPendingCalendarFlight(withID id: String) {
         var dismissed = dismissedPendingCalendarFlightIDs
         dismissed.insert(id)
         saveDismissedPendingCalendarFlightIDs(dismissed)
-
+        
         pendingCalendarFlights.removeAll { $0.id == id }
-
+        
         if selectedPendingCalendarFlightID == id {
             selectedPendingCalendarFlightID = nil
         }
-
+        
         if reviewCalendarFlight?.id == id {
             reviewCalendarFlight = nil
         }
-
+        
         rebuildAlerts()
     }
-
+    
     func restoreDismissedPendingCalendarFlight(withID id: String) {
         var dismissed = dismissedPendingCalendarFlightIDs
         dismissed.remove(id)
         saveDismissedPendingCalendarFlightIDs(dismissed)
     }
-
+    
     func clearDismissedPendingCalendarFlights() {
         saveDismissedPendingCalendarFlightIDs([])
     }
-
+    
     private var dismissedPendingCalendarFlightIDs: Set<String> {
         let stored = UserDefaults.standard.stringArray(
             forKey: PreferenceKeys.dismissedPendingCalendarFlightIDs
         ) ?? []
         return Set(stored)
     }
-
+    
     private func saveDismissedPendingCalendarFlightIDs(_ ids: Set<String>) {
         UserDefaults.standard.set(
             Array(ids),
             forKey: PreferenceKeys.dismissedPendingCalendarFlightIDs
         )
     }
-
+    
     private func isPendingCalendarFlightDismissed(id: String) -> Bool {
         dismissedPendingCalendarFlightIDs.contains(id)
     }
-
+    
     // MARK: - Tracked Flight
-
+    
     @Published var trackedFlight: TrackedFlight?
-
+    
     // MARK: - Plan Input (FIX for Alerts → Plan handoff)
-
+    
     @Published var planFlightNumber: String = ""
     @Published var planDepartureTime: Date?
     @Published var planAirport: FlowAirport?
@@ -145,47 +145,47 @@ final class LandingStore: ObservableObject {
         // 🔥 Populate Plan tab from tracked flight
         planFlightNumber = flight.flightNumber
         planDepartureTime = flight.departureTime
-
+        
         if let departureAirport = trackedDepartureAirport(from: flight.route) {
             planAirport = departureAirport
         }
         clearTrackedFlightRefreshThrottle()
-
+        
         if let matchedPending = pendingCalendarFlights.first(where: {
             $0.flightNumber.caseInsensitiveCompare(flight.flightNumber) == .orderedSame
         }) {
             pendingCalendarFlights.removeAll { $0.id == matchedPending.id }
-
+            
             if selectedPendingCalendarFlightID == matchedPending.id {
                 selectedPendingCalendarFlightID = nil
             }
-
+            
             if reviewCalendarFlight?.id == matchedPending.id {
                 reviewCalendarFlight = nil
             }
-
+            
             dismissPendingCalendarFlight(withID: matchedPending.id)
         }
-
+        
         if let departureAirport = trackedDepartureAirport(from: flight.route) {
             selectedAirport = departureAirport
         }
-
+        
         SavedFlightStore.shared.save(flight)
         FlowWatchConnectivityManager.shared.syncTrackedFlight(flight)
         rebuildAlerts()
-
+        
         Task {
             await FlowNotificationManager.shared.requestPermission()
             FlowNotificationManager.shared.scheduleTrackedFlightReminders(for: flight)
             await FlowLiveActivityManager.shared.start(for: flight)
         }
     }
-
+    
     func trackFlight(_ flight: TrackedFlight) {
         setTrackedFlight(flight)
     }
-
+    
     func clearTrackedFlight() {
         trackedFlight = nil
         clearTrackedFlightRefreshThrottle()
@@ -193,49 +193,49 @@ final class LandingStore: ObservableObject {
         FlowWatchConnectivityManager.shared.syncTrackedFlight(nil)
         FlowNotificationManager.shared.clearTrackedFlightNotifications()
         rebuildAlerts()
-
+        
         Task {
             await FlowLiveActivityManager.shared.end()
         }
     }
-
+    
     // MARK: - Services
-
+    
     private let waitTimeService: WaitTimeService
     private let weatherService: WeatherService
-
+    
     private let travelTimeService = TravelTimeService()
     private let flightLookupService = LiveFlightService()
-
+    
     // MARK: - Auto refresh
-
+    
     private var autoRefreshTask: Task<Void, Never>?
     private var autoRefreshInterval: TimeInterval = 60
-
+    
     // MARK: - Cache
-
+    
     private var waitTimeCache: [FlowAirport: [WaitTimeEstimate]] = [:]
     private var weatherCache: [FlowAirport: WeatherSnapshot] = [:]
     private var refreshedAtCache: [FlowAirport: Date] = [:]
-
+    
     private let waitTimeCacheTTL: TimeInterval = 45
     private let weatherCacheTTL: TimeInterval = 600
-
+    
     // MARK: - Prefetch
-
+    
     private var prefetchTask: Task<Void, Never>?
-
+    
     // MARK: - Init
-
+    
     init(
         waitTimeService: WaitTimeService,
         weatherService: WeatherService
     ) {
         self.waitTimeService = waitTimeService
         self.weatherService = weatherService
-
+        
         self.trackedFlight = SavedFlightStore.shared.load()
-
+        
         if let defaultAirportCode = UserDefaults.standard.string(forKey: PreferenceKeys.defaultAirportCode),
            let airport = AirportRegistry.airports
             .map(\.airport)
@@ -249,87 +249,87 @@ final class LandingStore: ObservableObject {
         } else {
             self.selectedAirport = .atl
         }
-
+        
         pendingCalendarFlights = pendingCalendarFlights
             .filter { !isPendingCalendarFlightDismissed(id: $0.id) }
             .sorted { $0.departureDate < $1.departureDate }
-
+        
         rebuildAlerts()
     }
-
+    
     deinit {
         autoRefreshTask?.cancel()
         prefetchTask?.cancel()
     }
-
+    
     // MARK: - Refresh
-
+    
     func refresh(
         prefetchNeighbors: Bool = true,
         shouldRefreshTrackedFlight: Bool = true
     ) async {
         let airport = selectedAirport
         await refreshAirport(airport, updateVisibleState: true)
-
+        
         if shouldRefreshTrackedFlight, trackedFlight != nil {
             await refreshTrackedFlight(
                 force: false,
                 minimumInterval: FlightAPIConfig.inactiveTrackedRefreshMinimumInterval
             )
         }
-
+        
         if prefetchNeighbors {
             startPrefetchAroundSelectedAirport(delay: 0.75)
         }
-
+        
         rebuildAlerts()
     }
-
+    
     private func refreshAirport(_ airport: FlowAirport, updateVisibleState: Bool) async {
         if updateVisibleState {
             errorText = nil
         }
-
+        
         async let waitTimesResult = loadWaitTimesResult(for: airport)
         async let weatherResult = loadWeatherResult(for: airport)
-
+        
         let (waitResult, wxResult) = await (waitTimesResult, weatherResult)
         let refreshedAt = Date()
-
+        
         var didUpdateAnything = false
         var waitTimesError: Error?
         var weatherError: Error?
-
+        
         switch waitResult {
         case .success(let newWaitTimes):
             waitTimeCache[airport] = newWaitTimes
             refreshedAtCache[airport] = refreshedAt
             didUpdateAnything = true
-
+            
             if updateVisibleState, airport == selectedAirport {
                 waitTimes = newWaitTimes
                 lastUpdated = refreshedAt
             }
-
+            
         case .failure(let error):
             waitTimesError = error
         }
-
+        
         switch wxResult {
         case .success(let newWeather):
             weatherCache[airport] = newWeather
             refreshedAtCache[airport] = refreshedAt
             didUpdateAnything = true
-
+            
             if updateVisibleState, airport == selectedAirport {
                 weather = newWeather
                 lastUpdated = refreshedAt
             }
-
+            
         case .failure(let error):
             weatherError = error
         }
-
+        
         if updateVisibleState, airport == selectedAirport {
             if didUpdateAnything {
                 errorText = nil
@@ -340,11 +340,11 @@ final class LandingStore: ObservableObject {
             } else if let weatherError {
                 errorText = "Refresh failed: \(weatherError.localizedDescription)"
             }
-
+            
             rebuildAlerts()
         }
     }
-
+    
     private func loadWaitTimesResult(for airport: FlowAirport) async -> Result<[WaitTimeEstimate], Error> {
         do {
             let result = try await loadWaitTimes(for: airport)
@@ -353,7 +353,7 @@ final class LandingStore: ObservableObject {
             return .failure(error)
         }
     }
-
+    
     private func loadWeatherResult(for airport: FlowAirport) async -> Result<WeatherSnapshot, Error> {
         do {
             let result = try await loadWeather(for: airport)
@@ -362,21 +362,21 @@ final class LandingStore: ObservableObject {
             return .failure(error)
         }
     }
-
+    
     // MARK: - Wait times
-
+    
     private func loadWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
         if let cached = waitTimeCache[airport],
            let refreshedAt = refreshedAtCache[airport],
            Date().timeIntervalSince(refreshedAt) <= waitTimeCacheTTL {
             return cached
         }
-
+        
         return try await waitTimeService.fetchWaitTimes(for: airport)
     }
-
+    
     // MARK: - Weather
-
+    
     private func loadWeather(for airport: FlowAirport) async throws -> WeatherSnapshot {
         if let cached = weatherCache[airport] {
             let age = Date().timeIntervalSince(cached.observedAt)
@@ -384,169 +384,175 @@ final class LandingStore: ObservableObject {
                 return cached
             }
         }
-
+        
         return try await weatherService.fetchWeather(for: airport)
     }
-
+    
     // MARK: - Selected Airport
-
+    
     private func handleSelectedAirportChanged() async {
         applyCachedSnapshotIfAvailable(for: selectedAirport)
         rebuildAlerts()
     }
-
+    
     private func applyCachedSnapshotIfAvailable(for airport: FlowAirport) {
         if let cachedWaitTimes = waitTimeCache[airport] {
             waitTimes = cachedWaitTimes
         }
-
+        
         if let cachedWeather = weatherCache[airport] {
             weather = cachedWeather
         }
-
+        
         if let refreshedAt = refreshedAtCache[airport] {
             lastUpdated = refreshedAt
         }
     }
-
+    
     // MARK: - Prefetch
-
+    
     private func startPrefetchAroundSelectedAirport(delay: TimeInterval = 0) {
         prefetchTask?.cancel()
-
+        
         let airportsToPrefetch = neighboringAirports(around: selectedAirport, limit: 3)
-
+        
         prefetchTask = Task { [weak self] in
             guard let self else { return }
-
+            
             if delay > 0 {
                 let delayNs = UInt64(delay * 1_000_000_000)
                 try? await Task.sleep(nanoseconds: delayNs)
             }
-
+            
             for airport in airportsToPrefetch {
                 if Task.isCancelled { return }
-
+                
                 let shouldRefreshWaitTimes = shouldRefreshWaitTimeCache(for: airport)
                 let shouldRefreshWeather = shouldRefreshWeatherCache(for: airport)
-
+                
                 if !shouldRefreshWaitTimes && !shouldRefreshWeather {
                     continue
                 }
-
+                
                 await self.refreshAirport(airport, updateVisibleState: false)
                 try? await Task.sleep(nanoseconds: 250_000_000)
             }
         }
     }
-
+    
     private func neighboringAirports(around airport: FlowAirport, limit: Int) -> [FlowAirport] {
         let all = AirportRegistry.airports.map(\.airport)
-
+        
         guard let currentIndex = all.firstIndex(of: airport) else {
             return Array(all.prefix(limit))
         }
-
+        
         var results: [FlowAirport] = []
         var offset = 1
-
+        
         while results.count < limit &&
-              (currentIndex - offset >= 0 || currentIndex + offset < all.count) {
-
+                (currentIndex - offset >= 0 || currentIndex + offset < all.count) {
+            
             if currentIndex + offset < all.count {
                 results.append(all[currentIndex + offset])
             }
-
+            
             if results.count >= limit { break }
-
+            
             if currentIndex - offset >= 0 {
                 results.append(all[currentIndex - offset])
             }
-
+            
             offset += 1
         }
-
+        
         return Array(results.prefix(limit))
     }
-
+    
     private func shouldRefreshWaitTimeCache(for airport: FlowAirport) -> Bool {
         guard let refreshedAt = refreshedAtCache[airport],
               waitTimeCache[airport] != nil else {
             return true
         }
-
+        
         return Date().timeIntervalSince(refreshedAt) > waitTimeCacheTTL
     }
-
+    
     private func shouldRefreshWeatherCache(for airport: FlowAirport) -> Bool {
         guard let cachedWeather = weatherCache[airport] else {
             return true
         }
-
+        
         return Date().timeIntervalSince(cachedWeather.observedAt) > weatherCacheTTL
     }
-
+    
     // MARK: - Auto Refresh
-
+    
     func startAutoRefresh(every seconds: TimeInterval = 60) {
         autoRefreshInterval = seconds
         stopAutoRefresh()
-
+        
         autoRefreshTask = Task { [weak self] in
             guard let self else { return }
-
+            
             try? await Task.sleep(nanoseconds: 300_000_000)
-
+            
             while !Task.isCancelled {
                 await self.refresh()
-
+                
                 let ns = UInt64(self.autoRefreshInterval * 1_000_000_000)
                 try? await Task.sleep(nanoseconds: ns)
             }
         }
     }
-
+    
     func stopAutoRefresh() {
         autoRefreshTask?.cancel()
         autoRefreshTask = nil
     }
-
+    
     // MARK: - Helpers
-
+    
     func overallMinutes(_ queue: QueueType) -> Int? {
         let relevant = waitTimes
             .filter { $0.airport == selectedAirport && $0.queueType == queue }
             .map { $0.minutes }
-
+        
         return relevant.min()
     }
-
+    
     func allWaitTimes() -> [WaitTimeEstimate] {
         waitTimes
     }
-
+    
+    // 🔥 FIXED VERSION (DO NOT MODIFY THIS AFTER)
     func waitTimes(for airport: FlowAirport) -> [WaitTimeEstimate] {
+        
+        // 1. Use cache first (best source)
         if let cached = waitTimeCache[airport], !cached.isEmpty {
             return cached
         }
-
-        if airport == selectedAirport {
-            return waitTimes.filter { $0.airport == airport }
+        
+        // 2. Fallback to global waitTimes (critical for tracked flights)
+        let global = waitTimes.filter { $0.airport == airport }
+        if !global.isEmpty {
+            return global
         }
-
+        
+        // 3. Final fallback (prevents empty UI)
         return []
     }
     
     private func isFlightFinishedStatus(_ status: String?) -> Bool {
         guard let status else { return false }
-
+        
         let normalized = status
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
-
+        
         return normalized == "departed" || normalized == "arrived"
     }
-
+    
     private func trackedDepartureAirportCode(from route: String) -> String {
         route
             .components(separatedBy: "→")
@@ -554,41 +560,41 @@ final class LandingStore: ObservableObject {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased() ?? selectedAirport.rawValue
     }
-
+    
     private func trackedDepartureAirport(from route: String) -> FlowAirport? {
         let code = route
             .components(separatedBy: "→")
             .first?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased()
-
+        
         guard let code else { return nil }
-
+        
         return AirportRegistry.airports
             .map(\.airport)
             .first(where: { $0.rawValue.uppercased() == code })
     }
-
+    
     private func flowAirport(from code: String) -> FlowAirport? {
         AirportRegistry.airports
             .map(\.airport)
             .first(where: { $0.rawValue.uppercased() == code.uppercased() })
     }
-
+    
     private func preferredText(_ newer: String?, fallback: String?) -> String? {
         let newValue = newer?.trimmingCharacters(in: .whitespacesAndNewlines)
         if let newValue, !newValue.isEmpty, newValue != "—" {
             return newValue
         }
-
+        
         let fallbackValue = fallback?.trimmingCharacters(in: .whitespacesAndNewlines)
         if let fallbackValue, !fallbackValue.isEmpty, fallbackValue != "—" {
             return fallbackValue
         }
-
+        
         return nil
     }
-
+    
     private var lastTrackedFlightRefreshAt: Date? {
         get {
             UserDefaults.standard.object(forKey: PreferenceKeys.lastTrackedFlightRefreshAt) as? Date
@@ -597,7 +603,7 @@ final class LandingStore: ObservableObject {
             UserDefaults.standard.set(newValue, forKey: PreferenceKeys.lastTrackedFlightRefreshAt)
         }
     }
-
+    
     private func clearTrackedFlightRefreshThrottle() {
         lastTrackedFlightRefreshAt = nil
     }
@@ -610,9 +616,7 @@ final class LandingStore: ObservableObject {
         }
 
         return Date().timeIntervalSince(lastRefreshAt) >= minimumInterval
-    }
-
-    // MARK: - Refresh tracked flight
+    }    // MARK: - Refresh tracked flight
 
     func refreshTrackedFlight(
         force: Bool = false,
