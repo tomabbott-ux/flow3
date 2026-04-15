@@ -45,24 +45,17 @@ extension LandingStore {
                 atlRouteMatch(for: terminalText, in: [route]) != nil
             }
         } else if let terminalText {
-            let terminalVariants = [
-                "Terminal \(terminalText)",
-                "Terminal T\(terminalText)",
-                "T\(terminalText)"
-            ]
-
             terminalMatches = allRoutes.filter { route in
-                terminalVariants.contains(where: { variant in
-                    route.title.localizedCaseInsensitiveContains(variant) ||
-                    route.subtitle.localizedCaseInsensitiveContains(variant) ||
-                    route.detail.localizedCaseInsensitiveContains(variant)
-                })
+                routeMatchesTerminal(
+                    route,
+                    airport: airport,
+                    terminalText: terminalText
+                )
             }
         } else {
             terminalMatches = []
         }
 
-        // Continue your existing logic below...
         let candidateRoutes = terminalMatches.isEmpty ? allRoutes : terminalMatches
         
         let generalRoutes = candidateRoutes.filter { !$0.isPreCheckOnly }
@@ -103,8 +96,11 @@ extension LandingStore {
     func setTrackedFlightSecurityRoute(_ routeID: String?) {
         guard let current = trackedFlight else { return }
         
+        let trackedAirport = flowAirport(from: current.route.components(separatedBy: "→").first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "") ?? selectedAirport
+        
+        
         let selection = plannerSecuritySelection(
-            for: selectedAirport,
+            for: trackedAirport,
             flightTerminal: current.terminal,
             preferredRouteID: routeID
         )
@@ -148,8 +144,11 @@ extension LandingStore {
     func refreshTrackedFlightSecurityIfNeeded() {
         guard let current = trackedFlight else { return }
         
+        let trackedAirport = flowAirport(from: current.route.components(separatedBy: "→").first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "") ?? selectedAirport
+    
+        
         let selection = plannerSecuritySelection(
-            for: selectedAirport,
+            for: trackedAirport,
             flightTerminal: current.terminal,
             preferredRouteID: current.securityRouteMode == .manual ? current.securityRouteID : nil
         )
@@ -186,8 +185,6 @@ extension LandingStore {
         }
         
         rebuildAlerts()
-        
-        
     }
 }
 
@@ -288,6 +285,7 @@ private extension LandingStore {
             return terminalStyleDisplayRows(from: waits, airport: airport)
         }
     }
+
     func checkpointDisplayRows(
         from rows: [WaitTimeEstimate],
         airport: FlowAirport
@@ -621,6 +619,117 @@ private extension LandingStore {
         
         return nil
     }
+
+    func routeMatchesTerminal(
+        _ route: SecurityRouteOption,
+        airport: FlowAirport,
+        terminalText: String
+    ) -> Bool {
+        
+        let normalizedRouteText = [
+            route.title,
+            route.subtitle,
+            route.detail
+        ]
+        .joined(separator: " ")
+        .uppercased()
+        
+        let value = terminalText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+        
+        if airport == .lax {
+            return laxRouteMatchesTerminal(
+                normalizedRouteText: normalizedRouteText,
+                terminalText: value
+            )
+        }
+        
+        let variants = terminalVariants(for: value)
+        
+        return variants.contains { variant in
+            normalizedRouteText.contains(variant)
+        }
+    }
+
+    func terminalVariants(for terminalText: String) -> [String] {
+        let value = terminalText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+        
+        var variants: [String] = [
+            "TERMINAL \(value)",
+            "TERMINAL T\(value)",
+            "T\(value)"
+        ]
+        
+        if value.hasPrefix("T") {
+            let raw = String(value.dropFirst())
+            variants.append("TERMINAL \(raw)")
+        }
+        
+        return Array(Set(variants))
+    }
+
+    func laxRouteMatchesTerminal(
+        normalizedRouteText: String,
+        terminalText: String
+    ) -> Bool {
+        
+        let value = terminalText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+        
+        let laxTerminalMap: [String: [String]] = [
+            "B": [
+                "TERMINAL B",
+                "TOM BRADLEY",
+                "TBIT",
+                "TERMINAL TBIT"
+            ],
+            "TBIT": [
+                "TERMINAL B",
+                "TOM BRADLEY",
+                "TBIT",
+                "TERMINAL TBIT"
+            ],
+            "TOM BRADLEY": [
+                "TERMINAL B",
+                "TOM BRADLEY",
+                "TBIT",
+                "TERMINAL TBIT"
+            ],
+            "1": ["TERMINAL 1", "T1"],
+            "2": ["TERMINAL 2", "T2"],
+            "3": ["TERMINAL 3", "T3"],
+            "4": ["TERMINAL 4", "T4"],
+            "5": ["TERMINAL 5", "T5"],
+            "6": ["TERMINAL 6", "T6"],
+            "7": ["TERMINAL 7", "T7"],
+            "8": ["TERMINAL 8", "T8"]
+        ]
+        
+        let lookupKey: String = {
+            if value == "TERMINAL B" { return "B" }
+            if value == "TERMINAL TBIT" { return "TBIT" }
+            if value == "TOMBRADLEY" || value == "TOM BRADLEY" { return "TOM BRADLEY" }
+            if value.hasPrefix("TERMINAL ") {
+                return value.replacingOccurrences(of: "TERMINAL ", with: "")
+            }
+            if value.hasPrefix("T"), value.count == 2 {
+                return String(value.dropFirst())
+            }
+            return value
+        }()
+        
+        guard let variants = laxTerminalMap[lookupKey] else {
+            return terminalVariants(for: value).contains { normalizedRouteText.contains($0) }
+        }
+        
+        return variants.contains { alias in
+            normalizedRouteText.contains(alias)
+        }
+    }
     
     func bestFallbackRouteMatch(
         airport: FlowAirport,
@@ -628,9 +737,21 @@ private extension LandingStore {
         in routes: [SecurityRouteOption]
     ) -> SecurityRouteOption? {
         
-        let value = terminalText.uppercased()
+        let strictTerminalMatches = routes.filter {
+            routeMatchesTerminal(
+                $0,
+                airport: airport,
+                terminalText: terminalText
+            )
+        }
+        
+        if let bestStrict = strictTerminalMatches.min(by: { $0.minutes < $1.minutes }) {
+            return bestStrict
+        }
         
         if airport == .atl {
+            let value = terminalText.uppercased()
+            
             if value == "N" || value == "S" || value == "MAIN" || value == "D" || value == "DOMESTIC" {
                 let domesticRoutes = routes.filter {
                     $0.subtitle.localizedCaseInsensitiveContains("DOMESTIC")
@@ -640,16 +761,6 @@ private extension LandingStore {
                     return bestDomestic
                 }
             }
-        }
-        
-        let exactTextMatch = routes.first(where: {
-            $0.title.localizedCaseInsensitiveContains(value) ||
-            $0.subtitle.localizedCaseInsensitiveContains(value) ||
-            $0.detail.localizedCaseInsensitiveContains(value)
-        })
-        
-        if let exactTextMatch {
-            return exactTextMatch
         }
         
         return routes.min(by: { $0.minutes < $1.minutes })

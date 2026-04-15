@@ -3,10 +3,11 @@ import Foundation
 enum FreeAirportConfig {
 
     static let freeAirports: Set<String> = [
-        "lax",
+        "iah",
         "ord",
         "ist",
         "ams",
+        "bcn",
         "lga"
     ]
 

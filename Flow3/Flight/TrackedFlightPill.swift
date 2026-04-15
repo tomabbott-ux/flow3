@@ -32,7 +32,6 @@ struct TrackedFlightPill: View {
                 .padding(20)
                 .background(cardBackground)
                 .shadow(color: .black.opacity(0.25), radius: 18, x: 0, y: 10)
-                
                 .onReceive(refreshTimer) { _ in
                     Task {
                         await store.refreshTrackedFlight()
@@ -99,8 +98,6 @@ struct TrackedFlightPill: View {
     private var headerTopBar: some View {
         HStack {
             HStack(spacing: 8) {
-
-                // Static dot (no animation)
                 Circle()
                     .fill(Color.green)
                     .frame(width: 6, height: 6)
@@ -117,7 +114,7 @@ struct TrackedFlightPill: View {
                 .foregroundColor(.white.opacity(0.7))
         }
     }
-    
+
     private func titleRow(for flight: TrackedFlight) -> some View {
         Text("\(flight.flightNumber) • \(flight.route)")
             .font(.system(size: 20, weight: .bold))
@@ -192,8 +189,8 @@ struct TrackedFlightPill: View {
 
             if usesFlowAirport(flight) {
                 HStack(spacing: 6) {
-                    Image(systemName: "suitcase")
-                    Text(securityRouteSummary(for: flight))
+                    Image(systemName: "shield")
+                    Text(checkpointSummaryLabel(for: flight))
                 }
             }
 
@@ -210,12 +207,11 @@ struct TrackedFlightPill: View {
 
             infoRow("Airline", flight.airline)
             infoRow("Status", displayStatus(for: flight))
-            infoRow("Terminal", displayTerminalExpanded(flight.terminal, for: flight))
+            infoRow("Flight terminal", displayTerminalExpanded(flight.terminal, for: flight))
             infoRow("Gate", displayGateExpanded(flight.gate))
             infoRow("Departure", timeString(flight.departureTime))
             infoRow("Leave at", timeString(flight.leaveTime))
             infoRow("Gate target", timeString(flight.gateTargetTime))
-
             Divider()
                 .overlay(Color.white.opacity(0.10))
 
@@ -340,9 +336,9 @@ struct TrackedFlightPill: View {
         return base
     }
 
-    private func securityRouteSummary(for flight: TrackedFlight) -> String {
-        if !flight.securityRouteTitle.isEmpty {
-            return flight.securityRouteTitle
+    private func checkpointSummaryLabel(for flight: TrackedFlight) -> String {
+        if !flight.securityRouteTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Checkpoint"
         }
 
         return "Security"

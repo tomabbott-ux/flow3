@@ -270,7 +270,10 @@ final class LandingStore: ObservableObject {
     ) async {
         let airport = selectedAirport
         await refreshAirport(airport, updateVisibleState: true)
-        
+
+        // 🔥 Preload tracked flight airport wait times if different
+        await preloadTrackedAirportIfNeeded()
+
         if shouldRefreshTrackedFlight, trackedFlight != nil {
             await refreshTrackedFlight(
                 force: false,
@@ -284,8 +287,7 @@ final class LandingStore: ObservableObject {
         
         rebuildAlerts()
     }
-    
-    private func refreshAirport(_ airport: FlowAirport, updateVisibleState: Bool) async {
+    func refreshAirport(_ airport: FlowAirport, updateVisibleState: Bool) async {
         if updateVisibleState {
             errorText = nil
         }
@@ -389,6 +391,13 @@ final class LandingStore: ObservableObject {
     }
     
     // MARK: - Selected Airport
+    private func preloadTrackedAirportIfNeeded() async {
+        guard let trackedFlight else { return }
+        guard let trackedAirport = trackedDepartureAirport(from: trackedFlight.route) else { return }
+        guard trackedAirport != selectedAirport else { return }
+
+        await refreshAirport(trackedAirport, updateVisibleState: false)
+    }
     
     private func handleSelectedAirportChanged() async {
         applyCachedSnapshotIfAvailable(for: selectedAirport)
@@ -561,7 +570,7 @@ final class LandingStore: ObservableObject {
             .uppercased() ?? selectedAirport.rawValue
     }
     
-    private func trackedDepartureAirport(from route: String) -> FlowAirport? {
+    func trackedDepartureAirport(from route: String) -> FlowAirport? {
         let code = route
             .components(separatedBy: "→")
             .first?
@@ -575,7 +584,7 @@ final class LandingStore: ObservableObject {
             .first(where: { $0.rawValue.uppercased() == code })
     }
     
-    private func flowAirport(from code: String) -> FlowAirport? {
+    func flowAirport(from code: String) -> FlowAirport?{
         AirportRegistry.airports
             .map(\.airport)
             .first(where: { $0.rawValue.uppercased() == code.uppercased() })
