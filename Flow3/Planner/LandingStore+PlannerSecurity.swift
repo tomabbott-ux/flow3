@@ -3,8 +3,7 @@ import Foundation
 extension LandingStore {
 
     func availableSecurityRoutes(for airport: FlowAirport) -> [SecurityRouteOption] {
-        let airportWaits = allWaitTimes()
-            .filter { $0.airport == airport }
+        let airportWaits = waitTimes(for: airport)
 
         let built = buildSecurityRouteOptions(
             from: airportWaits,
@@ -22,7 +21,7 @@ extension LandingStore {
 
         return [fallbackSecurityRouteOption(for: airport)]
     }
-
+    
     func plannerSecuritySelection(
         for airport: FlowAirport,
         flightTerminal: String?,

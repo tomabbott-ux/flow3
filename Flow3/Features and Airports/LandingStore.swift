@@ -525,6 +525,18 @@ final class LandingStore: ObservableObject {
         waitTimes
     }
 
+    func waitTimes(for airport: FlowAirport) -> [WaitTimeEstimate] {
+        if let cached = waitTimeCache[airport], !cached.isEmpty {
+            return cached
+        }
+
+        if airport == selectedAirport {
+            return waitTimes.filter { $0.airport == airport }
+        }
+
+        return []
+    }
+    
     private func isFlightFinishedStatus(_ status: String?) -> Bool {
         guard let status else { return false }
 
