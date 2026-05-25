@@ -37,6 +37,7 @@ enum AirportProviderKind: String, Codable, Hashable {
     case chs
     case bna
     case syd
+    case bos
 
     case yyz
     case yvr
@@ -98,7 +99,7 @@ struct AirportRegistry {
 
     private static let baseAirports: [AirportDefinition] = [
 
-        AirportDefinition(airport: .atl, feedType: .live, providerKind: .deltaNewsHub),
+        AirportDefinition(airport: .atl, feedType: .live, providerKind: .atl),
         AirportDefinition(airport: .jfk, feedType: .live, providerKind: .jfk),
         AirportDefinition(airport: .lhr, feedType: .live, providerKind: .lhr),
         AirportDefinition(airport: .ist, feedType: .live, providerKind: .ist),
@@ -147,8 +148,8 @@ struct AirportRegistry {
         AirportDefinition(airport: .alc, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .tfs, feedType: .live, providerKind: .aena),
         AirportDefinition(airport: .lpa, feedType: .live, providerKind: .aena),
-        AirportDefinition(airport: .lax, feedType: .highConfidence, providerKind: .estimated),
-
+        AirportDefinition(airport: .lax, feedType: .live, providerKind: .deltaNewsHub),
+        
         AirportDefinition(airport: .svq, feedType: .comingSoon, providerKind: .none),
         AirportDefinition(airport: .bio, feedType: .comingSoon, providerKind: .none),
         AirportDefinition(airport: .ibz, feedType: .comingSoon, providerKind: .none),
@@ -164,7 +165,7 @@ struct AirportRegistry {
 
         AirportDefinition(airport: .san, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .las, feedType: .estimated, providerKind: .estimated),
-        AirportDefinition(airport: .bos, feedType: .estimated, providerKind: .estimated),
+        AirportDefinition(airport: .bos, feedType: .live, providerKind: .bos),
         AirportDefinition(airport: .sfo, feedType: .estimated, providerKind: .estimated),
         AirportDefinition(airport: .tpa, feedType: .estimated, providerKind: .estimated),
 

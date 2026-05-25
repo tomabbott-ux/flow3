@@ -126,16 +126,10 @@ final class SubscriptionManager: ObservableObject {
             isRefreshingEntitlements = false
         }
 
-        // Simulator unlock for local Xcode testing only
-        if isSimulator {
-            applyEntitlementState(
-                hasPro: true,
-                productID: Constants.yearlyProductID,
-                expirationDate: .distantFuture
-            )
-            return
-        }
-
+        // Simulator now uses real StoreKit / local StoreKit configuration.
+        // Do not auto-unlock Pro, otherwise the paywall cannot be tested.
+        
+        
         var hasActivePro = false
         var newestExpirationDate: Date?
         var newestProductID: String?

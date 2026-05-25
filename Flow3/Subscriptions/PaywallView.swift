@@ -12,26 +12,26 @@ struct PaywallView: View {
         var title: String {
             switch self {
             case .general:
-                return "Upgrade to Flow Pro"
+                return "Try Flow Pro Free"
             case .lockedAirport(let code):
                 return "Unlock \(code)"
             case .flightTracking:
-                return "Unlock Flight Tracking"
+                return "Try Flight Tracking Free"
             case .alerts:
-                return "Unlock Smart Alerts"
+                return "Try Smart Alerts Free"
             }
         }
 
         var subtitle: String {
             switch self {
             case .general:
-                return "Get full airport access, flight tracking, and smarter travel tools."
+                return "Start your 7-day free trial and unlock the full Flow airport experience."
             case .lockedAirport(let code):
-                return "Get access to \(code) and every other premium airport in Flow."
+                return "Start your 7-day free trial to unlock \(code) and every supported airport in Flow."
             case .flightTracking:
-                return "Track flights, plan leave times smarter, and stay ahead of changes."
+                return "Start your 7-day free trial to track flights, plan leave times, and stay ahead of changes."
             case .alerts:
-                return "Get premium alerts and smarter notifications when it matters."
+                return "Start your 7-day free trial to unlock smarter alerts and premium travel notifications."
             }
         }
     }
@@ -75,6 +75,7 @@ struct PaywallView: View {
                 VStack(spacing: 20) {
                     topBar
                     hero
+                    trialPill
                     benefitCard
                     planPicker
                     actionArea
@@ -168,13 +169,13 @@ private extension PaywallView {
 
             VStack(spacing: 8) {
                 Text(source.title)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
 
                 Text(source.subtitle)
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.white.opacity(0.74))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)
             }
@@ -182,24 +183,49 @@ private extension PaywallView {
         .padding(.top, 4)
     }
 
+    var trialPill: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 13, weight: .bold))
+
+            Text("7 days free")
+                .font(.system(size: 14, weight: .bold))
+
+            Text("then choose monthly or yearly")
+                .font(.system(size: 13, weight: .semibold))
+                .opacity(0.82)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(Color(hex: "9B6CFF").opacity(0.24))
+                .overlay(
+                    Capsule()
+                        .stroke(Color(hex: "CBA8FF").opacity(0.26), lineWidth: 1)
+                )
+        )
+    }
+
     var benefitCard: some View {
         VStack(spacing: 14) {
             benefitRow(
                 icon: "globe",
-                title: "Full airport access",
-                subtitle: "Unlock all airports beyond LAX, ORD, IST, AMS, and LGA."
+                title: "All supported airports",
+                subtitle: "Unlock every supported airport beyond the free selection."
             )
 
             benefitRow(
                 icon: "airplane.departure",
                 title: "Flight tracking",
-                subtitle: "Track flights, plan leave times smarter, and stay ahead of changes."
+                subtitle: "Track flights, gates, status changes, and smarter leave times."
             )
 
             benefitRow(
                 icon: "bell.badge.fill",
-                title: "Smarter alerts",
-                subtitle: "Get more intelligent reminders and premium Flow notifications."
+                title: "Smart alerts",
+                subtitle: "Get premium reminders when it is time to leave or your journey changes."
             )
         }
         .padding(18)
@@ -416,12 +442,12 @@ private extension PaywallView {
                     .foregroundStyle(.white.opacity(0.62))
             }
 
-            Text("Payment will be charged to your Apple Account at confirmation of purchase. Subscription renews automatically unless cancelled at least 24 hours before the end of the current period.")
+            Text(legalBillingText)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.white.opacity(0.48))
                 .multilineTextAlignment(.center)
 
-            Text("Manage your subscription in your Apple Account settings. Restore Purchases is available above.")
+            Text("Manage or cancel your subscription in your Apple Account settings. Restore Purchases is available above.")
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.white.opacity(0.48))
                 .multilineTextAlignment(.center)
@@ -432,30 +458,40 @@ private extension PaywallView {
 
     var yearlySubtitle: String {
         if let product = subscriptionManager.yearlyProduct {
-            return "\(product.displayPrice) / year"
+            return "7 days free, then \(product.displayPrice) / year"
         }
-        return "Price unavailable"
+        return "7 days free, then yearly price"
     }
 
     var monthlySubtitle: String {
         if let product = subscriptionManager.monthlyProduct {
-            return "\(product.displayPrice) / month"
+            return "7 days free, then \(product.displayPrice) / month"
         }
-        return "Price unavailable"
+        return "7 days free, then monthly price"
     }
 
     var primaryButtonTitle: String {
         switch selectedPlan {
         case .yearly:
+            return "Start 7-Day Free Trial"
+        case .monthly:
+            return "Start 7-Day Free Trial"
+        }
+    }
+
+    var legalBillingText: String {
+        switch selectedPlan {
+        case .yearly:
             if let product = subscriptionManager.yearlyProduct {
-                return "Continue for \(product.displayPrice)"
+                return "7-day free trial for eligible new subscribers. After the trial, payment will be charged to your Apple Account at \(product.displayPrice) per year unless cancelled at least 24 hours before the end of the trial or current period."
             }
-            return "Continue"
+            return "7-day free trial for eligible new subscribers. After the trial, payment will be charged to your Apple Account unless cancelled at least 24 hours before the end of the trial or current period."
+
         case .monthly:
             if let product = subscriptionManager.monthlyProduct {
-                return "Continue for \(product.displayPrice)"
+                return "7-day free trial for eligible new subscribers. After the trial, payment will be charged to your Apple Account at \(product.displayPrice) per month unless cancelled at least 24 hours before the end of the trial or current period."
             }
-            return "Continue"
+            return "7-day free trial for eligible new subscribers. After the trial, payment will be charged to your Apple Account unless cancelled at least 24 hours before the end of the trial or current period."
         }
     }
 }

@@ -34,9 +34,7 @@ final class DeltaNewsHubWaitTimeProvider: WaitTimeProviding {
     }
 
     func fetchWaitTimes(for airport: FlowAirport) async throws -> [WaitTimeEstimate] {
-
-
-        guard airport == .atl || airport == .msp || airport == .dtw else {
+        guard airport == .msp || airport == .dtw || airport == .lax else {
             throw ProviderError.unsupportedAirport
         }
 
@@ -45,40 +43,27 @@ final class DeltaNewsHubWaitTimeProvider: WaitTimeProviding {
         }
 
         guard let url = URL(string: "https://news.delta.com/airport-wait-times") else {
-throw ProviderError.invalidURL
+            throw ProviderError.invalidURL
         }
-
-        
 
         let html = try await fetchHTML(from: url)
         let now = Date()
 
-    
-
         let parsedRows: [ParsedRow]
-        switch airport {
-        case .atl:
-            parsedRows = try parseATLRows(from: html)
 
+        switch airport {
         case .msp:
             parsedRows = try parseMSPRows(from: html)
 
         case .dtw:
             parsedRows = try parseDTWRows(from: html)
 
+        case .lax:
+            parsedRows = try parseLAXRows(from: html)
+
         default:
             parsedRows = []
         }
-
-      
-        let sourceType: WaitTimeSourceType = {
-            switch airport {
-            case .atl, .msp, .dtw:
-                return .live
-            default:
-                return .predicted
-            }
-        }()
 
         let results = parsedRows.map { row in
             WaitTimeEstimate(
@@ -89,10 +74,12 @@ throw ProviderError.invalidURL
                 observedAt: now,
                 checkpointName: row.checkpointName,
                 areaName: row.areaName,
-                sourceType: sourceType,
+                sourceType: .live,
                 isClosed: false
             )
         }
+
+        print("✅ DELTA FINAL RESULTS for \(airport.rawValue):", results)
 
         Self.storeCache(results, for: airport, fetchedAt: now)
         return results
@@ -119,113 +106,18 @@ throw ProviderError.invalidURL
         let (data, response) = try await session.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
-           
             throw ProviderError.invalidHTML
         }
 
- 
-
         guard (200...299).contains(http.statusCode) else {
-           
             throw ProviderError.badHTTPStatus(http.statusCode)
         }
 
         guard let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
-         
             throw ProviderError.invalidHTML
         }
 
         return html
-    }
-
-    // MARK: - ATL
-
-    private func parseATLRows(from html: String) throws -> [ParsedRow] {
-        let normalized = normalizeHTML(html)
-        let block = try airportBlock(for: "ATL", in: normalized)
-
-        let tableMatches = matches(
-            pattern: #"(?:<h4 class="airport-wait-times-airport__section">\s*(.*?)\s*</h4>\s*)?<table class="airport-wait-times-airport__table">\s*(.*?)\s*</table>"#,
-            in: block,
-            options: [.caseInsensitive, .dotMatchesLineSeparators]
-        )
-
-        var rows: [ParsedRow] = []
-
-        for match in tableMatches {
-            let section = decodeHTML(match[safe: 0] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let tableHTML = match[safe: 1] ?? ""
-
-            let rowMatches = matches(
-                pattern: #"<tr>\s*<td>\s*(.*?)\s*</td>\s*<td(?: class="([^"]*)")?>\s*(.*?)\s*</td>\s*<td>\s*(.*?)\s*</td>\s*</tr>"#,
-                in: tableHTML,
-                options: [.caseInsensitive, .dotMatchesLineSeparators]
-            )
-
-            for rowMatch in rowMatches {
-                let rawCheckpoint = decodeHTML(rowMatch[safe: 0] ?? "")
-                let rawWait = decodeHTML(rowMatch[safe: 2] ?? "")
-                let rawStatus = decodeHTML(rowMatch[safe: 3] ?? "")
-
-                guard let minutes = minutesFromText(rawWait) else { continue }
-
-                let checkpoint = normalizeATLCheckpoint(rawCheckpoint)
-                let area = normalizeATLArea(section)
-                let queueType: QueueType = rawStatus.localizedCaseInsensitiveContains("precheck") ? .precheck : .general
-
-                rows.append(
-                    ParsedRow(
-                        checkpointName: checkpoint,
-                        areaName: area,
-                        minutes: minutes,
-                        queueType: queueType,
-                        terminal: nil
-                    )
-                )
-            }
-        }
-
-        return rows.sorted(by: atlSort)
-    }
-
-    private func normalizeATLCheckpoint(_ text: String) -> String {
-        let value = cleanText(text).uppercased()
-
-        switch value {
-        case "MAIN":
-            return "MAIN"
-        case "NORTH":
-            return "NORTH"
-        case "LOWER NORTH":
-            return "LOWER NORTH"
-        case "SOUTH":
-            return "SOUTH"
-        default:
-            return value
-        }
-    }
-
-    private func normalizeATLArea(_ text: String) -> String {
-        let value = cleanText(text).uppercased()
-
-        if value.contains("INT") {
-            return "International"
-        }
-
-        return "Domestic"
-    }
-
-    private func atlSort(_ lhs: ParsedRow, _ rhs: ParsedRow) -> Bool {
-        if lhs.areaName != rhs.areaName {
-            if lhs.areaName == "Domestic" { return true }
-            if rhs.areaName == "Domestic" { return false }
-        }
-
-        let order = ["MAIN", "NORTH", "SOUTH", "LOWER NORTH"]
-        let lhsIndex = order.firstIndex(of: lhs.checkpointName) ?? 999
-        let rhsIndex = order.firstIndex(of: rhs.checkpointName) ?? 999
-
-        return lhsIndex < rhsIndex
     }
 
     // MARK: - MSP
@@ -251,13 +143,15 @@ throw ProviderError.invalidURL
 
             let checkpoint = cleanText(rawCheckpoint)
             let terminal = terminalFromMSPCheckpoint(checkpoint)
-            let queueType: QueueType = rawStatus.localizedCaseInsensitiveContains("precheck") ? .precheck : .general
-            let areaName = terminal == 2 ? "Terminal 2" : "Terminal 1"
+
+            let queueType: QueueType = rawStatus.localizedCaseInsensitiveContains("precheck")
+                ? .precheck
+                : .general
 
             rows.append(
                 ParsedRow(
                     checkpointName: checkpoint,
-                    areaName: areaName,
+                    areaName: terminal == 2 ? "Terminal 2" : "Terminal 1",
                     minutes: minutes,
                     queueType: queueType,
                     terminal: terminal
@@ -273,6 +167,7 @@ throw ProviderError.invalidURL
 
         if value.hasPrefix("T1") { return 1 }
         if value.hasPrefix("T2") { return 2 }
+
         return nil
     }
 
@@ -300,85 +195,138 @@ throw ProviderError.invalidURL
     // MARK: - DTW
 
     private func parseDTWRows(from html: String) throws -> [ParsedRow] {
-        let normalized = normalizeHTML(html)
-     
+        let textOnly = htmlToCleanText(html)
 
-        let block = try airportBlock(for: "DTW", in: normalized)
-       
+        guard let mcnamaraRange = textOnly.range(
+            of: "McNamara",
+            options: [.caseInsensitive]
+        ) else {
+            return []
+        }
 
-        let rowMatches = matches(
-            pattern: #"<tr>\s*<td>\s*(.*?)\s*</td>\s*<td(?: class="([^"]*)")?>\s*(.*?)\s*</td>\s*<td>\s*(.*?)\s*</td>\s*</tr>"#,
-            in: block,
-            options: [.caseInsensitive, .dotMatchesLineSeparators]
-        )
+        let afterMcNamara = String(textOnly[mcnamaraRange.upperBound...])
 
-        
+        guard let minutes = firstMinutes(in: afterMcNamara) else {
+            return []
+        }
+
+        return [
+            ParsedRow(
+                checkpointName: "McNamara",
+                areaName: "Detroit",
+                minutes: minutes,
+                queueType: .general,
+                terminal: 2
+            )
+        ]
+    }
+
+    // MARK: - LAX
+
+    private func parseLAXRows(from html: String) throws -> [ParsedRow] {
+        let textOnly = htmlToCleanText(html)
+
+        guard let laxRange = textOnly.range(
+            of: "Los Angeles",
+            options: [.caseInsensitive]
+        ) else {
+            print("❌ LAX section not found")
+            return []
+        }
+
+        let afterLAX = String(textOnly[laxRange.upperBound...])
+
+        let laxSection: String
+
+        if let nextAirportRange = afterLAX.range(
+            of: "Minneapolis",
+            options: [.caseInsensitive]
+        ) {
+            laxSection = String(afterLAX[..<nextAirportRange.lowerBound])
+        } else {
+            laxSection = afterLAX
+        }
+
+        return parseLAXRowsFromSection(laxSection)
+    }
+
+    private func parseLAXRowsFromSection(_ section: String) -> [ParsedRow] {
+        let cleaned = cleanText(section)
+
+        let pattern = #"TBIT\s+(\d{1,3})\s*min\s+(General Boarding|TSA PreCheck)"#
+
+        guard let regex = try? NSRegularExpression(
+            pattern: pattern,
+            options: [.caseInsensitive]
+        ) else {
+            return []
+        }
+
+        let range = NSRange(cleaned.startIndex..<cleaned.endIndex, in: cleaned)
+        let matches = regex.matches(in: cleaned, options: [], range: range)
 
         var rows: [ParsedRow] = []
 
-        for rowMatch in rowMatches {
-            let rawCheckpoint = decodeHTML(rowMatch[safe: 0] ?? "")
-            let rawWait = decodeHTML(rowMatch[safe: 2] ?? "")
-            let rawStatus = decodeHTML(rowMatch[safe: 3] ?? "")
+        for match in matches {
+            guard
+                let minutesRange = Range(match.range(at: 1), in: cleaned),
+                let statusRange = Range(match.range(at: 2), in: cleaned)
+            else {
+                continue
+            }
 
-            
-
-            guard let minutes = minutesFromText(rawWait) else { continue }
-
-            let checkpoint = normalizeDTWCheckpoint(rawCheckpoint)
-            let terminal = terminalFromDTWCheckpoint(checkpoint)
-            let queueType: QueueType = rawStatus.localizedCaseInsensitiveContains("precheck") ? .precheck : .general
+            let minutes = Int(cleaned[minutesRange]) ?? 0
+            let status = String(cleaned[statusRange])
+            let isPreCheck = status.localizedCaseInsensitiveContains("precheck")
 
             rows.append(
                 ParsedRow(
-                    checkpointName: checkpoint,
-                    areaName: "Detroit",
+                    checkpointName: "Tom Bradley International Terminal",
+                    areaName: isPreCheck ? "TSA PreCheck" : "General Boarding",
                     minutes: minutes,
-                    queueType: queueType,
-                    terminal: terminal
+                    queueType: isPreCheck ? .precheck : .general,
+                    terminal: 0
                 )
             )
         }
 
-        if rows.isEmpty {
-           
-        }
-
-        return rows.sorted(by: dtwSort)
-    }
-
-    private func normalizeDTWCheckpoint(_ text: String) -> String {
-        let value = cleanText(text)
-
-        switch value.lowercased() {
-        case "mcnamara":
-            return "McNamara"
-        case "evans":
-            return "Evans"
-        default:
-            return value
+        return rows.sorted {
+            queueSortRank($0.queueType) < queueSortRank($1.queueType)
         }
     }
 
-    private func terminalFromDTWCheckpoint(_ checkpoint: String) -> Int? {
-        switch checkpoint.lowercased() {
-        case "evans":
+    private func queueSortRank(_ queueType: QueueType) -> Int {
+        switch queueType {
+        case .general:
+            return 0
+        case .precheck:
             return 1
-        case "mcnamara":
-            return 2
         default:
+            return 99
+        }
+    }
+
+    private func firstMinutes(in text: String) -> Int? {
+        let pattern = #"(\d{1,3})\s*(?:min|minutes)?"#
+
+        guard let regex = try? NSRegularExpression(
+            pattern: pattern,
+            options: [.caseInsensitive]
+        ) else {
             return nil
         }
+
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+
+        guard let match = regex.firstMatch(in: text, options: [], range: range),
+              let swiftRange = Range(match.range(at: 1), in: text) else {
+            return nil
+        }
+
+        return Int(text[swiftRange])
     }
 
-    private func dtwSort(_ lhs: ParsedRow, _ rhs: ParsedRow) -> Bool {
-        let order = ["Evans", "McNamara"]
-        let lhsIndex = order.firstIndex(of: lhs.checkpointName) ?? 999
-        let rhsIndex = order.firstIndex(of: rhs.checkpointName) ?? 999
-        return lhsIndex < rhsIndex
-    }
-
-    // MARK: - Shared helpers
+    // MARK: - Shared Helpers
 
     private func airportBlock(for code: String, in html: String) throws -> String {
         let blockMatches = matches(
@@ -387,18 +335,25 @@ throw ProviderError.invalidURL
             options: [.caseInsensitive, .dotMatchesLineSeparators]
         )
 
-        print("🔎 DELTA airport blocks found:", blockMatches.count)
-
         for blockMatch in blockMatches {
             let block = blockMatch[safe: 0] ?? ""
+
             if block.localizedCaseInsensitiveContains("(\(code))") {
-             
                 return block
             }
         }
 
-       
         throw ProviderError.airportBlockNotFound
+    }
+
+    private func htmlToCleanText(_ html: String) -> String {
+        cleanText(
+            html.replacingOccurrences(
+                of: "<[^>]+>",
+                with: " ",
+                options: .regularExpression
+            )
+        )
     }
 
     private func normalizeHTML(_ html: String) -> String {
@@ -406,7 +361,11 @@ throw ProviderError.invalidURL
             .replacingOccurrences(of: "&nbsp;", with: " ")
             .replacingOccurrences(of: "\n", with: " ")
             .replacingOccurrences(of: "\r", with: " ")
-            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(
+                of: #"\s+"#,
+                with: " ",
+                options: .regularExpression
+            )
     }
 
     private func decodeHTML(_ text: String) -> String {
@@ -421,12 +380,17 @@ throw ProviderError.invalidURL
 
     private func cleanText(_ text: String) -> String {
         decodeHTML(text)
-            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(
+                of: #"\s+"#,
+                with: " ",
+                options: .regularExpression
+            )
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func minutesFromText(_ text: String) -> Int? {
         let cleaned = cleanText(text)
+
         let digits = cleaned
             .components(separatedBy: CharacterSet.decimalDigits.inverted)
             .compactMap { Int($0) }
@@ -439,7 +403,10 @@ throw ProviderError.invalidURL
         in text: String,
         options: NSRegularExpression.Options
     ) -> [[String]] {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else {
+        guard let regex = try? NSRegularExpression(
+            pattern: pattern,
+            options: options
+        ) else {
             return []
         }
 
@@ -450,6 +417,7 @@ throw ProviderError.invalidURL
 
             for index in 1..<match.numberOfRanges {
                 let captureRange = match.range(at: index)
+
                 if let swiftRange = Range(captureRange, in: text) {
                     captures.append(String(text[swiftRange]))
                 } else {
@@ -464,14 +432,22 @@ throw ProviderError.invalidURL
     private static func cachedEntry(for airport: FlowAirport, ttl: TimeInterval) -> CacheEntry? {
         cacheQueue.sync {
             guard let entry = cache[airport] else { return nil }
+
             let age = Date().timeIntervalSince(entry.fetchedAt)
             return age <= ttl ? entry : nil
         }
     }
 
-    private static func storeCache(_ waitTimes: [WaitTimeEstimate], for airport: FlowAirport, fetchedAt: Date) {
+    private static func storeCache(
+        _ waitTimes: [WaitTimeEstimate],
+        for airport: FlowAirport,
+        fetchedAt: Date
+    ) {
         cacheQueue.sync {
-            cache[airport] = CacheEntry(waitTimes: waitTimes, fetchedAt: fetchedAt)
+            cache[airport] = CacheEntry(
+                waitTimes: waitTimes,
+                fetchedAt: fetchedAt
+            )
         }
     }
 }

@@ -85,7 +85,7 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
             let officialResults: [WaitTimeEstimate] = try await withTimeout(seconds: 8) {
                 try await DTWLiveWaitTimeProvider().fetchWaitTimes(for: .dtw)
             }
-
+            
             if !officialResults.isEmpty {
                 logResult(
                     airport: .dtw,
@@ -98,13 +98,13 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
         } catch {
             
         }
-
+        
         // Second try Delta News Hub feed for DTW
         do {
             let deltaResults: [WaitTimeEstimate] = try await withTimeout(seconds: 8) {
                 try await deltaNewsHubProvider.fetchWaitTimes(for: .dtw)
             }
-
+            
             if !deltaResults.isEmpty {
                 logResult(
                     airport: .dtw,
@@ -117,18 +117,17 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
         } catch {
             
         }
-
+        
         // Final fallback
         let fallback = fallbackEstimate(for: .dtw)
         logResult(
             airport: .dtw,
             providerKind: .dtw,
-            outcome: "Official DTW feed failed and Delta fallback failed. Using static fallback",
+            outcome: "Official DTW feed failed and Delta fallback failed. Using estimated DTW fallback.",
             rows: fallback
         )
         return fallback
     }
-
     // MARK: - Primary Fetch
 
     private func fetchPrimaryResults(for airport: FlowAirport, providerKind: AirportProviderKind) async throws -> [WaitTimeEstimate] {
@@ -278,6 +277,9 @@ struct AirportWaitTimeRouter: WaitTimeProviding {
 
         case .pdx:
             return try await pdxProvider.fetchWaitTimes(for: airport)
+            
+        case .bos:
+            return try await BOSLiveWaitTimeProvider().fetchWaitTimes(for: airport)
 
         case .tsaWebsite:
             return try await tsaWebsiteProvider.fetchWaitTimes(for: airport)

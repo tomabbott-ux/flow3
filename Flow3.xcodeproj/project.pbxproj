@@ -78,6 +78,7 @@
 		F846E0912F83021D00997E61 /* FlowSubscriptions.storekit in Resources */ = {isa = PBXBuildFile; fileRef = F846E0902F83021D00997E61 /* FlowSubscriptions.storekit */; };
 		F854035D2F850055001A4969 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F854035C2F850055001A4969 /* AppEnvironment.swift */; };
 		F855A3402F75D80B00302569 /* DUBLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F855A33F2F75D80B00302569 /* DUBLiveWaitTimeProvider.swift */; };
+		F85F6C012FC49B6D00D0D013 /* BOSLiveWaitTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85F6C002FC49B6D00D0D013 /* BOSLiveWaitTimeProvider.swift */; };
 		F862F1A32F583923001666F2 /* Flow3App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F862F1A22F583923001666F2 /* Flow3App.swift */; };
 		F862F1A72F583927001666F2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F862F1A62F583927001666F2 /* Assets.xcassets */; };
 		F862F1AA2F583927001666F2 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F862F1A92F583927001666F2 /* Preview Assets.xcassets */; };
@@ -290,6 +291,7 @@
 		F846E0902F83021D00997E61 /* FlowSubscriptions.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = FlowSubscriptions.storekit; sourceTree = "<group>"; };
 		F854035C2F850055001A4969 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		F855A33F2F75D80B00302569 /* DUBLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DUBLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
+		F85F6C002FC49B6D00D0D013 /* BOSLiveWaitTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BOSLiveWaitTimeProvider.swift; sourceTree = "<group>"; };
 		F862F19F2F583923001666F2 /* Flow3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Flow3.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F862F1A22F583923001666F2 /* Flow3App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flow3App.swift; sourceTree = "<group>"; };
 		F862F1A62F583927001666F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -612,6 +614,7 @@
 				F8B5C97D2F79D5D00083071D /* BNAWebsiteWaitTimeProvider.swift */,
 				F8B5C9832F7F188C0083071D /* DeltaNewsHubWaitTimeProvider.swift */,
 				F84605E12F8A3B62005E5B03 /* SYDLiveWaitTimeProvider.swift */,
+				F85F6C002FC49B6D00D0D013 /* BOSLiveWaitTimeProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -1028,6 +1031,7 @@
 				F80599DB2F5AEC8F00146BF1 /* AirportSelectorView.swift in Sources */,
 				F80C80A82F7738F600C4DABC /* AirportTerminalFormat.swift in Sources */,
 				F80829DC2F5A4554000D5664 /* LandingStore+JFK.swift in Sources */,
+				F85F6C012FC49B6D00D0D013 /* BOSLiveWaitTimeProvider.swift in Sources */,
 				F84605E92F8A92CB005E5B03 /* CachedFlightLookup.swift in Sources */,
 				F862F1E02F583A94001666F2 /* ATLStubWaitTimeProvider.swift in Sources */,
 				F84605EB2F8A9316005E5B03 /* FlightAPIConfig.swift in Sources */,
@@ -1317,7 +1321,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.1.1;
 				NEW_SETTING = "";
 				PRODUCT_BUNDLE_IDENTIFIER = Flow.Flow3;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1355,7 +1359,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.1.1;
 				NEW_SETTING = "";
 				PRODUCT_BUNDLE_IDENTIFIER = Flow.Flow3;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1463,7 +1467,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = Flow.Flow3.FlowLiveActivityExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1499,7 +1503,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = Flow.Flow3.FlowLiveActivityExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
